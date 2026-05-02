@@ -145,25 +145,35 @@ Use `ha_config_get_dashboard` on every dashboard (list them first with `ha_confi
 - Jinja templates inside `icon_color`, `primary`, `secondary` strings (e.g. `area_entities('area_id')`, `area_id_filter: "area_id"`)
 - `visibility` conditions comparing against sensor states that return area IDs
 - Entity lists inside `entities` cards (can be plain strings or `{entity: ...}` objects)
+- `badges` arrays on heading cards
+- `footer.entity` on entities cards
+
+> **Warning:** `ha_config_get_dashboard(entity_id=...)` search mode only finds entities in top-level `entity` and `entities` card fields. It **does not** find references in `visibility` conditions, `badges`, `footer.entity`, or nested structures. Always fetch the **full dashboard config** and grep for the old entity ID string to catch everything.
 
 ### 2. Automations
 
-Use `ha_config_get_automation` on each automation and check:
+Do **not** rely on manually guessing which automations reference a renamed entity — use `ha_deep_search` with the old entity ID first to get an exhaustive list. Then use `ha_config_get_automation` on each match and check:
 
 - `trigger` — state triggers on the entity, or `event_data.entity_id`
 - `condition` — state or template conditions referencing the entity
 - `action` — service calls targeting the entity (e.g. `automation.turn_on`, `automation.trigger`, `light.turn_on` with `area_id`)
 - Blueprint `input` fields (e.g. `area_id: "old_area_id"`)
 
+> **Warning:** Automations that synchronise or mirror an entity (e.g. a "Synchronise Alarm Time" automation triggered by `time.clock_alarm_time`) are easily missed because they don't control the device being renamed — they just observe it. `ha_deep_search` will surface them; manual inspection will not.
+
 ### 3. Group helpers
 
-Use `ha_get_state` on each relevant group helper (e.g. room occupancy groups, light groups) to read the `entity_id` attribute — this lists the group's current members. If any member IDs are stale, update via `ha_set_config_entry_helper` with the corrected `entities` list.
+Use `ha_get_integration(domain="group")` to list **all** group config entries, then check every group whose domain matches the renamed entity's domain. Do not limit checks to occupancy groups — media_player groups, light groups, and others can all contain stale entity IDs.
 
-Occupancy groups to check after any room entity rename:
-- `binary_sensor.{area_id}_occupancy` — the room-level group
+For each candidate group, read its current members via `ha_get_state(entity_id)` and inspect the `entity_id` attribute. If any member IDs are stale, update via `ha_set_config_entry_helper` with the corrected `entities` list.
+
+Common groups to check (not exhaustive):
+- `binary_sensor.{area_id}_occupancy` — room-level occupancy group
 - `binary_sensor.house_occupancy_raw` — aggregates all room occupancy groups
+- `media_player.notification_players` — all notification speaker targets
+- Any light group, cover group, or other domain group that may include the renamed entity
 
-To update: `ha_get_integration(domain="group")` to find the `entry_id`, then `ha_set_config_entry_helper("group", entry_id=..., config={"group_type": "binary_sensor", "entities": [...], "hide_members": false, "all": false})`.
+To update: `ha_get_integration(domain="group")` to find the `entry_id`, then `ha_set_config_entry_helper("group", entry_id=..., config={"group_type": "<type>", "entities": [...], "hide_members": false})`.
 
 ### 4. Update order
 
