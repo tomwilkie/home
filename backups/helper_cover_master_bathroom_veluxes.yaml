@@ -1,0 +1,14 @@
+entity_id: cover.master_bathroom_veluxes
+original_name: Master Bathroom Veluxes
+platform: group
+unique_id: 01K2MBM9YEBK5TX98KR3928WFD
+area_id: master_bathroom
+enabled: true
+hidden: false
+aliases: []
+labels: []
+categories:
+  helpers: 01KFDHCHJM6V8C55DQ80DW8WC5
+members:
+  - cover.master_bathroom_velux_1_roof_window
+  - cover.master_bathroom_velux_2_roof_window

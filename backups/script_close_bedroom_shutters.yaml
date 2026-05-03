@@ -1,0 +1,8 @@
+alias: Close Bedroom Shutters
+description: ""
+sequence:
+  - action: pyscript.norman_shutters
+    metadata: {}
+    data:
+      action: close
+      addr: 192.168.2.225
