@@ -79,7 +79,7 @@ Examples:
 - Entity IDs must start with `{domain}.{area_id}_` — the area_id prefix is mandatory
 - Apostrophes in area display names are **dropped** in the area_id slug, so they do not appear in entity IDs (e.g. `toms_office_...` not `tom_s_office_...`)
 - Entities on devices without an area assignment are excluded from this convention
-- `device_tracker.*` entities from network-scanning integrations (UniFi, iRobot, ESPHome Presence Lite, etc.) follow a conditional rule: if the entity's device has an area assigned in HA, rename it per this convention; if the device has no area (bare network client with no HA counterpart), leave it as-is.
+- `device_tracker.*` entities from network-scanning integrations (e.g. UniFi, etc.) follow a conditional rule: if the entity's device has an area assigned in HA, rename it per this convention; if the device has no area (bare network client with no HA counterpart), leave it as-is.
 
 ### Display names (friendly names)
 
