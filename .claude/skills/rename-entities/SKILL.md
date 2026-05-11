@@ -1,7 +1,7 @@
 ---
 name: rename-entities
 description: >
-  Rename entities in a Home Assistant area to comply with naming-conventions.md.
+  Rename devices & entities in a Home Assistant area to comply with naming-conventions.md.
 
   TRIGGER THIS SKILL WHEN:
   - User runs /rename-entities (optional <Area Display Name> or <Device Name>)`
@@ -10,7 +10,7 @@ description: >
 
 # rename-entities
 
-Rename entities in a Home Assistant area to comply with `naming-conventions.md`.
+Rename devices & entities in a Home Assistant area to comply with `naming-conventions.md`.
 
 **Usage:** `/rename-entities (optional <Area Display Name> or <Device Name>)`
 
@@ -35,6 +35,7 @@ Given an area name or id, you must:
 
 Each subagent receives the device name, device_id, area display name, and area_id. This subagent should use the Haiku model. It must:
 
+0. Check the device name follows the right pattern.
 1. Call `ha_get_device(device_id="...")` to get all entities.
 2. For each entity, check:
    - **Entity ID**: does it start with `{domain}.{area_id}_`? If not, rename it with `ha_rename_entity`. Do NOT search for or fix references at this point — just rename.
