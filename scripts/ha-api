@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MCP_JSON="$SCRIPT_DIR/../.mcp.json"
+
+TOKEN=$(jq -r '.mcpServers["home-assistant"].env.HOMEASSISTANT_TOKEN' "$MCP_JSON")
+BASE_URL=$(jq -r '.mcpServers["home-assistant"].env.HOMEASSISTANT_URL' "$MCP_JSON")
+
+PATH_ARG="$1"
+shift
+
+curl -s \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  "${BASE_URL}${PATH_ARG}" \
+  "$@"
