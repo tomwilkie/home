@@ -74,6 +74,32 @@ Each area that has `room-light` entities should have its own dedicated adaptive 
 
 All instances should use identical settings — do not customise per-instance unless there is a specific documented reason. Divergence from the defaults is treated as configuration drift.
 
+### Standard Settings
+
+The table below lists every non-default value that all instances must share. Settings not listed here are left at the adaptive lighting integration's built-in defaults.
+
+| Setting | Value | Notes |
+|---|---|---|
+| `interval` | `90` | Seconds between adaptation updates |
+| `transition` | `45.0` | Seconds to transition when adapting |
+| `initial_transition` | `1.0` | Seconds for first transition after turn-on |
+| `max_brightness` | `100` | |
+| `min_color_temp` | `2000` | Kelvin |
+| `max_color_temp` | `5500` | Kelvin |
+| `min_brightness` | `10` | |
+| `brightness_mode` | `tanh` | Smooth S-curve; avoids harsh jumps at sunrise/sunset |
+| `brightness_mode_time_dark` | `900` | Seconds over which brightness ramps at night |
+| `brightness_mode_time_light` | `1800` | Seconds over which brightness ramps at day |
+| `min_sunrise_time` | `08:00` | Earliest time adaptive lighting treats as sunrise |
+| `take_over_control` | `true` | Pause adaptive control when lights are manually adjusted |
+| `take_over_control_mode` | `pause_all` | |
+| `intercept` | `true` | |
+| `multi_light_intercept` | `true` | |
+
+### Per-Instance Settings
+
+The only setting that varies by area is `lights` — the `room-light` entities for that area.
+
 ---
 
 ## Intentional Exceptions
