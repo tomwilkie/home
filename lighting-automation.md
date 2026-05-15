@@ -113,6 +113,14 @@ Some areas may be intentionally excluded from parts of the pattern:
 
 ---
 
+## Dashboard
+
+The `dashboard-home` dashboard has a dedicated **Lighting** tab (icon `mdi:ceiling-light-multiple`) with one `custom:auto-entities` card per room. Each card lists all `room-light` labelled lights in that area, with the entity ID shown as secondary text for identification.
+
+Rooms with a card: **Basement**, **Living Room**, **Master Bedroom**, **Nursery**, **Rear Guest Room**, **Tom's Office** — one card per room, matching the set of areas that have `room-light` entities.
+
+---
+
 ## Blueprint Reference
 
 **`twilkie/motion_lights.yaml`** — "Motion Activated Light (with brightness, sun & labels)"

@@ -183,3 +183,79 @@ Door opens ───────────┘                                 
                                                               Front Door Notification automation
                                                               (announce + push notify)
 ```
+
+---
+
+# Washing Machine Automation
+
+## Overview
+
+The washing machine system uses a **state helper** to decouple power detection from notification. A single automation manages all state transitions; a second automation reacts to state changes and delivers alerts.
+
+---
+
+## Helper: Washing Machine State
+
+| Field | Value |
+|---|---|
+| Entity ID | `input_select.washing_machine_state` |
+| Type | `input_select` |
+| Options | `idle`, `running`, `finished` |
+| Initial | `idle` |
+
+Tracks the current phase of a wash cycle. All other automations read or react to this value rather than directly wiring triggers to notifications.
+
+---
+
+## Automation: Washing Machine State (`automation.washing_machine_state`)
+
+Manages all transitions of the `washing_machine_state` helper. Triggered by two sources:
+
+| Trigger ID | Source | Event |
+|---|---|---|
+| `power_change` | `sensor.basement_washing_machine_smart_switch_power` | Any power reading change |
+| `door_open` | `binary_sensor.0x00158d008c7104b7_contact` | Door opens (state → `on`) |
+
+### Transition logic
+
+Each branch guards on the current state before acting, so spurious triggers are ignored:
+
+**`power_change` trigger, power > 1W** — only if current state is `idle`:
+- Sets state → `running`
+
+**`power_change` trigger, power ≤ 1W** — only if current state is `running`:
+- Waits 10 minutes, then sets state → `finished`
+
+**`door_open` trigger** — only if current state is `finished`:
+- Sets state → `idle`
+
+The automation runs in `restart` mode. If the power fluctuates during the 10-minute wait (e.g. a mid-cycle pause followed by the machine resuming), a new trigger interrupts and restarts the automation, resetting the 10-minute clock. The machine must sustain low power for a full uninterrupted 10 minutes before the state advances to `finished`.
+
+---
+
+## Automation: Washing Machine Notification (`automation.notify_on_washing_machine_has_finished`)
+
+Two triggers, branched by `trigger.id`:
+
+| Trigger ID | Condition | Action |
+|---|---|---|
+| `create` | `washing_machine_state` transitions `running` → `finished` | Announce via `script.annouce` (title: "Washing Machine") |
+| `dismiss` | `washing_machine_state` leaves `finished` (door opened → `idle`) | Dismiss notification via `script.cancel_announce` |
+
+---
+
+## Flow diagram
+
+```
+Power > 1W ───────────────────────────────────────────────────────────────┐
+                                                                           ▼
+Power ≤ 1W (10 min sustained) ──► Washing Machine State ──► input_select.washing_machine_state
+                                       automation                          │
+Door opens ───────────────────────► (state guards)              idle → running → finished → idle
+                                                                           │
+                                                                   running → finished
+                                                                           │
+                                                                           ▼
+                                                           Washing Machine Notification automation
+                                                           (announce via script.annouce)
+```
