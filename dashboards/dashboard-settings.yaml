@@ -1,0 +1,246 @@
+views:
+   -  theme: Backend-selected
+      title: Debugging
+      cards: []
+      icon: mdi:bug
+      type: sections
+      sections:
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading_style: title
+                  heading: Low Batteries
+                  icon: mdi:battery-alert
+               -  type: custom:auto-entities
+                  card:
+                      show_header_toggle: false
+                      type: entities
+                  filter:
+                      include:
+                         -  attributes:
+                                device_class: battery
+                      exclude:
+                         -  name: /[Ll]ow/
+                         -  name: /[Ss]tate/
+                         -  name: /[Rr]eplace/
+                         -  name: /[Vv]oltage/
+                  sort:
+                      method: state
+                      numeric: true
+                      count: 5
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Unavailable Entities
+                  heading_style: title
+                  icon: mdi:alert-circle
+               -  type: markdown
+                  content: "{% set device_ids = states \n  | selectattr('state', 'in',
+                      ['unavailable'])\n  | map(attribute='entity_id')\n  | reject('is_hidden_entity')\n\
+                      \  | map('device_id')\n  | reject('none')\n  | unique\n  | list\n\
+                      \  | sort %}\n\n{% if device_ids | length == 0 %}\n_All good_\n\
+                      {% endif %}\n\n{% for device_id in device_ids %}\n<ha-alert
+                      alert-type=\"error\">{{ device_attr(device_id, 'name') if device_attr(device_id,
+                      'name_by_user') == None else device_attr(device_id, 'name_by_user')
+                      }} has unavailable entities</ha-alert>\n{% endfor %}"
+         -  type: grid
+            cards:
+               -  type: heading
+                  icon: mdi:calendar
+                  heading: Old Entities
+                  heading_style: title
+               -  type: markdown
+                  content: "{# Look for devices that haven't been seen in a\n # while,
+                      just by looking for entities that haven't been\n # updated.\n\
+                      \ #}\n{% set time = now() - timedelta(hours=24) %}\n{% set stale_entity_devices
+                      = states \n  | rejectattr('domain', 'in', ['update'])\n  | selectattr('last_updated',
+                      '<', time)\n  | map(attribute='entity_id')\n  | reject('is_hidden_entity')\n\
+                      \  | map('device_id')\n  | reject('none')\n  | unique\n  | list\n\
+                      \  | sort %}\n\n{%- for device_id in stale_entity_devices -%}\n\
+                      {%-   set device_name = device_attr(device_id, 'name') if device_attr(device_id,
+                      'name_by_user') == None else device_attr(device_id, 'name_by_user')
+                      %}\n{%-   set last_updated = device_entities(device_id) | expand
+                      |  map(attribute='last_updated') | max -%}\n{%-   if last_updated
+                      < time %}\n<ha-alert alert-type=\"error\">{{ device_name }}
+                      most recent update was {{ time_since(last_updated) }} ago</ha-alert>\n\
+                      {%-   endif -%}\n{%- endfor -%}\n\n{# Look for ZWaveJS devices
+                      that haven't been seen in a\n # while. ZWaveJS will always update
+                      the last_update attribute,\n # but create a separate entity
+                      call _last_seen. A bit of\n # hack, we rely on the lexicographic
+                      sorting of iso dates\n # to find them.\n #}\n{% set time_iso
+                      = time.isoformat() %}\n{% set last_seen_devices = states.sensor\n\
+                      \  | rejectattr('attributes.device_class', 'undefined') \n \
+                      \ | selectattr('attributes.device_class', 'in', ['timestamp'])\n\
+                      \  | selectattr('entity_id', 'search', '_last_seen$')\n  | selectattr('state',
+                      '<', time_iso)\n  | map(attribute='entity_id')\n  | reject('is_hidden_entity')\n\
+                      \  | map('device_id')\n  | reject('none')\n  | unique\n  | list\n\
+                      \  | sort %}\n\n{%- for device_id in last_seen_devices -%}\n\
+                      {%-   set device_name = device_attr(device_id, 'name') if device_attr(device_id,
+                      'name_by_user') == None else device_attr(device_id, 'name_by_user')
+                      %}\n{%-   set last_seen = device_entities(device_id) | select('search',
+                      '_last_seen$') | first | states | as_datetime -%}\n<ha-alert
+                      alert-type=\"error\">{{ device_name }} most recent update was
+                      {{ time_since(last_seen) }} ago</ha-alert>\n{%- endfor -%}\n\
+                      \n"
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Vacuum Cleaner Runs (last week)
+                  heading_style: title
+                  icon: mdi:robot-vacuum-alert
+               -  type: tile
+                  entity: sensor.basement_roomba_cleaning_time
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  show_entity_picture: false
+                  vertical: false
+                  hide_state: false
+                  name: Basement Roomba
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: sensor.living_room_roomba_cleaning_time
+                  vertical: false
+                  features_position: bottom
+                  name: Living Room Roomba
+               -  type: tile
+                  entity: sensor.toms_office_roomba_cleaning_time
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  name: Tom's Office Roomba
+               -  type: tile
+                  entity: sensor.kitchen_vacuum_cleaning_time
+                  vertical: false
+                  features_position: bottom
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  name: Kitchen Vacuum
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading_style: title
+                  heading: Automations
+               -  type: custom:auto-entities
+                  card:
+                      type: entities
+                  show_empty: false
+                  filter:
+                      include:
+                         -  entity_id: automation.*
+                            attributes:
+                                current: '>0'
+               -  type: custom:auto-entities
+                  card:
+                      type: entities
+                  filter:
+                      include:
+                         -  entity_id: automation.*
+                            options:
+                                secondary_info: last-triggered
+                                type: simple-entity
+                            last_triggered: '>0'
+                  sort:
+                      method: last_triggered
+                      reverse: true
+                      count: 5
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Adaptive Lighting
+                  heading_style: title
+                  icon: mdi:ceiling-light-multiple
+               -  type: history-graph
+                  title: Adaptive Lighting Brightness
+                  hours_to_show: 24
+                  entities:
+                     -  entity: sensor.basement_adaptive_lighting_brightness
+                        name: Basement
+                     -  entity: sensor.living_room_adaptive_lighting_brightness
+                        name: Living Room
+                     -  entity:
+                            sensor.master_bedroom_adaptive_lighting_brightness
+                        name: Master Bedroom
+                     -  entity: sensor.nursery_adaptive_lighting_brightness
+                        name: Nursery
+                     -  entity:
+                            sensor.rear_guest_room_adaptive_lighting_brightness
+                        name: Rear Guest Room
+                     -  entity: sensor.toms_office_adaptive_lighting_brightness
+                        name: Tom's Office
+               -  type: entities
+                  title: Adaptive Lighting
+                  show_header_toggle: false
+                  state_color: true
+                  entities:
+                     -  entity: switch.basement_adaptive_lighting
+                        name: Basement
+                     -  entity: switch.living_room_adaptive_lighting
+                        name: Living Room
+                     -  entity: switch.master_bedroom_adaptive_lighting
+                        name: Master Bedroom
+                     -  entity: switch.nursery_adaptive_lighting
+                        name: Nursery
+                     -  entity: switch.rear_guest_room_adaptive_lighting
+                        name: Rear Guest Room
+                     -  entity: switch.toms_office_adaptive_lighting
+                        name: Tom's Office
+      max_columns: 4
+      header:
+          card:
+              type: markdown
+              text_only: true
+              content: '# Debugging'
+   -  type: sections
+      max_columns: 4
+      title: Settings
+      path: settings
+      icon: mdi:home-thermometer
+      sections:
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: New section
+               -  type: tile
+                  entity: schedule.house_comfort_mode
+                  name: Comfort Mode Schedule
+                  vertical: false
+                  features_position: bottom
+                  grid_options:
+                      columns: 12
+                      rows: 1
+               -  type: tile
+                  entity: automation.set_thermostat_state
+                  name: Comfort Mode Schedule
+                  hide_state: true
+                  vertical: false
+                  features:
+                     -  type: toggle
+                  features_position: inline
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Morning Routine
+                  heading_style: title
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: input_datetime.weekday_wakeup_time
+                  name: Default Weekday Wakeup Time
+                  vertical: false
+                  features_position: bottom
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: input_datetime.weekend_wakeup_time
+                  name: Default Weekend Wakeup Time
+                  show_entity_picture: false
+                  vertical: false
+                  features_position: bottom
+               -  type: tile
+                  entity: time.master_bedroom_clock_alarm_time

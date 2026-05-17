@@ -10,6 +10,7 @@ Files are named `{url-path}.yaml`, matching the dashboard's URL path in HA:
 |---|---|
 | `dashboards/kitchen-home.yaml` | `kitchen-home` |
 | `dashboards/dashboard-home.yaml` | `dashboard-home` |
+| `dashboards/dashboard-settings.yaml` | `dashboard-settings` |
 
 ## Workflow
 
@@ -51,7 +52,7 @@ The always-on display mounted in the kitchen. Shows at-a-glance status and quick
 
 ### `dashboard-home` — Main Home Dashboard
 
-The primary dashboard used on mobile and desktop. Has six views:
+The primary dashboard used on mobile and desktop. Has four views:
 
 | View | Path | Purpose |
 |---|---|---|
@@ -59,5 +60,12 @@ The primary dashboard used on mobile and desktop. Has six views:
 | Lighting | `lighting` | Lists all `room-light`-labelled entities per area for bulk management. |
 | Climate | `climate` | Thermostat cards (house, Tom's office, master bedroom aircon), per-room temperature/humidity history, radiator temperatures, boiler status, and boiler on-time. |
 | Cameras | _(default)_ | Live picture-entity feeds: front door, garage (AI Pro), garage door, G5 Turret Ultra. |
+
+### `dashboard-settings` — Settings
+
+Diagnostic and configuration views. Has two views:
+
+| View | Path | Purpose |
+|---|---|---|
 | Debugging | _(default)_ | Low batteries, unavailable entities, stale entities (not updated in 24 h), vacuum run times, active/recently-triggered automations, adaptive lighting brightness history and on/off switches. |
-| Central Heating | `central-heathing` | Comfort mode schedule, weekday/weekend wakeup time inputs, bedroom clock alarm. |
+| Settings | `settings` | Comfort mode schedule, weekday/weekend wakeup time inputs, bedroom clock alarm. |
