@@ -1,0 +1,45 @@
+services:
+  alloy:
+    image: grafana/alloy:v1.14.2
+    restart: unless-stopped
+    pid: "host"
+    network_mode: host
+    env_file: ".env"
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    security_opt:
+      - seccomp:unconfined
+    volumes:
+      # Node exporter mounts
+      - /proc:/host/proc:ro,rslave
+      - /sys:/host/sys:ro,rslave
+      - /dev:/host/dev:ro,rslave
+
+      # cAdvisor mounts
+      - /proc:/proc:ro,rslave
+      - /sys:/sys:ro,rslave
+      - /var/run:/var/run:rw
+      # Docker root (non-standard on HAOS) mapped to where cAdvisor expects it
+      - /mnt/data/docker:/var/lib/docker:ro
+
+      # Host identity files
+      - /etc/hostname:/etc/hostname:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      - /etc/os-release:/etc/os-release:ro
+      # Docker socket — container metrics + log discovery
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Logs — journal (volatile) and traditional /var/log
+      - /var/log/journal:/var/log/journal:ro,rslave
+      - /var/log:/var/log:ro,rslave
+      # Alloy config + persistent state
+      - /mnt/data/supervisor/homeassistant/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+
+volumes:
+  alloy-data:

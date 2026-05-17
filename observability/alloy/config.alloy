@@ -1,0 +1,180 @@
+// ── Grafana Cloud stack ───────────────────────────────────────────────────────
+import.git "grafana_cloud" {
+  repository     = "https://github.com/grafana/alloy-modules.git"
+  path           = "modules/cloud/grafana/cloud/module.alloy"
+  revision       = "021e920"
+  pull_frequency = "0s"
+}
+
+grafana_cloud.stack "receivers" {
+  stack_name = sys.env("STACK_NAME")
+  token      = sys.env("ACCESS_TOKEN")
+}
+
+// ── Alloy self-monitoring ─────────────────────────────────────────────────────
+logging {
+  level    = "info"
+  format   = "logfmt"
+  write_to = [loki.process.alloy.receiver]
+}
+
+loki.process "alloy" {
+  forward_to = [grafana_cloud.stack.receivers.logs]
+
+  stage.static_labels {
+    values = {
+      instance = constants.hostname,
+    }
+  }
+}
+
+prometheus.scrape "alloy" {
+  forward_to      = [grafana_cloud.stack.receivers.metrics]
+  targets         = [{"__address__" = "0.0.0.0:12345", "instance" = constants.hostname}]
+  scrape_interval = "60s"
+}
+
+// ── Node metrics ──────────────────────────────────────────────────────────────
+prometheus.exporter.unix "integrations_node_exporter" {
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+
+  disable_collectors = ["ipvs", "btrfs", "infiniband", "xfs", "zfs"]
+
+  filesystem {
+    fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|tmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
+    mount_points_exclude = "^/(dev|proc|run/credentials/.+|sys|var/lib/docker/.+)($|/)"
+    mount_timeout        = "5s"
+  }
+
+  netclass {
+    ignored_devices = "^(veth.*|cali.*|[a-f0-9]{15})$"
+  }
+
+  netdev {
+    device_exclude = "^(veth.*|cali.*|[a-f0-9]{15})$"
+  }
+}
+
+discovery.relabel "integrations_node_exporter" {
+  targets = prometheus.exporter.unix.integrations_node_exporter.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+  rule {
+    target_label = "job"
+    replacement  = "integrations/node_exporter"
+  }
+}
+
+prometheus.scrape "integrations_node_exporter" {
+  targets         = discovery.relabel.integrations_node_exporter.output
+  forward_to      = [prometheus.relabel.integrations_node_exporter.receiver]
+  scrape_interval = "60s"
+}
+
+prometheus.relabel "integrations_node_exporter" {
+  forward_to = [grafana_cloud.stack.receivers.metrics]
+
+  rule {
+    source_labels = ["__name__"]
+    regex         = "node_scrape_collector_.+"
+    action        = "drop"
+  }
+}
+
+// ── Container metrics (cAdvisor) ──────────────────────────────────────────────
+prometheus.exporter.cadvisor "integrations_cadvisor" {
+  docker_host = "unix:///var/run/docker.sock"
+  docker_only = true
+}
+
+discovery.relabel "integrations_cadvisor" {
+  targets = prometheus.exporter.cadvisor.integrations_cadvisor.targets
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/docker"
+  }
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+}
+
+prometheus.scrape "integrations_cadvisor" {
+  targets         = discovery.relabel.integrations_cadvisor.output
+  forward_to      = [grafana_cloud.stack.receivers.metrics]
+  scrape_interval = "60s"
+}
+
+// ── Systemd journal logs ──────────────────────────────────────────────────────
+loki.source.journal "system" {
+  path          = "/var/log/journal"
+  forward_to    = [grafana_cloud.stack.receivers.logs]
+  relabel_rules = loki.relabel.journal.rules
+
+  labels = {
+    job      = "journal",
+    instance = constants.hostname,
+  }
+}
+
+loki.relabel "journal" {
+  forward_to = []
+
+  rule {
+    source_labels = ["__journal__systemd_unit"]
+    target_label  = "unit"
+  }
+  rule {
+    source_labels = ["__journal_priority_keyword"]
+    target_label  = "level"
+  }
+  rule {
+    source_labels = ["__journal__container_name"]
+    target_label  = "container"
+  }
+}
+
+// ── Docker container logs ─────────────────────────────────────────────────────
+discovery.docker "logs_integrations_docker" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+discovery.relabel "logs_integrations_docker" {
+  targets = []
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/docker"
+  }
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "compose_service"
+  }
+}
+
+loki.source.docker "logs_integrations_docker" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.docker.logs_integrations_docker.targets
+  forward_to       = [grafana_cloud.stack.receivers.logs]
+  relabel_rules    = discovery.relabel.logs_integrations_docker.rules
+  refresh_interval = "5s"
+}
