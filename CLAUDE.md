@@ -7,4 +7,5 @@ The live Home Assistant configuration (automations, scripts, helpers, dashboards
 - Refer to @lighting-automation.md for information on how the lighting automation should be configured.
 - Refer to @naming-conventions.md for information on how to name automations, devices, entities etc. Always consult @naming-conventions.md before creating or renaming entities, helpers, automations, or devices.
 - Refer to @notifications.md for information on how e.g. the front door, washing machine and tumble dryer notifications are configured.
+- Refer to @dashboards.md for the GitOps workflow for managing dashboards and the purpose of each dashboard.
 

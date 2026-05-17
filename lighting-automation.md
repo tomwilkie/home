@@ -64,6 +64,8 @@ Tag a light entity `room-light` if ALL of the following are true:
 3. It is **not** already governed by a conflicting automation (e.g. a sleep/wake routine in a bedroom)
 4. It is in a room where occupancy-based control makes sense (not server racks, garages, or utility spaces)
 
+Decorative/accent lights and utility task lights (e.g. a 3D printer light) have no special exemption — apply the four rules above as normal.
+
 ---
 
 ## Adaptive Lighting

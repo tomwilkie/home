@@ -1,0 +1,1186 @@
+views:
+   -  title: Home
+      path: home
+      icon: mdi:office-building
+      type: sections
+      sections:
+         -  type: grid
+            cards:
+               -  type: custom:mushroom-select-card
+                  entity: input_select.tom_room_selector
+                  primary_info: none
+                  secondary_info: none
+                  layout: horizontal
+                  icon: mdi:office-building
+               -  type: tile
+                  entity: sensor.tom_s_iphone_area
+                  name: Tom's Location
+                  icon: mdi:home
+               -  type: tile
+                  entity: sensor.rachanas_iphone_area
+                  name: Rachana's Location
+                  vertical: false
+                  features_position: bottom
+               -  type: tile
+                  entity: person.rachana_shanbhogue
+                  show_entity_picture: true
+               -  type: tile
+                  entity: binary_sensor.house_occupancy
+            column_span: 3
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Basement
+                  heading_style: title
+                  icon: mdi:home-floor-b
+                  badges:
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.basement_multisensor_air_temperature
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.basement_multisensor_humidity
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: false
+                        show_icon: true
+                        entity: binary_sensor.basement_occupancy
+                        color: state
+                        tap_action:
+                            action: more-info
+               -  type: media-control
+                  entity: media_player.basement_home_cinema
+                  grid_options:
+                      columns: 6
+                      rows: 2
+               -  type: tile
+                  entity: automation.basement_lights
+                  layout_options:
+                      grid_columns: 2
+                      grid_rows: 1
+                  name: Auto Lights
+                  show_entity_picture: false
+                  tap_action:
+                      action: toggle
+                  icon: mdi:ceiling-light
+               -  type: custom:mushroom-template-card
+                  primary: Lights
+                  secondary: ''
+                  icon: mdi:lightbulb
+                  icon_color: "{% set label_entity_ids = label_entities('room-light')
+                      | list %}\n{% if expand(area_entities('Basement')) | selectattr('domain',
+                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
+                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
+                      else %}\n  grey\n{% endif %}"
+                  tap_action:
+                      action: perform-action
+                      perform_action: script.call_service
+                      data:
+                          service: light.toggle
+                          domain: light
+                          area_id_filter: basement
+                          label_id_filter: room-light
+               -  features:
+                     -  type: vacuum-commands
+                        commands:
+                           -  start_pause
+                           -  stop
+                           -  locate
+                  type: tile
+                  entity: vacuum.basement_roomba
+                  features_position: inline
+                  vertical: false
+                  grid_options:
+                      columns: 12
+                      rows: 1
+               -  type: tile
+                  entity: input_select.washing_machine_state
+               -  type: tile
+                  entity: input_select.tumble_dryer_state
+            visibility:
+               -  condition: or
+                  conditions:
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: Basement
+                     -  condition: and
+                        conditions:
+                           -  condition: state
+                              entity: input_select.tom_room_selector
+                              state: Auto
+                           -  condition: state
+                              entity: sensor.tom_s_iphone_area
+                              state: Basement
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: All
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Kitchen
+                  heading_style: title
+                  icon: mdi:faucet-variant
+                  badges:
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.kitchen_netatmo_temperature
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.kitchen_netatmo_humidity
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: false
+                        show_icon: true
+                        entity: binary_sensor.kitchen_occupancy
+                        color: state
+                        tap_action:
+                            action: more-info
+               -  type: tile
+                  entity: sensor.kitchen_radiator_pressure
+                  name: Pressure
+               -  type: custom:mushroom-title-card
+                  title: ''
+               -  features:
+                     -  type: vacuum-commands
+                        commands:
+                           -  start_pause
+                           -  stop
+                           -  locate
+                  type: tile
+                  entity: vacuum.kitchen_vacuum
+                  features_position: inline
+                  vertical: false
+                  grid_options:
+                      columns: 12
+                      rows: 1
+               -  type: tile
+                  entity: media_player.kitchen_display
+                  features_position: inline
+                  vertical: false
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  features:
+                     -  type: media-player-volume-slider
+            visibility:
+               -  condition: or
+                  conditions:
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: Kitchen
+                     -  condition: and
+                        conditions:
+                           -  condition: state
+                              entity: input_select.tom_room_selector
+                              state: Auto
+                           -  condition: state
+                              entity: sensor.tom_s_iphone_area
+                              state: Kitchen
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: All
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Living Room
+                  heading_style: title
+                  icon: mdi:sofa
+                  badges:
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.living_room_multisensor_air_temperature_2
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.living_room_multisensor_humidity_2
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: false
+                        show_icon: true
+                        entity: binary_sensor.living_room_occupancy
+                        color: state
+                        tap_action:
+                            action: more-info
+               -  type: tile
+                  entity: sensor.living_room_radiator_rear_right_pressure
+                  name: Pressure
+               -  type: custom:mushroom-title-card
+                  title: ''
+               -  type: media-control
+                  grid_options:
+                      columns: 6
+                      rows: 2
+                  entity: media_player.living_room_apple_tv
+               -  type: tile
+                  entity: automation.living_room_lights
+                  layout_options:
+                      grid_columns: 2
+                      grid_rows: 1
+                  name: Auto Lights
+                  tap_action:
+                      action: toggle
+                  icon: mdi:ceiling-light
+               -  type: custom:mushroom-template-card
+                  primary: Lights
+                  secondary: ''
+                  icon: mdi:lightbulb
+                  icon_color: "{% set label_entity_ids = label_entities('room-light')
+                      | list %}\n{% if expand(area_entities('Living Room')) | selectattr('domain',
+                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
+                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
+                      else %}\n  grey\n{% endif %}"
+                  tap_action:
+                      action: perform-action
+                      perform_action: script.call_service
+                      data:
+                          service: light.toggle
+                          domain: light
+                          area_id_filter: living_room
+                          label_id_filter: room-light
+                      target: {}
+               -  type: tile
+                  entity: vacuum.living_room_roomba
+                  features_position: inline
+                  vertical: false
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  features:
+                     -  type: vacuum-commands
+                        commands:
+                           -  start_pause
+                           -  stop
+                           -  locate
+            visibility:
+               -  condition: or
+                  conditions:
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: Living Room
+                     -  condition: and
+                        conditions:
+                           -  condition: state
+                              entity: input_select.tom_room_selector
+                              state: Auto
+                           -  condition: state
+                              entity: sensor.tom_s_iphone_area
+                              state: Living Room
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: All
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Master Bedroom
+                  heading_style: title
+                  icon: mdi:bed
+                  badges:
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.master_bedroom_netatmo_temperature
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.master_bedroom_netatmo_humidity
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: false
+                        show_icon: true
+                        entity: binary_sensor.master_bedroom_occupancy
+               -  show_name: true
+                  show_icon: false
+                  show_state: true
+                  type: glance
+                  columns: 3
+                  entities:
+                     -  entity: sensor.master_bedroom_netatmo_co2
+                        name: CO2
+                     -  entity: sensor.master_bedroom_radiator_pressure
+                        name: Pressure
+                     -  entity: sensor.master_bedroom_dyson_fan_hcho
+                        name: Formaldehyde
+                     -  entity: 
+                            sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
+                        name: VOCs
+                     -  entity: sensor.master_bedroom_dyson_fan_pm_2_5
+                        name: PM 2.5
+                     -  entity: sensor.master_bedroom_dyson_fan_pm_10
+                        name: PM 10
+               -  type: custom:mushroom-title-card
+                  title: ''
+               -  features:
+                     -  type: fan-speed
+                  type: tile
+                  entity: fan.master_bedroom_dyson_fan
+                  name: Dyson Fan
+                  features_position: inline
+                  vertical: false
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  hide_state: false
+               -  type: tile
+                  entity: climate.master_bedroom_aircon
+                  icon: ''
+                  hide_state: false
+                  tap_action:
+                      action: call-service
+                      service: automation.trigger
+                      target:
+                          entity_id: automation.turn_on_bedroom_ac_for_1hr
+                      data:
+                          skip_condition: true
+                  name: Aircon
+                  state_content:
+                     -  state
+                     -  temperature
+                  features_position: inline
+                  vertical: false
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  features:
+                     -  style: dropdown
+                        type: climate-hvac-modes
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: cover.master_bedroom_norman_hub_all_shutters
+                  name: Shutters
+                  hide_state: false
+                  vertical: false
+                  features:
+                     -  type: cover-open-close
+                  features_position: inline
+               -  type: custom:mushroom-template-card
+                  primary: Lights
+                  secondary: ''
+                  icon: mdi:lightbulb
+                  icon_color: "{% set label_entity_ids = label_entities('room-light')
+                      | list %}\n{% if expand(area_entities('Master Bedroom')) | selectattr('domain',
+                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
+                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
+                      else %}\n  grey\n{% endif %}"
+                  tap_action:
+                      action: perform-action
+                      perform_action: script.call_service
+                      data:
+                          service: light.toggle
+                          domain: light
+                          area_id_filter: master_bedroom
+                          label_id_filter: room-light
+                  grid_options:
+                      columns: 12
+                      rows: 1
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: switch.master_bedroom_electric_blanket
+                  name: Electric Blanket
+                  show_entity_picture: false
+                  vertical: false
+                  features:
+                     -  type: toggle
+                  features_position: inline
+            visibility:
+               -  condition: or
+                  conditions:
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: Master Bedroom
+                     -  condition: and
+                        conditions:
+                           -  condition: state
+                              entity: input_select.tom_room_selector
+                              state: Auto
+                           -  condition: state
+                              entity: sensor.tom_s_iphone_area
+                              state: Master Bedroom
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: All
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Nursery
+                  heading_style: title
+                  icon: mdi:cradle
+                  badges:
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.nursery_netatmo_temperature
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.nursery_netatmo_humidity
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: false
+                        show_icon: true
+                        entity: binary_sensor.nursery_occupancy
+                        color: state
+                        tap_action:
+                            action: more-info
+               -  type: tile
+                  entity: sensor.nursery_netatmo_co2
+                  name: CO2
+               -  type: tile
+                  entity: sensor.nursery_radiator_pressure
+                  name: Pressure
+               -  type: custom:mushroom-title-card
+                  title: ''
+               -  type: custom:mushroom-template-card
+                  primary: Lights
+                  secondary: ''
+                  icon: mdi:lightbulb
+                  icon_color: "{% set label_entity_ids = label_entities('room-light')
+                      | list %}\n{% if expand(area_entities('nursery')) | selectattr('domain',
+                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
+                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
+                      else %}\n  grey\n{% endif %}"
+                  tap_action:
+                      action: perform-action
+                      perform_action: script.call_service
+                      data:
+                          service: light.toggle
+                          domain: light
+                          area_id_filter: nursery
+                          label_id_filter: room-light
+               -  type: tile
+                  entity: automation.nursery_lights
+                  layout_options:
+                      grid_columns: 2
+                      grid_rows: 1
+                  name: Auto Lights
+                  tap_action:
+                      action: toggle
+                  icon: mdi:ceiling-light
+            visibility:
+               -  condition: or
+                  conditions:
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: Rachana's Office
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: All
+                     -  condition: and
+                        conditions:
+                           -  condition: state
+                              entity: input_select.tom_room_selector
+                              state: Auto
+                           -  condition: state
+                              entity: sensor.tom_s_room
+                              state: nursery
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Tom's Office
+                  heading_style: title
+                  icon: mdi:chair-rolling
+                  badges:
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.toms_office_netatmo_temperature
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.toms_office_netatmo_humidity
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: false
+                        show_icon: true
+                        entity: binary_sensor.toms_office_occupancy
+                        color: state
+                        tap_action:
+                            action: more-info
+               -  show_name: true
+                  show_icon: false
+                  show_state: true
+                  type: glance
+                  entities:
+                     -  entity: sensor.toms_office_netatmo_co2
+                        name: C02
+                     -  entity: sensor.toms_office_netatmo_pressure
+                        name: Pressure
+                     -  entity: sensor.toms_office_airgradient_nox_index
+                        name: NOx
+                     -  entity: sensor.toms_office_airgradient_voc_index
+                        name: VOCs
+                     -  entity: sensor.toms_office_airgradient_pm0_3
+                        name: PM0.3
+                     -  entity: sensor.toms_office_airgradient_pm1
+                        name: PM1
+                     -  entity: sensor.toms_office_airgradient_pm2_5
+                        name: PM2.5
+                     -  entity: sensor.toms_office_airgradient_pm10
+                        name: PM10
+                  columns: 4
+               -  type: custom:mushroom-title-card
+                  title: ''
+               -  type: media-control
+                  entity: media_player.toms_office_arylic_lp10
+                  grid_options:
+                      columns: 6
+                      rows: 2
+               -  type: custom:mushroom-template-card
+                  primary: Lights
+                  secondary: ''
+                  icon: mdi:lightbulb
+                  icon_color: "{% set label_entity_ids = label_entities('room-light')
+                      | list %}\n{% if expand(area_entities('toms_office')) | selectattr('domain',
+                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
+                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
+                      else %}\n  grey\n{% endif %}"
+                  tap_action:
+                      action: perform-action
+                      perform_action: script.call_service
+                      data:
+                          service: light.toggle
+                          domain: light
+                          area_id_filter: toms_office
+                          label_id_filter: room-light
+               -  type: tile
+                  entity: automation.toms_office_lights
+                  layout_options:
+                      grid_columns: 2
+                      grid_rows: 1
+                  name: Auto Lights
+                  icon: mdi:ceiling-light
+                  tap_action:
+                      action: toggle
+               -  type: tile
+                  entity: vacuum.toms_office_roomba
+                  features_position: inline
+                  vertical: false
+                  features:
+                     -  type: vacuum-commands
+                        commands:
+                           -  start_pause
+                           -  stop
+                           -  locate
+               -  type: tile
+                  entity: climate.toms_office_aircon
+                  name: Aircon
+                  icon: mdi:air-conditioner
+                  state_content:
+                     -  state
+                     -  temperature
+                  features_position: inline
+                  vertical: false
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  features:
+                     -  style: dropdown
+                        type: climate-hvac-modes
+            visibility:
+               -  condition: or
+                  conditions:
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: Tom's Office
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: All
+                     -  condition: and
+                        conditions:
+                           -  condition: state
+                              entity: input_select.tom_room_selector
+                              state: Auto
+                           -  condition: state
+                              entity: sensor.tom_s_room
+                              state: toms_office
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Master Bathroom
+                  heading_style: title
+                  icon: mdi:toilet
+                  badges:
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: 
+                            sensor.master_bathroom_motion_sensor_air_temperature
+                        tap_action:
+                            action: more-info
+                     -  type: entity
+                        show_state: false
+                        show_icon: true
+                        entity: binary_sensor.master_bathroom_occupancy
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: cover.master_bathroom_veluxes
+                  name: Veluxes
+                  state_content: state
+                  vertical: false
+                  features:
+                     -  type: cover-open-close
+                  features_position: inline
+      max_columns: 3
+      cards: []
+   -  theme: Backend-selected
+      title: Lighting
+      icon: mdi:ceiling-light-multiple
+      cards:
+         -  type: custom:auto-entities
+            card:
+                type: entities
+                title: Basement
+                show_header_toggle: true
+            filter:
+                include:
+                   -  domain: light
+                      area: basement
+                      label: room-light
+                      options:
+                          secondary_info: entity-id
+         -  type: custom:auto-entities
+            card:
+                type: entities
+                title: Living Room
+                show_header_toggle: true
+            filter:
+                include:
+                   -  options:
+                          secondary_info: entity-id
+                      domain: light
+                      area: living_room
+                      label: room-light
+         -  type: custom:auto-entities
+            card:
+                type: entities
+                title: Master Bedroom
+                show_header_toggle: true
+            filter:
+                include:
+                   -  domain: light
+                      area: master_bedroom
+                      label: room-light
+                      options:
+                          secondary_info: entity-id
+         -  type: custom:auto-entities
+            card:
+                type: entities
+                title: Nursery
+                show_header_toggle: true
+            filter:
+                include:
+                   -  options:
+                          secondary_info: entity-id
+                      domain: light
+                      area: nursery
+                      label: room-light
+         -  type: custom:auto-entities
+            card:
+                type: entities
+                title: Tom's Office
+                show_header_toggle: true
+            filter:
+                include:
+                   -  domain: light
+                      area: toms_office
+                      label: room-light
+                      options:
+                          secondary_info: entity-id
+         -  type: custom:auto-entities
+            card:
+                type: entities
+                title: Rear Guest Room
+                show_header_toggle: true
+            filter:
+                include:
+                   -  domain: light
+                      area: rear_guest_room
+                      label: room-light
+                      options:
+                          secondary_info: entity-id
+      type: masonry
+      path: lighting
+   -  theme: Backend-selected
+      title: Climate
+      path: climate
+      type: custom:grid-layout
+      icon: mdi:home-thermometer-outline
+      layout:
+          grid-template-columns: repeat(4, 250px)
+      badges: []
+      cards:
+         -  type: thermostat
+            entity: climate.house_thermostat
+            view_layout:
+                grid-column: 1
+                grid-row: 1
+         -  type: thermostat
+            entity: climate.toms_office_aircon
+            view_layout:
+                grid-column: 2
+                grid-row: 1
+         -  type: thermostat
+            entity: climate.master_bedroom_aircon
+            view_layout:
+                grid-column: 3
+                grid-row: 1
+         -  type: entities
+            entities:
+               -  entity: fan.master_bedroom_dyson_fan
+               -  entity: sensor.master_bedroom_dyson_fan_hcho
+                  name: HCHO
+               -  entity: sensor.master_bedroom_dyson_fan_pm_10
+                  name: PM 10
+               -  entity: sensor.master_bedroom_dyson_fan_pm_2_5
+                  name: PM 2.5
+               -  entity: 
+                      sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
+                  name: VOC Index
+               -  entity: sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
+                  name: Nitrogen Dioxide Index
+                  icon: ''
+            title: Bedroom Fan
+            state_color: false
+            view_layout:
+                grid-column: 4
+                grid-row: 1
+         -  type: weather-forecast
+            entity: weather.home
+            forecast_type: daily
+            view_layout:
+                grid-column: 1 / span 2
+                grid-row: 2
+         -  type: history-graph
+            entities:
+               -  entity: climate.house_thermostat
+            hours_to_show: 24
+            view_layout:
+                grid-column: 3 / span 2
+                grid-row: 2
+         -  type: entities
+            entities:
+               -  entity: sensor.toms_office_multisensor_air_temperature
+                  name: Temperature
+               -  entity: sensor.toms_office_netatmo_temperature
+                  name: Temperature (Netatmo)
+               -  entity: sensor.toms_office_multisensor_humidity
+                  name: Humidity
+               -  entity: sensor.toms_office_netatmo_humidity
+                  name: Humidity (Netatmo)
+               -  entity: sensor.toms_office_netatmo_co2
+                  name: CO2
+            footer:
+                type: graph
+                entity: sensor.toms_office_multisensor_air_temperature
+                detail: 1
+            title: Tom’s Office
+         -  type: entities
+            entities:
+               -  entity: sensor.nursery_motion_sensor_air_temperature
+                  name: Temperature
+               -  entity: sensor.nursery_netatmo_temperature
+                  name: Temperature (Netatmo)
+               -  entity: sensor.nursery_netatmo_humidity
+                  name: Humidity
+               -  entity: sensor.nursery_netatmo_co2
+                  name: CO2
+            title: Nursery
+            footer:
+                type: graph
+                entity: sensor.nursery_netatmo_temperature
+         -  type: entities
+            entities:
+               -  entity: sensor.master_bedroom_netatmo_temperature
+                  name: Temperature
+               -  entity: sensor.master_bedroom_netatmo_humidity
+                  name: Humidity
+               -  entity: sensor.master_bedroom_netatmo_co2
+                  name: CO2
+            title: Master Bedroom
+            footer:
+                type: graph
+                entity: sensor.master_bedroom_netatmo_temperature
+         -  type: entities
+            entities:
+               -  entity: sensor.hallway_thermostat_current_temperature
+                  name: Temperature
+            title: Hallway
+            footer:
+                type: graph
+                entity: sensor.hallway_thermostat_current_temperature
+         -  type: entities
+            entities:
+               -  entity: sensor.living_room_multisensor_air_temperature_2
+                  name: Temperature
+               -  entity: sensor.living_room_multisensor_humidity_2
+                  name: Humidity
+            footer:
+                type: graph
+                entity: sensor.living_room_multisensor_air_temperature_2
+                detail: 1
+            title: Living Room
+         -  type: entities
+            entities:
+               -  entity: sensor.kitchen_netatmo_temperature
+                  name: Temperature
+               -  entity: sensor.kitchen_netatmo_humidity
+                  name: Humidity
+               -  entity: sensor.kitchen_netatmo_co2
+                  name: CO2
+            title: Kitchen
+            footer:
+                type: graph
+                entity: sensor.kitchen_netatmo_temperature
+         -  type: entities
+            entities:
+               -  entity: sensor.basement_multisensor_air_temperature
+                  name: Temperature
+               -  entity: sensor.basement_multisensor_humidity
+                  name: Humidity
+            title: Basement
+            footer:
+                type: graph
+                entity: sensor.basement_multisensor_air_temperature
+         -  type: entities
+            entities:
+               -  entity: sensor.garage_netatmo_temperature
+                  name: Temperature
+               -  entity: sensor.garage_netatmo_humidity
+                  name: Humidity
+            title: Garage
+            footer:
+                type: graph
+                entity: sensor.garage_netatmo_temperature
+         -  type: history-graph
+            entities:
+               -  entity: sensor.kitchen_radiator_temperature
+               -  entity: sensor.living_room_radiator_front_temperature
+               -  entity: sensor.living_room_radiator_rear_right_temperature
+               -  entity: sensor.living_room_radiator_rear_left_temperature
+               -  entity: sensor.hallway_radiator_temperature
+               -  entity: sensor.guest_bathroom_radiator_temperature
+               -  entity: sensor.guest_bathroom_towel_heater_temperature
+               -  entity: sensor.rear_guest_room_radiator_temperature
+               -  entity: sensor.front_guest_room_radiator_temperature
+               -  entity: sensor.master_bathroom_radiator_temperature
+               -  entity: sensor.nursery_radiator_temperature
+               -  entity: sensor.master_bedroom_radiator_temperature
+               -  entity: sensor.toms_office_radiator_temperature
+            title: Radiator Temperatures
+            hours_to_show: 24
+            logarithmic_scale: false
+            show_names: false
+            view_layout:
+                grid-column: 1 / span 2
+                grid-row: 3
+         -  type: history-graph
+            entities:
+               -  entity: binary_sensor.kitchen_boiler_monitor_boiler_on
+               -  entity: sensor.kitchen_boiler_monitor_temperature_1
+               -  entity: sensor.kitchen_boiler_monitor_temperature_2
+            title: Boiler Status
+            hours_to_show: 24
+            show_names: false
+            view_layout:
+                grid-column: 3 / span 2
+                grid-row: 3
+         -  type: entities
+            entities:
+               -  sensor.kitchen_boiler_on_time
+   -  title: Cameras
+      cards:
+         -  show_state: false
+            show_name: false
+            camera_view: live
+            type: picture-entity
+            entity: camera.front_door_high_resolution_channel
+         -  show_state: false
+            show_name: false
+            camera_view: live
+            type: picture-entity
+            entity: camera.garage_ai_pro_high_resolution_channel
+         -  show_state: false
+            show_name: false
+            camera_view: live
+            type: picture-entity
+            entity: camera.garage_door_high_resolution_channel
+         -  show_state: false
+            show_name: false
+            camera_view: live
+            type: picture-entity
+            entity: camera.g5_turret_ultra_high_resolution_channel
+      icon: mdi:cctv
+   -  theme: Backend-selected
+      title: Debugging
+      cards: []
+      icon: mdi:bug
+      type: sections
+      sections:
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading_style: title
+                  heading: Low Batteries
+                  icon: mdi:battery-alert
+               -  type: custom:auto-entities
+                  card:
+                      show_header_toggle: false
+                      type: entities
+                  filter:
+                      include:
+                         -  attributes:
+                                device_class: battery
+                      exclude:
+                         -  name: /[Ll]ow/
+                         -  name: /[Ss]tate/
+                         -  name: /[Rr]eplace/
+                         -  name: /[Vv]oltage/
+                  sort:
+                      method: state
+                      numeric: true
+                      count: 5
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Unavailable Entities
+                  heading_style: title
+                  icon: mdi:alert-circle
+               -  type: markdown
+                  content: "{% set device_ids = states \n  | selectattr('state', 'in',
+                      ['unavailable'])\n  | map(attribute='entity_id')\n  | reject('is_hidden_entity')\n\
+                      \  | map('device_id')\n  | reject('none')\n  | unique\n  | list\n\
+                      \  | sort %}\n\n{% if device_ids | length == 0 %}\n_All good_\n\
+                      {% endif %}\n\n{% for device_id in device_ids %}\n<ha-alert
+                      alert-type=\"error\">{{ device_attr(device_id, 'name') if device_attr(device_id,
+                      'name_by_user') == None else device_attr(device_id, 'name_by_user')
+                      }} has unavailable entities</ha-alert>\n{% endfor %}"
+         -  type: grid
+            cards:
+               -  type: heading
+                  icon: mdi:calendar
+                  heading: Old Entities
+                  heading_style: title
+               -  type: markdown
+                  content: "{# Look for devices that haven't been seen in a\n # while,
+                      just by looking for entities that haven't been\n # updated.\n\
+                      \ #}\n{% set time = now() - timedelta(hours=24) %}\n{% set stale_entity_devices
+                      = states \n  | rejectattr('domain', 'in', ['update'])\n  | selectattr('last_updated',
+                      '<', time)\n  | map(attribute='entity_id')\n  | reject('is_hidden_entity')\n\
+                      \  | map('device_id')\n  | reject('none')\n  | unique\n  | list\n\
+                      \  | sort %}\n\n{%- for device_id in stale_entity_devices -%}\n\
+                      {%-   set device_name = device_attr(device_id, 'name') if device_attr(device_id,
+                      'name_by_user') == None else device_attr(device_id, 'name_by_user')
+                      %}\n{%-   set last_updated = device_entities(device_id) | expand
+                      |  map(attribute='last_updated') | max -%}\n{%-   if last_updated
+                      < time %}\n<ha-alert alert-type=\"error\">{{ device_name }}
+                      most recent update was {{ time_since(last_updated) }} ago</ha-alert>\n\
+                      {%-   endif -%}\n{%- endfor -%}\n\n{# Look for ZWaveJS devices
+                      that haven't been seen in a\n # while. ZWaveJS will always update
+                      the last_update attribute,\n # but create a separate entity
+                      call _last_seen. A bit of\n # hack, we rely on the lexicographic
+                      sorting of iso dates\n # to find them.\n #}\n{% set time_iso
+                      = time.isoformat() %}\n{% set last_seen_devices = states.sensor\n\
+                      \  | rejectattr('attributes.device_class', 'undefined') \n \
+                      \ | selectattr('attributes.device_class', 'in', ['timestamp'])\n\
+                      \  | selectattr('entity_id', 'search', '_last_seen$')\n  | selectattr('state',
+                      '<', time_iso)\n  | map(attribute='entity_id')\n  | reject('is_hidden_entity')\n\
+                      \  | map('device_id')\n  | reject('none')\n  | unique\n  | list\n\
+                      \  | sort %}\n\n{%- for device_id in last_seen_devices -%}\n\
+                      {%-   set device_name = device_attr(device_id, 'name') if device_attr(device_id,
+                      'name_by_user') == None else device_attr(device_id, 'name_by_user')
+                      %}\n{%-   set last_seen = device_entities(device_id) | select('search',
+                      '_last_seen$') | first | states | as_datetime -%}\n<ha-alert
+                      alert-type=\"error\">{{ device_name }} most recent update was
+                      {{ time_since(last_seen) }} ago</ha-alert>\n{%- endfor -%}\n\
+                      \n"
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Vacuum Cleaner Runs (last week)
+                  heading_style: title
+                  icon: mdi:robot-vacuum-alert
+               -  type: tile
+                  entity: sensor.basement_roomba_cleaning_time
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  show_entity_picture: false
+                  vertical: false
+                  hide_state: false
+                  name: Basement Roomba
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: sensor.living_room_roomba_cleaning_time
+                  vertical: false
+                  features_position: bottom
+                  name: Living Room Roomba
+               -  type: tile
+                  entity: sensor.toms_office_roomba_cleaning_time
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  name: Tom's Office Roomba
+               -  type: tile
+                  entity: sensor.kitchen_vacuum_cleaning_time
+                  vertical: false
+                  features_position: bottom
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  name: Kitchen Vacuum
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading_style: title
+                  heading: Automations
+               -  type: custom:auto-entities
+                  card:
+                      type: entities
+                  show_empty: false
+                  filter:
+                      include:
+                         -  entity_id: automation.*
+                            attributes:
+                                current: '>0'
+               -  type: custom:auto-entities
+                  card:
+                      type: entities
+                  filter:
+                      include:
+                         -  entity_id: automation.*
+                            options:
+                                secondary_info: last-triggered
+                                type: simple-entity
+                            last_triggered: '>0'
+                  sort:
+                      method: last_triggered
+                      reverse: true
+                      count: 5
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Adaptive Lighting
+                  heading_style: title
+                  icon: mdi:ceiling-light-multiple
+               -  type: history-graph
+                  title: Adaptive Lighting Brightness
+                  hours_to_show: 24
+                  entities:
+                     -  entity: sensor.basement_adaptive_lighting_brightness
+                        name: Basement
+                     -  entity: sensor.living_room_adaptive_lighting_brightness
+                        name: Living Room
+                     -  entity: 
+                            sensor.master_bedroom_adaptive_lighting_brightness
+                        name: Master Bedroom
+                     -  entity: sensor.nursery_adaptive_lighting_brightness
+                        name: Nursery
+                     -  entity: 
+                            sensor.rear_guest_room_adaptive_lighting_brightness
+                        name: Rear Guest Room
+                     -  entity: sensor.toms_office_adaptive_lighting_brightness
+                        name: Tom's Office
+               -  type: entities
+                  title: Adaptive Lighting
+                  show_header_toggle: false
+                  state_color: true
+                  entities:
+                     -  entity: switch.basement_adaptive_lighting
+                        name: Basement
+                     -  entity: switch.living_room_adaptive_lighting
+                        name: Living Room
+                     -  entity: switch.master_bedroom_adaptive_lighting
+                        name: Master Bedroom
+                     -  entity: switch.nursery_adaptive_lighting
+                        name: Nursery
+                     -  entity: switch.rear_guest_room_adaptive_lighting
+                        name: Rear Guest Room
+                     -  entity: switch.toms_office_adaptive_lighting
+                        name: Tom's Office
+      max_columns: 4
+      header:
+          card:
+              type: markdown
+              text_only: true
+              content: '# Debugging'
+   -  type: sections
+      max_columns: 4
+      title: Central Heathing
+      path: central-heathing
+      icon: mdi:home-thermometer
+      sections:
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: New section
+               -  type: tile
+                  entity: schedule.house_comfort_mode
+                  name: Comfort Mode Schedule
+                  vertical: false
+                  features_position: bottom
+                  grid_options:
+                      columns: 12
+                      rows: 1
+               -  type: tile
+                  entity: automation.set_thermostat_state
+                  name: Comfort Mode Schedule
+                  hide_state: true
+                  vertical: false
+                  features:
+                     -  type: toggle
+                  features_position: inline
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Morning Routine
+                  heading_style: title
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: input_datetime.weekday_wakeup_time
+                  name: Default Weekday Wakeup Time
+                  vertical: false
+                  features_position: bottom
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: input_datetime.weekend_wakeup_time
+                  name: Default Weekend Wakeup Time
+                  show_entity_picture: false
+                  vertical: false
+                  features_position: bottom
+               -  type: tile
+                  entity: time.master_bedroom_clock_alarm_time
+

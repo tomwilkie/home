@@ -1,0 +1,306 @@
+wallpanel:
+    enabled: false
+    hide_toolbar: true
+    hide_sidebar: true
+    idle_time: 0
+views:
+   -  type: sections
+      max_columns: 3
+      sections:
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Kitchen
+                  badges:
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.kitchen_netatmo_temperature
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.kitchen_netatmo_co2
+                     -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.kitchen_netatmo_humidity
+               -  features:
+                     -  type: vacuum-commands
+                        commands:
+                           -  start_pause
+                           -  stop
+                           -  return_home
+                  type: tile
+                  entity: vacuum.kitchen_vacuum
+                  layout_options:
+                      grid_columns: 4
+                      grid_rows: 1
+                  show_entity_picture: false
+                  vertical: false
+                  hide_state: false
+                  state_content:
+                     -  state
+                     -  last-changed
+                  features_position: inline
+               -  type: tile
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  entity: water_heater.hallway_thermostat
+                  name: Hot Water
+                  hide_state: true
+                  vertical: false
+                  features:
+                     -  type: water-heater-operation-modes
+                  features_position: inline
+               -  entities:
+                     -  calendar.shanbhogue_wilkie_family
+                  compact_events_to_show: 3
+                  filter_duplicates: true
+                  day_separator_width: 1px
+                  today_indicator: glow
+                  show_single_allday_time: false
+                  show_end_time: false
+                  show_location: false
+                  weather:
+                      position: date
+                      date:
+                          show_conditions: true
+                          show_high_temp: true
+                          show_low_temp: false
+                          show_uv_index: false
+                          uv_index_threshold: 0
+                          icon_size: 14px
+                          font_size: 12px
+                          color: var(--primary-text-color)
+                      event:
+                          show_conditions: true
+                          show_temp: true
+                          show_uv_index: false
+                          uv_index_threshold: 0
+                          icon_size: 14px
+                          font_size: 12px
+                          color: var(--primary-text-color)
+                  type: custom:calendar-card-pro
+         -  type: grid
+            cards:
+               -  type: tile
+                  entity: sensor.london_underground_weaver
+                  name: Weaver Line
+                  icon: mdi:train
+                  show_entity_picture: false
+                  state_content:
+                     -  state
+                     -  Description
+                  vertical: false
+                  features_position: bottom
+                  grid_options:
+                      columns: 6
+                      rows: 1
+               -  type: tile
+                  grid_options:
+                      columns: 6
+                      rows: 1
+                  entity: sensor.london_underground_victoria
+                  name: Victoria Line
+                  icon: mdi:train
+                  show_entity_picture: false
+                  state_content:
+                     -  state
+                     -  Description
+                  vertical: false
+                  features_position: bottom
+               -  type: heading
+                  heading: Rectory Road
+               -  type: custom:hasl4-departure-card
+                  title: ''
+                  entities:
+                     -  sensor.weaver
+                  show_entity_name: false
+                  show_header: false
+                  show_icon: true
+                  show_departures: true
+                  direction: 0
+                  max_departures: 5
+                  hide_departed: true
+                  show_departed_offeset: 5
+                  show_updated: true
+                  tap_action: info
+                  hide_line_number: true
+         -  type: grid
+            cards:
+               -  type: custom:clock-weather-card
+                  entity: weather.home
+                  sun_entity: sun.sun
+                  show_humidity: true
+                  forecast_rows: 3
+               -  show_name: true
+                  show_icon: false
+                  show_state: true
+                  type: glance
+                  columns: 3
+                  entities:
+                     -  entity: sensor.kleenex_pollen_radar_grass
+                        name: Grass Pollen
+                     -  entity: sensor.kleenex_pollen_radar_trees
+                        name: Tree Pollen
+                     -  entity: sensor.kleenex_pollen_radar_weeds
+                        name: Weed Pollen
+                     -  entity: 
+                            sensor.kleenex_pollen_radar_grass_level
+                        name: Grass Pollen
+                     -  entity: 
+                            sensor.kleenex_pollen_radar_trees_level
+                        name: Tree Pollen
+                     -  entity: 
+                            sensor.kleenex_pollen_radar_weeds_level
+                        name: Weed Pollen
+         -  type: grid
+            cards:
+               -  type: custom:webrtc-camera
+                  streams:
+                     -  url: REDACTED_RTSP_STREAM
+                  ui: false
+                  digital_ptz: false
+                  muted: true
+                  background: true
+                  intersection: 0.75
+                  style: '.mode {display: none}'
+         -  type: grid
+            cards:
+               -  type: custom:webrtc-camera
+                  streams:
+                     -  url: REDACTED_RTSP_STREAM
+                  intersection: 0.75
+                  ui: false
+                  digital_ptz: false
+                  muted: true
+                  background: true
+                  style: '.mode {display: none}'
+         -  type: grid
+            cards:
+               -  type: custom:webrtc-camera
+                  streams:
+                     -  url: REDACTED_RTSP_STREAM
+                  intersection: 0.75
+                  ui: false
+                  digital_ptz: false
+                  muted: true
+                  background: true
+                  style: '.mode {display: none}, video {aspect-ratio: 16/9; object-fit:
+                      cover;}'
+         -  type: grid
+            cards:
+               -  type: custom:mushroom-template-card
+                  primary: Apple Music
+                  secondary: ''
+                  icon: mdi:apple
+                  icon_color: red
+                  tap_action:
+                      action: perform-action
+                      perform_action: fully_kiosk.start_application
+                      target:
+                          device_id: d65ad94b2be7c4e89151608a8bf3d68b
+                      data:
+                          application: com.apple.android.music
+                  layout_options:
+                      grid_columns: 4
+                      grid_rows: 1
+               -  type: custom:mushroom-template-card
+                  primary: Launch YouTube
+                  secondary: ''
+                  icon: mdi:youtube
+                  icon_color: red
+                  tap_action:
+                      action: perform-action
+                      perform_action: fully_kiosk.load_url
+                      target:
+                          device_id: d65ad94b2be7c4e89151608a8bf3d68b
+                      data:
+                          url: https://www.youtube.com/
+                  layout_options:
+                      grid_columns: 4
+                      grid_rows: 1
+         -  type: grid
+            cards:
+               -  type: tile
+                  entity: automation.turn_everything_off
+                  tap_action:
+                      action: perform-action
+                      perform_action: automation.trigger
+                      target:
+                          entity_id: automation.turn_everything_off
+                      data:
+                          skip_condition: true
+                  icon: mdi:lightbulb-group-off
+                  color: light-grey
+                  layout_options:
+                      grid_columns: 4
+                      grid_rows: 1
+                  hide_state: true
+               -  type: tile
+                  entity: climate.master_bedroom_aircon
+                  icon: ''
+                  hide_state: false
+                  tap_action:
+                      action: call-service
+                      service: automation.trigger
+                      target:
+                          entity_id: automation.turn_on_bedroom_ac_for_1hr
+                      data:
+                          skip_condition: true
+                  name: Turn on Bedroom Aircon for 1hr
+                  state_content:
+                     -  state
+                     -  temperature
+                     -  current_temperature
+                  visibility:
+                     -  condition: numeric_state
+                        entity: sensor.master_bedroom_netatmo_temperature
+                        above: 21
+                  layout_options:
+                      grid_columns: 4
+                      grid_rows: 1
+         -  type: grid
+            cards:
+               -  type: custom:mushroom-template-card
+                  primary: Where is Tom?
+                  secondary: "{% set device = device_id(entity) %}\n{% set device_tracker
+                      = device_entities(device) | select('match', '^device_tracker\\\
+                      .') | sort | first %}\n{% if is_state(device_tracker, 'home')
+                      %}\n  {{ states(entity) }}\n{% else %} \n  Away\n{% endif %}"
+                  icon: mdi:human-male
+                  icon_color: "{% set device = device_id(entity) %}\n{% set device_tracker
+                      = device_entities(device) | select('match', '^device_tracker\\\
+                      .') | sort | first %}\n{% if is_state(device_tracker, 'home')
+                      %}\n  green\n{% else %} \n  red\n{% endif %}"
+                  entity: sensor.tom_s_iphone_area
+                  layout_options:
+                      grid_columns: 4
+                      grid_rows: 1
+                  tap_action:
+                      action: more-info
+               -  type: custom:mushroom-template-card
+                  primary: Where is Rachana?
+                  secondary: "{% set device = device_id(entity) %}\n{% set device_tracker
+                      = device_entities(device) | select('match', '^device_tracker\\\
+                      .') | sort | first %}\n{% if is_state(device_tracker, 'home')
+                      %}\n  {{ states(entity) }}\n{% else %} \n  Away\n{% endif %}"
+                  icon: "{% set device = device_id(entity) %}\n{% set device_tracker
+                      = device_entities(device) | select('match', '^device_tracker\\\
+                      .') | sort | first %}\n{% if is_state(device_tracker, 'home')
+                      %}\n  mdi:human-female\n{% else %} \n  mdi:run\n{% endif %}"
+                  entity: sensor.rachanas_iphone_area
+                  layout_options:
+                      grid_columns: 4
+                      grid_rows: 1
+                  tap_action:
+                      action: more-info
+                  color: "{% set device = device_id(entity) %}\n{% set device_tracker
+                      = device_entities(device) | select('match', '^device_tracker\\\
+                      .') | sort | first %}\n{% if is_state(device_tracker, 'home')
+                      %}\n  green\n{% else %} \n  red\n{% endif %}"
+                  features_position: bottom
+      icon: mdi:home
+      cards: []
+

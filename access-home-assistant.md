@@ -8,7 +8,7 @@ Use the `mcp__home-assistant__*` tools to read and write live HA configuration. 
 
 ## Home Assistant CLI
 
-There is the `hass-cli` command which can be used to e.g. download & upload dashboards:
+There is the `hass-cli` command which can be used to e.g. download & upload dashboards. When running from a Claude Code session, prefix with `source ~/.zshrc &&` as the binary is only on the PATH after the zsh startup file is loaded:
 
 To list dashboards in home assistant:
 ```sh
@@ -37,7 +37,7 @@ SSH is a last resort — prefer MCP tools. In particular:
 - Use `ha_get_integration(domain="<domain>")` to inspect config entries and their current option values (the `options_schema` on each entry shows `suggested_value` for every field, which is the live value).
 - Use `ha_get_integration(entry_id="...", include_schema=True)` to get the full options flow schema for a specific entry before updating it.
 
-SSH access: `ssh root@homeassistant.local -C "<command>"`
+SSH access: `ssh root@homeassistant.local -C "<command>"` — always use `root@homeassistant.local`; host key verification fails with other usernames or hostnames.
 
 Registry files live at `/config/.storage/` on the HA host:
 - `core.entity_registry` — entities; structure: `.data.entities[]` (active), `.data.deleted_entities[]` (orphaned/removed)
