@@ -13,8 +13,6 @@ Each room uses a four-component pattern for occupancy-based lighting with adapti
 
 ## Naming Conventions
 
-Follows the same slugification rules as [naming-conventions.md](naming-conventions.md): apostrophes dropped, spaces → underscores, lowercase.
-
 ### Occupancy Groups
 
 | | Format | Example |
@@ -110,14 +108,6 @@ Some areas may be intentionally excluded from parts of the pattern:
   - **Master Bedroom** is the current exception. It is controlled by three bespoke automations: `turn_bedroom_lights_on_before_sunset` (turns lights on at sunset, plays music, closes blinds), `toggle_bedroom_lights` (wall-switch toggles), and `turn_off_lights_in_master_bedroom` (turns lights off after 20 min no presence, but only before sunset). Adaptive lighting uses `switch.adaptive_lighting_master_bedroom`.
 - **No adaptive lighting**: If a light is on/off only with no brightness or colour control, exclude it from the adaptive lighting instance. It still gets the `room-light` label and is controlled by the occupancy automation.
 - **No smart lights**: Some areas have occupancy sensors but no smart light entities. These areas have no automation, no adaptive lighting instance, and no `room-light` labelled entities — the occupancy sensor exists for other purposes (e.g. presence-based heating or security).
-
----
-
-## Dashboard
-
-The `dashboard-home` dashboard has a dedicated **Lighting** tab (icon `mdi:ceiling-light-multiple`) with one `custom:auto-entities` card per room. Each card lists all `room-light` labelled lights in that area, with the entity ID shown as secondary text for identification.
-
-Rooms with a card: **Basement**, **Living Room**, **Master Bedroom**, **Nursery**, **Rear Guest Room**, **Tom's Office** — one card per room, matching the set of areas that have `room-light` entities.
 
 ---
 

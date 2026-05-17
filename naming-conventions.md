@@ -1,5 +1,31 @@
 # Home Assistant Naming Conventions
 
+## Entity IDs must be area-first
+
+Entity IDs follow `{domain}.{area_id}_{device_slug}_{measurement}`. The area comes **first** — this applies to all entities including those auto-created by integrations (adaptive lighting, template helpers, etc.). When an integration creates entities with the wrong order (e.g. `switch.adaptive_lighting_living_room`), rename them with `ha_set_entity(new_entity_id=...)` immediately.
+
+## Display names must not include the area or device
+
+Integration `original_name` values often embed the area (e.g. "Adaptive Lighting: Living Room"). After renaming an entity ID, check the display name and override it with `ha_set_entity(name="...")` to strip the area prefix. Correct names: `Adaptive Lighting`, `Adapt Brightness`, `Sleep Mode`. Incorrect: `Adaptive Lighting: Living Room`.
+
+## Dashboard cards need explicit name overrides
+
+When an entity's display name is intentionally generic (e.g. "Adaptive Lighting" for every room's switch), use the object form in entities cards to show the room name in the UI:
+```yaml
+entities:
+  - entity: switch.living_room_adaptive_lighting
+    name: Living Room
+```
+This keeps the entity name convention-compliant while remaining readable in the dashboard.
+
+## After any rename, update all consumers
+
+Renaming an entity ID does **not** propagate automatically. Always update:
+1. Dashboard cards (use `ha_config_get_dashboard(entity_id=...)` to find them)
+2. Automations that reference the old entity ID
+3. Template helpers whose `state` template references the old entity ID
+4. Scripts
+
 ## Areas
 
 ### Area IDs
@@ -76,8 +102,6 @@ Examples:
 
 ### Key rules
 
-- Entity IDs must start with `{domain}.{area_id}_` — the area_id prefix is mandatory
-- Apostrophes in area display names are **dropped** in the area_id slug, so they do not appear in entity IDs (e.g. `toms_office_...` not `tom_s_office_...`)
 - Entities on devices without an area assignment are excluded from this convention
 - `device_tracker.*` entities from network-scanning integrations (e.g. UniFi, etc.) follow a conditional rule: if the entity's device has an area assigned in HA, rename it per this convention; if the device has no area (bare network client with no HA counterpart), leave it as-is.
 
@@ -103,10 +127,10 @@ Entity display names should be concise and reflect only what the entity measures
 
 ### Entity ID format
 
-Automation entity IDs are slugified from the alias (display name) using the same rules as area IDs:
+Automation entity IDs are slugified from the alias (display name) using the same rules as [area IDs](#area-ids):
 
 - Lowercase, spaces → underscores
-- Apostrophes → **dropped** (not `_s_`)
+- Apostrophes → dropped (not `_s_`)
 - ` - ` separators → `_`
 - Special characters (parentheses, etc.) → dropped
 
@@ -130,82 +154,4 @@ Examples:
 
 ## Zigbee2MQTT sync
 
-Device names in zigbee2mqtt (friendly names) must be kept in sync with the HA device names. This section documents how to do that.
-
-### Prerequisites
-
-`mosquitto` CLI tools must be installed (`brew install mosquitto`). MQTT broker:
-
-- Host: `homeassistant.local`, port `1883`
-- Credentials: `homeconnect` / `homeconnect`
-
-### Step 1 — get z2m device list
-
-Pull the current z2m devices and their friendly names:
-
-```bash
-/opt/homebrew/bin/mosquitto_sub -h homeassistant.local -p 1883 -u homeconnect -P homeconnect \
-  -t 'zigbee2mqtt/bridge/devices' -C 1 -W 10 \
-  | jq -r '.[] | select(.type != "Coordinator") | [.ieee_address, .friendly_name] | @tsv'
-```
-
-### Step 2 — get HA MQTT device names
-
-SSH into HA and extract the IEEE address → display name mapping for all MQTT devices:
-
-```bash
-ssh root@homeassistant.local -C \
-  "jq -r '.data.devices[] | select(.identifiers[][] == \"mqtt\") | [(.identifiers[] | select(.[0]==\"mqtt\") | .[1] | ltrimstr(\"zigbee2mqtt_\")), .name_by_user // .name] | @tsv' \
-  /config/.storage/core.device_registry"
-```
-
-The identifier format for z2m devices in HA is `zigbee2mqtt_<ieee_address>`, so stripping the prefix gives the IEEE address for matching.
-
-### Step 3 — rename z2m devices to match HA
-
-Use the `zigbee2mqtt/bridge/request/device/rename` topic. The `homeassistant_rename: false` flag prevents z2m from also trying to rename the HA device (which is already correct).
-
-Run renames in parallel using a shell function:
-
-```bash
-pub() {
-  /opt/homebrew/bin/mosquitto_pub -h homeassistant.local -p 1883 -u homeconnect -P homeconnect \
-    -t 'zigbee2mqtt/bridge/request/device/rename' \
-    -m "{\"from\": \"$1\", \"to\": \"$2\", \"homeassistant_rename\": false}" \
-    && echo "ok: $2" || echo "FAIL: $2"
-}
-
-pub "0x001788010ea0b4e4" "Living Room - Tom's Lamp" &
-pub "0xaabbccddeeff0011" "Kitchen - Radiator" &
-# ... one line per device
-wait
-```
-
-> **Note:** Avoid naming the shell function `rename` — it conflicts with the zsh builtin and the mosquitto_pub call will silently not run.
-
-### Step 4 — clear stale descriptions
-
-z2m devices have a user-settable `description` field that can hold stale names from before a rename. After renaming, check for and clear any non-empty descriptions:
-
-```bash
-# List devices with non-empty descriptions
-/opt/homebrew/bin/mosquitto_sub -h homeassistant.local -p 1883 -u homeconnect -P homeconnect \
-  -t 'zigbee2mqtt/bridge/devices' -C 1 -W 10 \
-  | jq -r '.[] | select(.description != null and .description != "") | [.friendly_name, .description] | @tsv'
-```
-
-Clear descriptions in parallel using `zigbee2mqtt/bridge/request/device/options`:
-
-```bash
-pub() {
-  /opt/homebrew/bin/mosquitto_pub -h homeassistant.local -p 1883 -u homeconnect -P homeconnect \
-    -t 'zigbee2mqtt/bridge/request/device/options' \
-    -m "{\"id\": \"$1\", \"options\": {\"description\": \"\"}}" \
-    && echo "ok: $1" || echo "FAIL: $1"
-}
-
-pub "Living Room - Lamp Rear" &
-pub "Kitchen - Radiator" &
-# ... one line per device with a stale description
-wait
-```
+After renaming HA devices, sync the friendly names in zigbee2mqtt to match. See [@zigbee2mqtt-sync.md](zigbee2mqtt-sync.md) for the step-by-step procedure.

@@ -1,27 +1,31 @@
-# Announce Scripts
+# Notifications
 
-## `script.annouce`
+## Announce Scripts
+
+### `script.annouce`
 
 Delivers a message to the house. Accepts `title`, `message`, and optional `important` fields. Actions:
 1. Temporarily lowers Tom's office speaker volume if it is playing
 2. Speaks the message via ChimeTTS to all notification players (time-gated: 06:00–23:00, or always if `important: true`)
 3. Creates a persistent notification in the HA UI — `notification_id` is derived from `title | slugify` so it can be addressed for later dismissal
 
-## `script.cancel_announce`
+### `script.cancel_announce`
 
 Dismisses a persistent notification previously created by `script.annouce`. Accepts a `title` field and calls `persistent_notification.dismiss` using the same `title | slugify` convention. Automations call this script on their dismiss trigger rather than calling the service directly.
 
 ---
 
-# Tumble Dryer Automation
+## Pattern
 
-## Overview
-
-The tumble dryer system uses a **state helper** to decouple device events from notification. A single automation manages all state transitions; a second automation reacts to state changes and delivers the alert.
+Each appliance uses the same structure: an `input_select` state helper decouples device events from notification. One automation manages all state transitions; a second reacts to state changes and delivers or dismisses alerts. All state automations run in `restart` mode — a new trigger interrupts any in-progress run, so late-arriving events are never queued or dropped.
 
 ---
 
-## Helper: Tumble Dryer State
+## Tumble Dryer Automation
+
+---
+
+### Helper: Tumble Dryer State
 
 | Field | Value |
 |---|---|
@@ -30,11 +34,11 @@ The tumble dryer system uses a **state helper** to decouple device events from n
 | Options | `idle`, `active`, `finished` |
 | Initial | `idle` |
 
-Tracks the current phase of a drying cycle. All other automations read or react to this value rather than directly wiring triggers to notifications.
+Tracks the current phase of a drying cycle.
 
 ---
 
-## Automation: Tumble Dryer State (`automation.tumble_dryer_state`)
+### Automation: Tumble Dryer State (`automation.tumble_dryer_state`)
 
 Manages all transitions of the `tumble_dryer_state` helper. Triggered by three events:
 
@@ -44,7 +48,7 @@ Manages all transitions of the `tumble_dryer_state` helper. Triggered by three e
 | `finished` | `event.dryer_laundrycare_dryer_event_dryingprocessfinished` | `event_type` attribute → `Present` |
 | `door_open` | `event.dryer_laundrycare_common_event_dooropen` | `event_type` attribute → `Present` |
 
-### Transition logic
+#### Transition logic
 
 Each branch guards on the current state before acting, so spurious triggers are ignored:
 
@@ -57,17 +61,11 @@ Each branch guards on the current state before acting, so spurious triggers are 
 **`door_open` trigger** — only if current state is `finished`:
 - Sets state → `idle`
 
-The automation runs in `restart` mode — if a new trigger fires while a previous run is still executing, the current run is interrupted and the automation restarts immediately. This ensures a `door_open` event is never queued or dropped if it arrives mid-run.
-
-### Anti-wrinkle guard edge case
-
-After the main drying cycle completes, the dryer runs a short anti-wrinkle tumble (~60 sec). This causes a second `Run → Finished` sequence and fires the `dryingprocessfinished` event again. The state guards prevent any corruption:
-- The second `Run` does not flip `finished → active` because the `start` branch requires state = `idle`.
-- The second `dryingprocessfinished` event is a no-op because the `finished` branch requires state = `active`.
+> The state guards also prevent the anti-wrinkle tumble (a second Run→Finished cycle after the main drying completes) from re-triggering the notification.
 
 ---
 
-## Automation: Tumble Dryer Notification (`automation.notify_on_tumble_drier_finished`)
+### Automation: Tumble Dryer Notification (`automation.notify_on_tumble_drier_finished`)
 
 Two triggers, branched by `trigger.id`:
 
@@ -80,33 +78,11 @@ The `from` guard on the `create` trigger prevents spurious fires on HA restart o
 
 ---
 
-## Flow diagram
-
-```
-Dryer starts (Run) ───────────────────────────────────────────────────┐
-                                                                       ▼
-Drying complete (dryingprocessfinished) ──► Tumble Dryer State ──► input_select.tumble_dryer_state
-                                               automation                      │
-Door opens ───────────────────────────────► (state guards)            idle → active → finished → idle
-                                                                               │
-                                                                       active → finished
-                                                                               │
-                                                                               ▼
-                                                               Tumble Dryer Notification automation
-                                                               (announce via script.annouce)
-```
+## Front Door Automation
 
 ---
 
-# Front Door Automation
-
-## Overview
-
-The front door system uses a **state helper** to decouple detection from notification. A single automation manages all state transitions; a second automation reacts to state changes and delivers alerts.
-
----
-
-## Helper: Front Door State
+### Helper: Front Door State
 
 | Field | Value |
 |---|---|
@@ -115,11 +91,11 @@ The front door system uses a **state helper** to decouple detection from notific
 | Options | `Absent`, `Someone at the Door` |
 | Initial | `Absent` |
 
-Tracks whether someone is currently at the front door. All other automations read or react to this value rather than directly wiring triggers to notifications.
+Tracks whether someone is currently at the front door.
 
 ---
 
-## Automation: Front Door State (`automation.front_door_state`)
+### Automation: Front Door State (`automation.front_door_state`)
 
 Manages all transitions of the `front_door_state` helper. Triggered by three events:
 
@@ -129,7 +105,7 @@ Manages all transitions of the `front_door_state` helper. Triggered by three eve
 | `webhook` | Webhook `<your-webhook-id>` | GET request received |
 | `door_open` | `binary_sensor.front_door_contact_contact` | Door opens (state → `on`) |
 
-### Transition logic
+#### Transition logic
 
 Each branch guards on the current state before acting, so spurious triggers are ignored:
 
@@ -142,15 +118,15 @@ Each branch guards on the current state before acting, so spurious triggers are 
 **`webhook` trigger** — only if current state is `Absent`:
 - Sets state → `Someone at the Door`
 
-### Auto-reset
+#### Auto-reset
 
 After the choose block, if the state is now `Someone at the Door` (i.e. one of the above branches fired), the automation waits **2 minutes** then resets to `Absent`. The door-open trigger can fire earlier to reset sooner.
 
-The automation runs in `restart` mode — if a new trigger fires while the automation is in the 2-minute wait (e.g. door opens), the current run is interrupted and the automation restarts immediately from the top. This ensures the door-open reset is never delayed by an in-progress wait.
+Runs in `restart` mode — if the door opens during the 2-minute wait, the reset fires immediately rather than waiting for the current run to finish.
 
 ---
 
-## Automation: Front Door Notification (`automation.front_door_notification`)
+### Automation: Front Door Notification (`automation.front_door_notification`)
 
 Two triggers, branched by `trigger.id`:
 
@@ -170,31 +146,11 @@ The `dismiss` trigger fires when the state helper resets to `Absent` — either 
 
 ---
 
-## Flow diagram
-
-```
-Vibration detected ──┐
-                      ├──► Front Door State automation ──► input_select.front_door_state
-Webhook received ─────┤         (state guards + 2-min auto-reset)          │
-                      │                                                     │
-Door opens ───────────┘                                              Absent → Someone at the Door
-                                                                            │
-                                                                            ▼
-                                                              Front Door Notification automation
-                                                              (announce + push notify)
-```
+## Washing Machine Automation
 
 ---
 
-# Washing Machine Automation
-
-## Overview
-
-The washing machine system uses a **state helper** to decouple power detection from notification. A single automation manages all state transitions; a second automation reacts to state changes and delivers alerts.
-
----
-
-## Helper: Washing Machine State
+### Helper: Washing Machine State
 
 | Field | Value |
 |---|---|
@@ -203,11 +159,11 @@ The washing machine system uses a **state helper** to decouple power detection f
 | Options | `idle`, `running`, `finished` |
 | Initial | `idle` |
 
-Tracks the current phase of a wash cycle. All other automations read or react to this value rather than directly wiring triggers to notifications.
+Tracks the current phase of a wash cycle.
 
 ---
 
-## Automation: Washing Machine State (`automation.washing_machine_state`)
+### Automation: Washing Machine State (`automation.washing_machine_state`)
 
 Manages all transitions of the `washing_machine_state` helper. Triggered by two sources:
 
@@ -216,7 +172,7 @@ Manages all transitions of the `washing_machine_state` helper. Triggered by two 
 | `power_change` | `sensor.basement_washing_machine_smart_switch_power` | Any power reading change |
 | `door_open` | `binary_sensor.0x00158d008c7104b7_contact` | Door opens (state → `on`) |
 
-### Transition logic
+#### Transition logic
 
 Each branch guards on the current state before acting, so spurious triggers are ignored:
 
@@ -229,11 +185,11 @@ Each branch guards on the current state before acting, so spurious triggers are 
 **`door_open` trigger** — only if current state is `finished`:
 - Sets state → `idle`
 
-The automation runs in `restart` mode. If the power fluctuates during the 10-minute wait (e.g. a mid-cycle pause followed by the machine resuming), a new trigger interrupts and restarts the automation, resetting the 10-minute clock. The machine must sustain low power for a full uninterrupted 10 minutes before the state advances to `finished`.
+Runs in `restart` mode — power fluctuations during the 10-minute wait restart the clock. The machine must sustain low power for a full uninterrupted 10 minutes before the state advances to `finished`.
 
 ---
 
-## Automation: Washing Machine Notification (`automation.notify_on_washing_machine_has_finished`)
+### Automation: Washing Machine Notification (`automation.notify_on_washing_machine_has_finished`)
 
 Two triggers, branched by `trigger.id`:
 
@@ -242,20 +198,3 @@ Two triggers, branched by `trigger.id`:
 | `create` | `washing_machine_state` transitions `running` → `finished` | Announce via `script.annouce` (title: "Washing Machine") |
 | `dismiss` | `washing_machine_state` leaves `finished` (door opened → `idle`) | Dismiss notification via `script.cancel_announce` |
 
----
-
-## Flow diagram
-
-```
-Power > 1W ───────────────────────────────────────────────────────────────┐
-                                                                           ▼
-Power ≤ 1W (10 min sustained) ──► Washing Machine State ──► input_select.washing_machine_state
-                                       automation                          │
-Door opens ───────────────────────► (state guards)              idle → running → finished → idle
-                                                                           │
-                                                                   running → finished
-                                                                           │
-                                                                           ▼
-                                                           Washing Machine Notification automation
-                                                           (announce via script.annouce)
-```
