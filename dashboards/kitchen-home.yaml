@@ -47,17 +47,15 @@ views:
                       columns: 12
                       rows: 1
                   primary: Hot Water
-                  secondary: "{% set mode = states('water_heater.hallway_thermostat')
-                      %} {% if mode == 'off' %}\n  Last on {{ relative_time(states.water_heater.hallway_thermostat.last_changed)
-                      }}\n{% else %}\n  {{ mode | title }}\n{% endif %}\n"
-                  icon: "{% set mode = states('water_heater.hallway_thermostat') %}
-                      {% if mode == 'on' %}\n  mdi:water-boiler\n{% elif mode == 'eco'
-                      %}\n  mdi:water-boiler-auto\n{% else %}\n  mdi:water-boiler-off\n\
+                  secondary: "{% if is_state('binary_sensor.basement_hotwater_state',
+                      'on') %}\n  Heating\n{% else %}\n  Last on {{ relative_time(states.binary_sensor.basement_hotwater_state.last_changed)
+                      }}\n{% endif %}\n"
+                  icon: "{% if is_state('binary_sensor.basement_hotwater_state', 'on')
+                      %}\n  mdi:water-boiler\n{% else %}\n  mdi:water-boiler-off\n\
                       {% endif %}\n"
-                  icon_color: "{% set mode = states('water_heater.hallway_thermostat')
-                      %} {% if mode == 'on' %}\n  orange\n{% elif mode == 'eco' %}\n\
-                      \  green\n{% else %}\n  grey\n{% endif %}\n"
-                  entity: water_heater.hallway_thermostat
+                  icon_color: "{% if is_state('binary_sensor.basement_hotwater_state',
+                      'on') %}\n  orange\n{% else %}\n  grey\n{% endif %}\n"
+                  entity: binary_sensor.basement_hotwater_state
                   tap_action:
                       action: call-service
                       service: hive.boost_hot_water
