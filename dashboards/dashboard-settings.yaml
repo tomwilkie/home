@@ -34,11 +34,23 @@ views:
                   heading_style: title
                   icon: mdi:alarm
                -  type: custom:time-picker-card
-                  entity: time.master_bedroom_clock_alarm_time
                   name: Master Bedroom Clock Alarm
                   grid_options:
                       columns: 12
                       rows: 2
+                  entity: input_datetime.wake_up_time
+                  hour_mode: 24
+                  minute_step: 15
+                  layout:
+                      hour_mode: single
+                      align_controls: center
+                      name: header
+                      embedded: true
+                      thin: false
+                  hide:
+                      name: false
+                      icon: true
+                      seconds: true
                -  type: tile
                   grid_options:
                       columns: 6
@@ -124,10 +136,11 @@ views:
                       ['unavailable'])\n  | map(attribute='entity_id')\n  | reject('is_hidden_entity')\n\
                       \  | map('device_id')\n  | reject('none')\n  | unique\n  | list\n\
                       \  | sort %}\n\n{% if device_ids | length == 0 %}\n_All good_\n\
-                      {% endif %}\n\n{% for device_id in device_ids %}\n<ha-alert
-                      alert-type=\"error\">{{ device_attr(device_id, 'name') if device_attr(device_id,
-                      'name_by_user') == None else device_attr(device_id, 'name_by_user')
-                      }} has unavailable entities</ha-alert>\n{% endfor %}"
+                      {% endif %}\n\n{% for device_id in device_ids %}\n<a href=\"/config/devices/device/{{
+                      device_id }}\"><ha-alert alert-type=\"error\">{{ device_attr(device_id,
+                      'name') if device_attr(device_id, 'name_by_user') == None else
+                      device_attr(device_id, 'name_by_user') }} has unavailable entities</ha-alert></a>\n{%
+                      endfor %}"
          -  type: grid
             cards:
                -  type: heading
