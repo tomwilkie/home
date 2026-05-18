@@ -57,12 +57,8 @@ views:
                       'on') %}\n  orange\n{% else %}\n  grey\n{% endif %}\n"
                   entity: binary_sensor.basement_hotwater_state
                   tap_action:
-                      action: call-service
-                      service: hive.boost_hot_water
-                      data:
-                          entity_id: water_heater.hallway_thermostat
-                          time_period: 01:00:00
-                          on_off: on
+                      action: perform-action
+                      perform_action: script.toggle_hot_water_boost
                   hold_action:
                       action: more-info
                -  entities:
