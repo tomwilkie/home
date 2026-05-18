@@ -48,8 +48,9 @@ views:
                       rows: 1
                   primary: Hot Water
                   secondary: "{% if is_state('binary_sensor.basement_hotwater_state',
-                      'on') %}\n  Heating\n{% else %}\n  Last on {{ relative_time(states.binary_sensor.basement_hotwater_state.last_changed)
-                      }}\n{% endif %}\n"
+                      'on') %}\n  Heating (tap to stop)\n{% else %}\n  Last on {{
+                      relative_time(states.binary_sensor.basement_hotwater_state.last_changed)
+                      }} ago (tap to boost)\n{% endif %}\n"
                   icon: "{% if is_state('binary_sensor.basement_hotwater_state', 'on')
                       %}\n  mdi:water-boiler\n{% else %}\n  mdi:water-boiler-off\n\
                       {% endif %}\n"
