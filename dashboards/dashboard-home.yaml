@@ -98,10 +98,60 @@ views:
                   grid_options:
                       columns: 12
                       rows: 1
-               -  type: tile
+               -  type: custom:mushroom-template-card
+                  primary: Washing Machine
+                  secondary: '{{ states("input_select.washing_machine_state") | title }}'
+                  icon: >
+                    {% if is_state("input_select.washing_machine_state", "running") %}
+                      mdi:washing-machine
+                    {% elif is_state("input_select.washing_machine_state", "finished") %}
+                      mdi:washing-machine-alert
+                    {% else %}
+                      mdi:washing-machine-off
+                    {% endif %}
+                  icon_color: >
+                    {% if is_state("input_select.washing_machine_state", "running") %}
+                      blue
+                    {% elif is_state("input_select.washing_machine_state", "finished") %}
+                      orange
+                    {% else %}
+                      disabled
+                    {% endif %}
+                  badge_icon: >
+                    {% if is_state("input_select.washing_machine_state", "finished") %}
+                      mdi:basket
+                    {% endif %}
+                  badge_color: orange
                   entity: input_select.washing_machine_state
-               -  type: tile
+                  tap_action:
+                      action: more-info
+               -  type: custom:mushroom-template-card
+                  primary: Tumble Dryer
+                  secondary: '{{ states("input_select.tumble_dryer_state") | title }}'
+                  icon: >
+                    {% if is_state("input_select.tumble_dryer_state", "active") %}
+                      mdi:tumble-dryer
+                    {% elif is_state("input_select.tumble_dryer_state", "finished") %}
+                      mdi:tumble-dryer-alert
+                    {% else %}
+                      mdi:tumble-dryer-off
+                    {% endif %}
+                  icon_color: >
+                    {% if is_state("input_select.tumble_dryer_state", "active") %}
+                      blue
+                    {% elif is_state("input_select.tumble_dryer_state", "finished") %}
+                      orange
+                    {% else %}
+                      disabled
+                    {% endif %}
+                  badge_icon: >
+                    {% if is_state("input_select.tumble_dryer_state", "finished") %}
+                      mdi:basket
+                    {% endif %}
+                  badge_color: orange
                   entity: input_select.tumble_dryer_state
+                  tap_action:
+                      action: more-info
             visibility:
                -  condition: or
                   conditions:
