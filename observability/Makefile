@@ -5,7 +5,7 @@ DOCKER_HOST      := ssh://$(HAOS_HOST)
 
 export DOCKER_HOST
 
-.PHONY: deploy up down restart logs ps
+.PHONY: deploy up down restart logs ps shell
 
 deploy: push up
 
@@ -23,7 +23,10 @@ restart:
 	docker compose restart alloy
 
 logs:
-	docker compose logs -f alloy
+	docker compose logs --tail=100 alloy
 
 ps:
 	docker compose ps
+
+shell:
+	docker compose exec alloy bash

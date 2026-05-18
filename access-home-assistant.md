@@ -8,7 +8,7 @@ Use the `mcp__home-assistant__*` tools to read and write live HA configuration. 
 
 ## Home Assistant CLI
 
-There is the `hass-cli` command which can be used to e.g. download & upload dashboards. When running from a Claude Code session, prefix with `source ~/.zshrc &&` as the binary is only on the PATH after the zsh startup file is loaded:
+There is the `hass-cli` command which can be used to e.g. download & upload dashboards.
 
 To list dashboards in home assistant:
 ```sh

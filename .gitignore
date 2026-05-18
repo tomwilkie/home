@@ -1,3 +1,4 @@
 .mcp.json
 .DS_Store
 observability/.env
+.envrc

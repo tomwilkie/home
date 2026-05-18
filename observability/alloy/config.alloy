@@ -24,14 +24,32 @@ loki.process "alloy" {
   stage.static_labels {
     values = {
       instance = constants.hostname,
+      job = "integrations/alloy",
     }
   }
 }
 
-prometheus.scrape "alloy" {
+prometheus.exporter.self "integrations_alloy_health" { }
+
+discovery.relabel "integrations_alloy_health" {
+  targets = prometheus.exporter.self.integrations_alloy_health.targets
+
+  rule {
+    replacement = constants.hostname
+    target_label  = "instance"
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/alloy"
+  }
+}
+
+prometheus.scrape "integrations_alloy_health" {
   forward_to      = [grafana_cloud.stack.receivers.metrics]
-  targets         = [{"__address__" = "0.0.0.0:12345", "instance" = constants.hostname}]
+  targets         = discovery.relabel.integrations_alloy_health.output
   scrape_interval = "60s"
+  job_name        = "integrations/alloy"
 }
 
 // ── Node metrics ──────────────────────────────────────────────────────────────
@@ -177,4 +195,69 @@ loki.source.docker "logs_integrations_docker" {
   forward_to       = [grafana_cloud.stack.receivers.logs]
   relabel_rules    = discovery.relabel.logs_integrations_docker.rules
   refresh_interval = "5s"
+}
+
+// ── Gather Home Assistant metrics ─────────────────────────────────────────────────────
+
+prometheus.scrape "homeassistant" {
+  forward_to = [grafana_cloud.stack.receivers.metrics]
+  targets = [
+    {
+      "__address__" = "localhost:8123",
+      "instance" = constants.hostname,
+      "job" = "integrations/homeassistant",
+    },
+  ]
+  scrape_interval = "60s"
+  metrics_path = "/api/prometheus"
+  bearer_token = env("HASS_METRICS_TOKEN")
+  scheme = "http"
+}
+
+// ── Gather Unpoller metrics ───────────────────────────────────────────────────
+// Uses Docker SD to resolve the container's IP on the hassio network.
+// The static hostname (addon_<hash>_unpoller) only resolves inside Docker
+// networks; Alloy runs with host networking so DNS lookup fails.
+
+discovery.docker "metrics_containers" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "30s"
+}
+
+discovery.relabel "unpoller" {
+  targets = discovery.docker.metrics_containers.targets
+
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/addon_[a-z0-9]+_unpoller"
+    action        = "keep"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_network_name"]
+    regex         = "hassio"
+    action        = "keep"
+  }
+
+  rule {
+    source_labels = ["__meta_docker_network_ip"]
+    replacement   = "$1:9130"
+    target_label  = "__address__"
+  }
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/unpoller"
+  }
+
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+}
+
+prometheus.scrape "unpoller" {
+  forward_to      = [grafana_cloud.stack.receivers.metrics]
+  targets         = discovery.relabel.unpoller.output
+  scrape_interval = "60s"
 }

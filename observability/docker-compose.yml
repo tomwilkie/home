@@ -22,6 +22,8 @@ services:
       - /var/run:/var/run:rw
       # Docker root (non-standard on HAOS) mapped to where cAdvisor expects it
       - /mnt/data/docker:/var/lib/docker:ro
+      # Also expose at the host path so cAdvisor can resolve host-rooted overlayfs paths
+      - /mnt/data/docker:/mnt/data/docker:ro
 
       # Host identity files
       - /etc/hostname:/etc/hostname:ro
