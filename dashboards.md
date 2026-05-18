@@ -14,16 +14,24 @@ Files are named `{url-path}.yaml`, matching the dashboard's URL path in HA:
 
 ## Workflow
 
-1. Edit `dashboards/{url-path}.yaml` in this repo
-2. Diff against the live HA state to review the change:
+1. **Check for remote changes** before editing — if HA has changes not in this repo, pull them first:
+   ```bash
+   diff -u dashboards/{url-path}.yaml <(hass-cli -o yaml dashboard get {url-path})
+   ```
+   If there are differences, download the live version before proceeding:
+   ```bash
+   hass-cli -o yaml dashboard get {url-path} > dashboards/{url-path}.yaml
+   ```
+2. Edit `dashboards/{url-path}.yaml` in this repo
+3. Diff to review your outgoing change:
    ```bash
    diff -u <(hass-cli -o yaml dashboard get {url-path}) dashboards/{url-path}.yaml
    ```
-3. Push to HA:
+4. Push to HA:
    ```bash
    hass-cli dashboard set dashboards/{url-path}.yaml {url-path}
    ```
-4. Commit to git
+5. Commit to git
 
 ## Initial download (bootstrap only)
 
