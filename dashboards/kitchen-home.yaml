@@ -47,39 +47,24 @@ views:
                       columns: 12
                       rows: 1
                   primary: Hot Water
-                  secondary: >
-                      {% set mode = states('water_heater.hallway_thermostat') %}
-                      {% if mode == 'off' %}
-                        Last on {{ relative_time(states.water_heater.hallway_thermostat.last_changed) }}
-                      {% else %}
-                        {{ mode | title }}
-                      {% endif %}
-                  icon: >
-                      {% set mode = states('water_heater.hallway_thermostat') %}
-                      {% if mode == 'on' %}
-                        mdi:water-boiler
-                      {% elif mode == 'eco' %}
-                        mdi:water-boiler-auto
-                      {% else %}
-                        mdi:water-boiler-off
-                      {% endif %}
-                  icon_color: >
-                      {% set mode = states('water_heater.hallway_thermostat') %}
-                      {% if mode == 'on' %}
-                        orange
-                      {% elif mode == 'eco' %}
-                        green
-                      {% else %}
-                        grey
-                      {% endif %}
+                  secondary: "{% set mode = states('water_heater.hallway_thermostat')
+                      %} {% if mode == 'off' %}\n  Last on {{ relative_time(states.water_heater.hallway_thermostat.last_changed)
+                      }}\n{% else %}\n  {{ mode | title }}\n{% endif %}\n"
+                  icon: "{% set mode = states('water_heater.hallway_thermostat') %}
+                      {% if mode == 'on' %}\n  mdi:water-boiler\n{% elif mode == 'eco'
+                      %}\n  mdi:water-boiler-auto\n{% else %}\n  mdi:water-boiler-off\n\
+                      {% endif %}\n"
+                  icon_color: "{% set mode = states('water_heater.hallway_thermostat')
+                      %} {% if mode == 'on' %}\n  orange\n{% elif mode == 'eco' %}\n\
+                      \  green\n{% else %}\n  grey\n{% endif %}\n"
                   entity: water_heater.hallway_thermostat
                   tap_action:
                       action: call-service
                       service: hive.boost_hot_water
                       data:
                           entity_id: water_heater.hallway_thermostat
-                          time_period: "01:00:00"
-                          on_off: "on"
+                          time_period: 01:00:00
+                          on_off: on
                   hold_action:
                       action: more-info
                -  entities:
