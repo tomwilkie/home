@@ -1,4 +1,89 @@
 views:
+   -  type: sections
+      max_columns: 4
+      title: Settings
+      path: settings
+      icon: mdi:home-thermometer
+      sections:
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Central Heating
+                  heading_style: title
+                  icon: mdi:radiator
+               -  type: tile
+                  entity: automation.set_thermostat_state
+                  name: Comfort Mode Schedule
+                  hide_state: true
+                  vertical: false
+                  features:
+                     -  type: toggle
+                  features_position: inline
+               -  type: tile
+                  entity: schedule.house_comfort_mode
+                  name: Comfort Mode Schedule
+                  vertical: false
+                  features_position: bottom
+                  grid_options:
+                      columns: 12
+                      rows: 1
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Morning Routine
+                  heading_style: title
+                  icon: mdi:alarm
+               -  type: custom:time-picker-card
+                  entity: time.master_bedroom_clock_alarm_time
+                  name: Master Bedroom Clock Alarm
+                  grid_options:
+                      columns: 12
+                      rows: 2
+               -  type: tile
+                  grid_options:
+                      columns: 6
+                      rows: 1
+                  entity: input_datetime.weekday_wakeup_time
+                  name: Default Weekday Wakeup Time
+                  vertical: false
+                  features_position: bottom
+               -  type: tile
+                  grid_options:
+                      columns: 6
+                      rows: 1
+                  entity: input_datetime.weekend_wakeup_time
+                  name: Default Weekend Wakeup Time
+                  show_entity_picture: false
+                  vertical: false
+                  features_position: bottom
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading_style: title
+                  heading: Lighting
+                  icon: mdi:ceiling-light
+               -  type: entities
+                  title: Adaptive Lighting
+                  show_header_toggle: false
+                  state_color: true
+                  entities:
+                     -  entity: switch.basement_adaptive_lighting
+                        name: Basement
+                     -  entity: switch.living_room_adaptive_lighting
+                        name: Living Room
+                     -  entity: switch.master_bedroom_adaptive_lighting
+                        name: Master Bedroom
+                     -  entity: switch.nursery_adaptive_lighting
+                        name: Nursery
+                     -  entity: switch.rear_guest_room_adaptive_lighting
+                        name: Rear Guest Room
+                     -  entity: switch.toms_office_adaptive_lighting
+                        name: Tom's Office
+      header:
+          card:
+              type: markdown
+              text_only: true
+              content: '# Settings'
    -  theme: Backend-selected
       title: Debugging
       cards: []
@@ -161,32 +246,15 @@ views:
                         name: Basement
                      -  entity: sensor.living_room_adaptive_lighting_brightness
                         name: Living Room
-                     -  entity:
+                     -  entity: 
                             sensor.master_bedroom_adaptive_lighting_brightness
                         name: Master Bedroom
                      -  entity: sensor.nursery_adaptive_lighting_brightness
                         name: Nursery
-                     -  entity:
+                     -  entity: 
                             sensor.rear_guest_room_adaptive_lighting_brightness
                         name: Rear Guest Room
                      -  entity: sensor.toms_office_adaptive_lighting_brightness
-                        name: Tom's Office
-               -  type: entities
-                  title: Adaptive Lighting
-                  show_header_toggle: false
-                  state_color: true
-                  entities:
-                     -  entity: switch.basement_adaptive_lighting
-                        name: Basement
-                     -  entity: switch.living_room_adaptive_lighting
-                        name: Living Room
-                     -  entity: switch.master_bedroom_adaptive_lighting
-                        name: Master Bedroom
-                     -  entity: switch.nursery_adaptive_lighting
-                        name: Nursery
-                     -  entity: switch.rear_guest_room_adaptive_lighting
-                        name: Rear Guest Room
-                     -  entity: switch.toms_office_adaptive_lighting
                         name: Tom's Office
       max_columns: 4
       header:
@@ -194,53 +262,4 @@ views:
               type: markdown
               text_only: true
               content: '# Debugging'
-   -  type: sections
-      max_columns: 4
-      title: Settings
-      path: settings
-      icon: mdi:home-thermometer
-      sections:
-         -  type: grid
-            cards:
-               -  type: heading
-                  heading: New section
-               -  type: tile
-                  entity: schedule.house_comfort_mode
-                  name: Comfort Mode Schedule
-                  vertical: false
-                  features_position: bottom
-                  grid_options:
-                      columns: 12
-                      rows: 1
-               -  type: tile
-                  entity: automation.set_thermostat_state
-                  name: Comfort Mode Schedule
-                  hide_state: true
-                  vertical: false
-                  features:
-                     -  type: toggle
-                  features_position: inline
-         -  type: grid
-            cards:
-               -  type: heading
-                  heading: Morning Routine
-                  heading_style: title
-               -  type: tile
-                  grid_options:
-                      columns: 12
-                      rows: 1
-                  entity: input_datetime.weekday_wakeup_time
-                  name: Default Weekday Wakeup Time
-                  vertical: false
-                  features_position: bottom
-               -  type: tile
-                  grid_options:
-                      columns: 12
-                      rows: 1
-                  entity: input_datetime.weekend_wakeup_time
-                  name: Default Weekend Wakeup Time
-                  show_entity_picture: false
-                  vertical: false
-                  features_position: bottom
-               -  type: tile
-                  entity: time.master_bedroom_clock_alarm_time
+
