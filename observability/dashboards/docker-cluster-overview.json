@@ -19,7 +19,22 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 2813781422161920,
+    "id": 3123632091123712,
+    "links": [
+      {
+        "asDropdown": false,
+        "icon": "",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "docker-integration"
+        ],
+        "targetBlank": false,
+        "title": "All Docker dashboards",
+        "tooltip": "",
+        "type": "dashboards"
+      }
+    ],
     "liveNow": false,
     "panels": [
       {
@@ -29,9 +44,9 @@
           "x": 0,
           "y": 0
         },
-        "id": 1026,
+        "id": 1042,
         "options": {
-          "content": "## \ud83d\udc33 Docker - Host Overview\n\nAggregate resource usage across all containers on a single Docker host.",
+          "content": "## \ud83d\udc33 Docker - Cluster Overview\n\nCross-host summary \u2014 one row per Docker host \u2014 for comparing CPU, memory, network, and disk usage across all instances.",
           "mode": "markdown"
         },
         "targets": [],
@@ -39,24 +54,11 @@
         "type": "text"
       },
       {
-        "collapsed": false,
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 3
-        },
-        "id": 1027,
-        "panels": [],
-        "title": "Host Stats",
-        "type": "row"
-      },
-      {
         "datasource": {
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "Logical CPU cores on this host.",
+        "description": "Distinct Docker hosts reporting metrics.",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -78,9 +80,9 @@
           "h": 3,
           "w": 4,
           "x": 0,
-          "y": 4
+          "y": 3
         },
-        "id": 1028,
+        "id": 1043,
         "options": {
           "colorMode": "background",
           "graphMode": "none",
@@ -102,13 +104,13 @@
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "machine_cpu_cores{job=\"$job\", instance=~\"$instance\"}",
+            "expr": "count(count by (instance) (container_last_seen{job=~\"$job\", name!=\"\"}))",
             "instant": true,
             "legendFormat": "",
             "refId": "A"
           }
         ],
-        "title": "CPU Cores",
+        "title": "Hosts",
         "type": "stat"
       },
       {
@@ -116,7 +118,7 @@
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "Total physical memory on this host.",
+        "description": "Total containers across all hosts.",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -131,16 +133,16 @@
                 }
               ]
             },
-            "unit": "decbytes"
+            "unit": "short"
           }
         },
         "gridPos": {
           "h": 3,
           "w": 4,
           "x": 4,
-          "y": 4
+          "y": 3
         },
-        "id": 1029,
+        "id": 1044,
         "options": {
           "colorMode": "background",
           "graphMode": "none",
@@ -162,13 +164,13 @@
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "machine_memory_bytes{job=\"$job\", instance=~\"$instance\"}",
+            "expr": "count(count by (instance, name) (container_last_seen{job=~\"$job\", name!=\"\"}))",
             "instant": true,
             "legendFormat": "",
             "refId": "A"
           }
         ],
-        "title": "Total RAM",
+        "title": "Containers",
         "type": "stat"
       },
       {
@@ -176,7 +178,7 @@
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "Total CPU across all containers as % of host cores.",
+        "description": "Aggregate CPU across all containers and hosts.",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -204,11 +206,11 @@
         },
         "gridPos": {
           "h": 3,
-          "w": 5,
+          "w": 4,
           "x": 8,
-          "y": 4
+          "y": 3
         },
-        "id": 1030,
+        "id": 1045,
         "options": {
           "colorMode": "background",
           "graphMode": "none",
@@ -230,13 +232,13 @@
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval])) / scalar(machine_cpu_cores{job=\"$job\", instance=~\"$instance\"}) * 100",
+            "expr": "sum(rate(container_cpu_usage_seconds_total{job=~\"$job\", name!=\"\"}[$__rate_interval])) * 100",
             "instant": true,
             "legendFormat": "",
             "refId": "A"
           }
         ],
-        "title": "Aggregate CPU %",
+        "title": "Total CPU %",
         "type": "stat"
       },
       {
@@ -244,7 +246,7 @@
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "Total working-set memory as % of host RAM.",
+        "description": "Total working-set memory across all containers.",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -256,27 +258,19 @@
                 {
                   "color": "green",
                   "value": 0
-                },
-                {
-                  "color": "yellow",
-                  "value": 80
-                },
-                {
-                  "color": "red",
-                  "value": 95
                 }
               ]
             },
-            "unit": "percent"
+            "unit": "decbytes"
           }
         },
         "gridPos": {
           "h": 3,
-          "w": 5,
-          "x": 13,
-          "y": 4
+          "w": 4,
+          "x": 12,
+          "y": 3
         },
-        "id": 1031,
+        "id": 1046,
         "options": {
           "colorMode": "background",
           "graphMode": "none",
@@ -298,13 +292,13 @@
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "sum(container_memory_working_set_bytes{job=\"$job\", instance=~\"$instance\", name!=\"\"}) / scalar(machine_memory_bytes{job=\"$job\", instance=~\"$instance\"}) * 100",
+            "expr": "sum(container_memory_working_set_bytes{job=~\"$job\", name!=\"\"})",
             "instant": true,
             "legendFormat": "",
             "refId": "A"
           }
         ],
-        "title": "Memory %",
+        "title": "Total Memory",
         "type": "stat"
       },
       {
@@ -312,7 +306,7 @@
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "Total OOM kills across all containers in the time range.",
+        "description": "Combined inbound + outbound traffic.",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -324,23 +318,19 @@
                 {
                   "color": "green",
                   "value": 0
-                },
-                {
-                  "color": "red",
-                  "value": 1
                 }
               ]
             },
-            "unit": "short"
+            "unit": "binBps"
           }
         },
         "gridPos": {
           "h": 3,
-          "w": 6,
-          "x": 18,
-          "y": 4
+          "w": 4,
+          "x": 16,
+          "y": 3
         },
-        "id": 1032,
+        "id": 1047,
         "options": {
           "colorMode": "background",
           "graphMode": "none",
@@ -362,13 +352,13 @@
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "sum(increase(container_oom_events_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range]))",
+            "expr": "sum(rate(container_network_receive_bytes_total{job=~\"$job\",name!=\"\"}[$__rate_interval])) + sum(rate(container_network_transmit_bytes_total{job=~\"$job\",name!=\"\"}[$__rate_interval]))",
             "instant": true,
             "legendFormat": "",
             "refId": "A"
           }
         ],
-        "title": "OOM Events",
+        "title": "Total Network",
         "type": "stat"
       },
       {
@@ -376,133 +366,36 @@
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "Non-reclaimable working-set memory across all containers.",
+        "description": "Combined read + write throughput.",
         "fieldConfig": {
           "defaults": {
             "color": {
-              "mode": "palette-classic"
+              "mode": "thresholds"
             },
             "thresholds": {
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "blue",
+                  "color": "green",
                   "value": 0
                 }
               ]
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Containers"
-              },
-              "properties": [
-                {
-                  "id": "unit",
-                  "value": "short"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "blue",
-                    "mode": "fixed"
-                  }
-                }
-              ]
             },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "CPU Usage"
-              },
-              "properties": [
-                {
-                  "id": "unit",
-                  "value": "percent"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "orange",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Memory Usage"
-              },
-              "properties": [
-                {
-                  "id": "unit",
-                  "value": "decbytes"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "green",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Network Traffic"
-              },
-              "properties": [
-                {
-                  "id": "unit",
-                  "value": "Bps"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "purple",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Disk I/O"
-              },
-              "properties": [
-                {
-                  "id": "unit",
-                  "value": "Bps"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "red",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            }
-          ]
+            "unit": "binBps"
+          }
         },
         "gridPos": {
-          "h": 4,
-          "w": 24,
-          "x": 0,
-          "y": 7
+          "h": 3,
+          "w": 4,
+          "x": 20,
+          "y": 3
         },
-        "id": 2,
+        "id": 1048,
         "options": {
           "colorMode": "background",
           "graphMode": "none",
           "justifyMode": "auto",
-          "orientation": "vertical",
-          "percentChangeColorMode": "standard",
+          "orientation": "auto",
           "reduceOptions": {
             "calcs": [
               "lastNotNull"
@@ -510,83 +403,22 @@
             "fields": "",
             "values": false
           },
-          "showPercentChange": false,
           "textMode": "auto",
           "wideLayout": true
         },
-        "pluginVersion": "13.1.0-25668120414",
         "targets": [
           {
-            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "editorMode": "code",
-            "expr": "count(count by (name) (container_last_seen{job=\"$job\", instance=~\"$instance\", name!=\"\"}))",
+            "expr": "sum(rate(container_fs_reads_bytes_total{job=~\"$job\",name!=\"\"}[$__rate_interval])) + sum(rate(container_fs_writes_bytes_total{job=~\"$job\",name!=\"\"}[$__rate_interval]))",
             "instant": true,
-            "legendFormat": "Containers",
-            "queryType": "instant",
-            "range": false,
+            "legendFormat": "",
             "refId": "A"
-          },
-          {
-            "app": "grafana-assistant-app",
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "editorMode": "code",
-            "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range])) * 100",
-            "instant": true,
-            "legendFormat": "CPU Usage",
-            "queryType": "instant",
-            "range": false,
-            "refId": "B"
-          },
-          {
-            "app": "grafana-assistant-app",
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "expr": "sum(container_memory_working_set_bytes{job=\"$job\", instance=~\"$instance\", name!=\"\"})",
-            "instant": true,
-            "legendFormat": "Memory Usage",
-            "queryType": "instant",
-            "range": false,
-            "refId": "C"
-          },
-          {
-            "app": "grafana-assistant-app",
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "editorMode": "code",
-            "expr": "sum(rate(container_network_receive_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range])) + sum(rate(container_network_transmit_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range]))",
-            "instant": true,
-            "legendFormat": "Network Traffic",
-            "queryType": "instant",
-            "range": false,
-            "refId": "D"
-          },
-          {
-            "app": "grafana-assistant-app",
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "editorMode": "code",
-            "expr": "sum(rate(container_fs_reads_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range])) + sum(rate(container_fs_writes_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range]))",
-            "instant": true,
-            "legendFormat": "Disk I/O",
-            "queryType": "instant",
-            "range": false,
-            "refId": "E"
           }
         ],
-        "title": "Overview",
+        "title": "Total Disk I/O",
         "type": "stat"
       },
       {
@@ -594,12 +426,9 @@
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "All running containers with average resource usage. Click a container name to open the Container Overview.",
+        "description": "One row per Docker host. Click a host name to drill into its Host Overview dashboard.",
         "fieldConfig": {
           "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
             "custom": {
               "align": "left",
               "cellOptions": {
@@ -610,27 +439,18 @@
                 "reducers": []
               },
               "inspect": false
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                }
-              ]
             }
           },
           "overrides": [
             {
               "matcher": {
                 "id": "byName",
-                "options": "name"
+                "options": "instance"
               },
               "properties": [
                 {
                   "id": "displayName",
-                  "value": "Container Name"
+                  "value": "Host"
                 },
                 {
                   "id": "links",
@@ -638,10 +458,36 @@
                     {
                       "keepTime": true,
                       "targetBlank": false,
-                      "title": "Docker - Container Overview",
-                      "url": "/d/tog2fp8?var-prometheus_datasource=${prometheus_datasource}&var-job=${job}&var-instance=${instance}&var-name=${__value.raw}"
+                      "title": "Docker - Host Overview",
+                      "url": "/d/toj7b4l?var-prometheus_datasource=${prometheus_datasource}&var-job=${__data.fields.job}&var-instance=${__value.raw}"
                     }
                   ]
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "containers"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Containers"
+                },
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "custom.width",
+                  "value": 90
+                },
+                {
+                  "id": "cellOptions",
+                  "value": {
+                    "type": "auto"
+                  }
                 }
               ]
             },
@@ -658,13 +504,6 @@
                 {
                   "id": "unit",
                   "value": "percent"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "orange",
-                    "mode": "fixed"
-                  }
                 },
                 {
                   "id": "thresholds",
@@ -719,7 +558,7 @@
             {
               "matcher": {
                 "id": "byName",
-                "options": "network_receive"
+                "options": "net_rx"
               },
               "properties": [
                 {
@@ -731,13 +570,6 @@
                   "value": "binBps"
                 },
                 {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "purple",
-                    "mode": "fixed"
-                  }
-                },
-                {
                   "id": "cellOptions",
                   "value": {
                     "type": "sparkline"
@@ -748,7 +580,7 @@
             {
               "matcher": {
                 "id": "byName",
-                "options": "network_transmit"
+                "options": "net_tx"
               },
               "properties": [
                 {
@@ -760,11 +592,26 @@
                   "value": "binBps"
                 },
                 {
-                  "id": "color",
+                  "id": "cellOptions",
                   "value": {
-                    "fixedColor": "purple",
-                    "mode": "fixed"
+                    "type": "sparkline"
                   }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "disk_r"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Disk Read"
+                },
+                {
+                  "id": "unit",
+                  "value": "binBps"
                 },
                 {
                   "id": "cellOptions",
@@ -777,52 +624,16 @@
             {
               "matcher": {
                 "id": "byName",
-                "options": "disk_read"
+                "options": "disk_w"
               },
               "properties": [
                 {
                   "id": "displayName",
-                  "value": "Disk R"
+                  "value": "Disk Write"
                 },
                 {
                   "id": "unit",
                   "value": "binBps"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "red",
-                    "mode": "fixed"
-                  }
-                },
-                {
-                  "id": "cellOptions",
-                  "value": {
-                    "type": "sparkline"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "disk_write"
-              },
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "Disk W"
-                },
-                {
-                  "id": "unit",
-                  "value": "binBps"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "red",
-                    "mode": "fixed"
-                  }
                 },
                 {
                   "id": "cellOptions",
@@ -835,108 +646,93 @@
           ]
         },
         "gridPos": {
-          "h": 11,
+          "h": 12,
           "w": 24,
           "x": 0,
-          "y": 11
+          "y": 6
         },
-        "id": 3,
+        "id": 1049,
         "options": {
           "cellHeight": "sm",
-          "frameIndex": 1,
-          "showHeader": true,
-          "sortBy": [
-            {
-              "desc": true,
-              "displayName": "Container Name"
-            }
-          ]
+          "showHeader": true
         },
-        "pluginVersion": "13.1.0-25668120414",
         "targets": [
           {
-            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "editorMode": "code",
-            "expr": "100 * sum by (name) (rate(container_cpu_usage_seconds_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
-            "instant": false,
+            "expr": "count by (instance) (count by (instance,name) (container_last_seen{job=~\"$job\",name!=\"\"}))",
+            "instant": true,
             "legendFormat": "__auto",
-            "queryType": "range",
-            "range": true,
+            "range": false,
             "refId": "A"
           },
           {
-            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "editorMode": "code",
-            "expr": "sum by (name) (container_memory_working_set_bytes{job=\"$job\", instance=~\"$instance\", name!=\"\"})",
+            "expr": "sum by (instance) (rate(container_cpu_usage_seconds_total{job=~\"$job\",name!=\"\"}[$__rate_interval])) * 100",
             "instant": false,
             "legendFormat": "__auto",
-            "queryType": "range",
             "range": true,
             "refId": "B"
           },
           {
-            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "editorMode": "code",
-            "expr": "sum by (name) (rate(container_network_receive_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (instance) (container_memory_working_set_bytes{job=~\"$job\",name!=\"\"})",
             "instant": false,
             "legendFormat": "__auto",
-            "queryType": "range",
             "range": true,
             "refId": "C"
           },
           {
-            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "editorMode": "code",
-            "expr": "sum by (name) (rate(container_network_transmit_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (instance) (rate(container_network_receive_bytes_total{job=~\"$job\",name!=\"\"}[$__rate_interval]))",
             "instant": false,
             "legendFormat": "__auto",
-            "queryType": "range",
             "range": true,
             "refId": "D"
           },
           {
-            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "editorMode": "code",
-            "expr": "sum by (name) (rate(container_fs_reads_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (instance) (rate(container_network_transmit_bytes_total{job=~\"$job\",name!=\"\"}[$__rate_interval]))",
             "instant": false,
             "legendFormat": "__auto",
-            "queryType": "range",
             "range": true,
             "refId": "E"
           },
           {
-            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "editorMode": "code",
-            "expr": "sum by (name) (rate(container_fs_writes_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (instance) (rate(container_fs_reads_bytes_total{job=~\"$job\",name!=\"\"}[$__rate_interval]))",
             "instant": false,
             "legendFormat": "__auto",
-            "queryType": "range",
             "range": true,
             "refId": "F"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum by (instance) (rate(container_fs_writes_bytes_total{job=~\"$job\",name!=\"\"}[$__rate_interval]))",
+            "instant": false,
+            "legendFormat": "__auto",
+            "range": true,
+            "refId": "G"
           }
         ],
         "title": "",
@@ -967,13 +763,17 @@
               "F": {
                 "stat": "mean",
                 "timeField": "Time"
+              },
+              "G": {
+                "stat": "mean",
+                "timeField": "Time"
               }
             }
           },
           {
             "id": "joinByField",
             "options": {
-              "byField": "name",
+              "byField": "instance",
               "mode": "outer"
             }
           },
@@ -984,13 +784,13 @@
               "includeByName": {},
               "indexByName": {},
               "renameByName": {
-                "Trend #A": "cpu",
-                "Trend #B": "memory",
-                "Trend #C": "network_receive",
-                "Trend #D": "network_transmit",
-                "Trend #E": "disk_read",
-                "Trend #F": "disk_write",
-                "name": "name"
+                "Trend #A": "containers",
+                "Trend #B": "cpu",
+                "Trend #C": "memory",
+                "Trend #D": "net_rx",
+                "Trend #E": "net_tx",
+                "Trend #F": "disk_r",
+                "Trend #G": "disk_w"
               }
             }
           }
@@ -1003,270 +803,16 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 22
+          "y": 18
         },
-        "id": 1037,
+        "id": 1053,
         "panels": [
           {
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "description": "Physical (non-hyperthreaded) CPU cores.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "short"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 6,
-              "x": 0,
-              "y": 1
-            },
-            "id": 1033,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_cpu_physical_cores{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "Physical Cores",
-            "type": "stat"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "Number of physical CPU sockets.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "short"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 6,
-              "x": 6,
-              "y": 1
-            },
-            "id": 1034,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_cpu_sockets{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "CPU Sockets",
-            "type": "stat"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "NVDIMM capacity, if present on this host.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "decbytes"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 6,
-              "x": 12,
-              "y": 1
-            },
-            "id": 1035,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_nvm_capacity{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "NVM Capacity",
-            "type": "stat"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "NVM average power budget in watts.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "watt"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 6,
-              "x": 18,
-              "y": 1
-            },
-            "id": 1036,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_nvm_avg_power_budget_watts{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "NVM Power Budget",
-            "type": "stat"
-          }
-        ],
-        "title": "Hardware Details",
-        "type": "row"
-      },
-      {
-        "collapsed": true,
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 23
-        },
-        "id": 1041,
-        "panels": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "cAdvisor version running on this host.",
+            "description": "cAdvisor version(s) in use.",
             "fieldConfig": {
               "defaults": {
                 "color": {
@@ -1291,7 +837,7 @@
               "x": 0,
               "y": 1
             },
-            "id": 1038,
+            "id": 1050,
             "options": {
               "colorMode": "background",
               "graphMode": "none",
@@ -1313,7 +859,7 @@
                   "type": "prometheus",
                   "uid": "${prometheus_datasource}"
                 },
-                "expr": "cadvisor_version_info{job=\"$job\", instance=~\"$instance\"}",
+                "expr": "cadvisor_version_info{job=~\"$job\"}",
                 "instant": true,
                 "legendFormat": "",
                 "refId": "A"
@@ -1350,7 +896,7 @@
               "x": 8,
               "y": 1
             },
-            "id": 1039,
+            "id": 1051,
             "options": {
               "cellHeight": "sm",
               "showHeader": true
@@ -1361,7 +907,7 @@
                   "type": "prometheus",
                   "uid": "${prometheus_datasource}"
                 },
-                "expr": "cadvisor_build_info{job=\"$job\", instance=~\"$instance\"}",
+                "expr": "cadvisor_build_info{job=~\"$job\"}",
                 "format": "table",
                 "instant": true,
                 "legendFormat": "",
@@ -1377,7 +923,7 @@
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "description": "1 if cAdvisor had errors collecting host metrics.",
+            "description": "Total scrape errors across all hosts.",
             "fieldConfig": {
               "defaults": {
                 "color": {
@@ -1405,7 +951,7 @@
               "x": 16,
               "y": 1
             },
-            "id": 1040,
+            "id": 1052,
             "options": {
               "colorMode": "background",
               "graphMode": "none",
@@ -1427,7 +973,7 @@
                   "type": "prometheus",
                   "uid": "${prometheus_datasource}"
                 },
-                "expr": "machine_scrape_error{job=\"$job\", instance=~\"$instance\"}",
+                "expr": "sum(machine_scrape_error{job=~\"$job\"})",
                 "instant": true,
                 "legendFormat": "",
                 "refId": "A"
@@ -1442,7 +988,7 @@
       }
     ],
     "preload": false,
-    "refresh": "5s",
+    "refresh": "30s",
     "schemaVersion": 42,
     "templating": {
       "list": [
@@ -1467,10 +1013,6 @@
         {
           "allValue": ".+",
           "allowCustomValue": false,
-          "current": {
-            "text": "integrations/docker",
-            "value": "integrations/docker"
-          },
           "datasource": {
             "type": "prometheus",
             "uid": "${prometheus_datasource}"
@@ -1485,53 +1027,6 @@
           "query": {
             "qryType": 1,
             "query": "label_values(container_last_seen,job)",
-            "refId": "PrometheusVariableQueryEditor-VariableQuery"
-          },
-          "refresh": 2,
-          "regex": "",
-          "regexApplyTo": "value",
-          "skipUrlSync": false,
-          "sort": 1,
-          "type": "query"
-        },
-        {
-          "allValue": ".+",
-          "allowCustomValue": false,
-          "current": {
-            "text": [
-              "homeassistant"
-            ],
-            "value": [
-              "homeassistant"
-            ]
-          },
-          "datasource": {
-            "type": "prometheus",
-            "uid": "${prometheus_datasource}"
-          },
-          "hide": 0,
-          "includeAll": false,
-          "label": "Instance",
-          "multi": false,
-          "name": "instance",
-          "options": [],
-          "query": {
-            "label": "instance",
-            "labelFilters": [
-              {
-                "label": "job",
-                "op": "!=",
-                "value": "kubelet"
-              },
-              {
-                "label": "job",
-                "op": "=~",
-                "value": "$job"
-              }
-            ],
-            "metric": "container_last_seen",
-            "qryType": 1,
-            "query": "label_values(container_last_seen{job!=\"kubelet\",job=~\"$job\"},instance)",
             "refId": "PrometheusVariableQueryEditor-VariableQuery"
           },
           "refresh": 2,
@@ -1562,9 +1057,9 @@
       ]
     },
     "timezone": "browser",
-    "title": "Docker - Host Overview",
-    "uid": "toj7b4l",
-    "version": 15
+    "title": "Docker - Cluster Overview",
+    "uid": "docker-cluster-overview",
+    "version": 1
   },
   "meta": {
     "annotationsPermissions": {
@@ -1580,8 +1075,8 @@
     "canEdit": true,
     "canSave": true,
     "canStar": true,
-    "created": "2026-05-18T19:21:43Z",
-    "createdBy": "REDACTED",
+    "created": "2026-05-19T15:52:58Z",
+    "createdBy": "Anonymous",
     "expires": "0001-01-01T00:00:00Z",
     "folderId": 30,
     "folderTitle": "Integration - Docker",
@@ -1591,11 +1086,11 @@
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
-    "slug": "docker-host-overview",
+    "slug": "docker-cluster-overview",
     "type": "db",
-    "updated": "2026-05-19T15:52:56Z",
-    "updatedBy": "REDACTED",
-    "url": "/d/toj7b4l/docker-host-overview",
-    "version": 15
+    "updated": "2026-05-19T15:52:58Z",
+    "updatedBy": "Anonymous",
+    "url": "/d/docker-cluster-overview/docker-cluster-overview",
+    "version": 1
   }
 }
