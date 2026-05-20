@@ -24,19 +24,448 @@
     "panels": [
       {
         "gridPos": {
-          "h": 3,
+          "h": 2,
           "w": 24,
           "x": 0,
           "y": 0
         },
         "id": 1026,
         "options": {
-          "content": "## \ud83d\udc33 Docker - Host Overview\n\nAggregate resource usage across all containers on a single Docker host.",
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "### \ud83d\udc33 Docker - Host Overview\n\nAggregate resource usage across all containers on a single Docker host.",
           "mode": "markdown"
         },
+        "pluginVersion": "13.1.0-25668120414",
         "targets": [],
         "title": "",
+        "transparent": true,
         "type": "text"
+      },
+      {
+        "collapsed": true,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 2
+        },
+        "id": 1042,
+        "panels": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "Shows if metrics are being received for the selected time range.",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "fixedColor": "text",
+                  "mode": "fixed"
+                },
+                "mappings": [
+                  {
+                    "options": {
+                      "0": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "No"
+                      },
+                      "1": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "Yes"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                }
+              }
+            },
+            "gridPos": {
+              "h": 3,
+              "w": 8,
+              "x": 0,
+              "y": 1
+            },
+            "id": 1044,
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "13.1.0-25668120414",
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "editorMode": "code",
+                "expr": "vector(1) and on() ((count(up{asserts_env=~\"$env\", asserts_site=~\"$site\", job=\"$job\", instance=~\"$instance\"} == 1) > 0) and (absent(absent(machine_scrape_error{asserts_env=~\"$env\", asserts_site=~\"$site\", job=\"$job\", instance=~\"$instance\"})))) or vector(0) and on() ((count(up{asserts_env=~\"$env\", asserts_site=~\"$site\", job=\"$job\", instance=~\"$instance\"}) > 0) and (absent(machine_scrape_error{asserts_env=~\"$env\", asserts_site=~\"$site\", job=\"$job\", instance=~\"$instance\"})))\n",
+                "instant": true,
+                "legendFormat": "",
+                "range": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Metrics",
+            "type": "stat"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "Timestamp of the most recent metric received.",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "dateTimeAsLocal"
+              }
+            },
+            "gridPos": {
+              "h": 3,
+              "w": 8,
+              "x": 8,
+              "y": 1
+            },
+            "id": 1045,
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "13.1.0-25668120414",
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "max by (job) (timestamp(container_last_seen{asserts_env=~\"$env\", asserts_site=~\"$site\", job=\"$job\", instance=~\"$instance\", name!=\"\"}))",
+                "instant": true,
+                "legendFormat": "",
+                "refId": "A"
+              }
+            ],
+            "title": "Latest metrics received",
+            "type": "stat"
+          },
+          {
+            "gridPos": {
+              "h": 3,
+              "w": 8,
+              "x": 16,
+              "y": 1
+            },
+            "id": 1046,
+            "options": {
+              "code": {
+                "language": "plaintext",
+                "showLineNumbers": false,
+                "showMiniMap": false
+              },
+              "content": "The cAdvisor integration version is determined by the version of cAdvisor running on the host. Use the panels below to check the installed version.",
+              "mode": "markdown"
+            },
+            "pluginVersion": "13.1.0-25668120414",
+            "title": "Integration version",
+            "type": "text"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "cAdvisor version running on this host.",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "custom": {
+                  "align": "auto",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false
+                },
+                "displayName": "${__field.labels.version}",
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    }
+                  ]
+                },
+                "unit": "string"
+              }
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 8,
+              "x": 0,
+              "y": 4
+            },
+            "id": 1038,
+            "options": {
+              "cellHeight": "sm",
+              "showHeader": false
+            },
+            "pluginVersion": "13.1.0-25668120414",
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "editorMode": "code",
+                "expr": "cadvisor_version_info{job=\"$job\", instance=~\"$instance\", asserts_env=~\"$env\", asserts_site=~\"$site\"}",
+                "format": "table",
+                "instant": true,
+                "legendFormat": "",
+                "refId": "A"
+              }
+            ],
+            "title": "cAdvisor Version",
+            "transformations": [
+              {
+                "id": "filterFieldsByName",
+                "options": {
+                  "include": {
+                    "names": [
+                      "kernelVersion",
+                      "osVersion",
+                      "Time"
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "transpose",
+                "options": {}
+              }
+            ],
+            "type": "table"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "cAdvisor build metadata.",
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "left",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "filterable": true,
+                  "footer": {
+                    "reducers": []
+                  },
+                  "inspect": false
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 80
+                    }
+                  ]
+                }
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": ""
+                  },
+                  "properties": []
+                }
+              ]
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 8,
+              "x": 8,
+              "y": 4
+            },
+            "id": 1039,
+            "options": {
+              "cellHeight": "sm",
+              "showHeader": false
+            },
+            "pluginVersion": "13.1.0-25668120414",
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "cadvisor_build_info{job=\"$job\", instance=~\"$instance\", asserts_env=~\"$env\", asserts_site=~\"$site\"}",
+                "format": "table",
+                "instant": true,
+                "legendFormat": "",
+                "refId": "A"
+              }
+            ],
+            "title": "cAdvisor Build Info",
+            "transformations": [
+              {
+                "id": "filterFieldsByName",
+                "options": {
+                  "byVariable": false,
+                  "include": {
+                    "names": [
+                      "branch",
+                      "goarch",
+                      "goversion",
+                      "revision",
+                      "tags",
+                      "version",
+                      "Time"
+                    ]
+                  }
+                }
+              },
+              {
+                "id": "transpose",
+                "options": {}
+              }
+            ],
+            "type": "table"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "1 if cAdvisor had errors collecting host metrics.",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "thresholds"
+                },
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": 0
+                    },
+                    {
+                      "color": "red",
+                      "value": 1
+                    }
+                  ]
+                },
+                "unit": "short"
+              }
+            },
+            "gridPos": {
+              "h": 4,
+              "w": 8,
+              "x": 16,
+              "y": 4
+            },
+            "id": 1040,
+            "options": {
+              "colorMode": "background",
+              "graphMode": "none",
+              "justifyMode": "auto",
+              "orientation": "auto",
+              "percentChangeColorMode": "standard",
+              "reduceOptions": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "fields": "",
+                "values": false
+              },
+              "showPercentChange": false,
+              "textMode": "auto",
+              "wideLayout": true
+            },
+            "pluginVersion": "13.1.0-25668120414",
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "machine_scrape_error{job=\"$job\", instance=~\"$instance\", asserts_env=~\"$env\", asserts_site=~\"$site\"}",
+                "instant": true,
+                "legendFormat": "",
+                "refId": "A"
+              }
+            ],
+            "title": "Scrape Errors",
+            "type": "stat"
+          }
+        ],
+        "title": "Integration Status",
+        "type": "row"
       },
       {
         "collapsed": false,
@@ -46,8 +475,7 @@
           "x": 0,
           "y": 3
         },
-        "id": 1027,
-        "panels": [],
+        "id": 1043,
         "title": "Host Stats",
         "type": "row"
       },
@@ -56,11 +484,10 @@
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "Logical CPU cores on this host.",
         "fieldConfig": {
           "defaults": {
             "color": {
-              "mode": "thresholds"
+              "mode": "palette-classic"
             },
             "thresholds": {
               "mode": "absolute",
@@ -70,22 +497,100 @@
                   "value": 0
                 }
               ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "CPU Cores"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "orange",
+                    "mode": "fixed"
+                  }
+                }
+              ]
             },
-            "unit": "short"
-          }
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Total RAM"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "decbytes"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Physical Cores"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "semi-dark-orange",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "CPU Sockets"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "dark-orange",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
         },
         "gridPos": {
-          "h": 3,
-          "w": 4,
+          "h": 4,
+          "w": 24,
           "x": 0,
           "y": 4
         },
-        "id": 1028,
+        "id": 1041,
         "options": {
           "colorMode": "background",
           "graphMode": "none",
           "justifyMode": "auto",
-          "orientation": "auto",
+          "orientation": "vertical",
+          "percentChangeColorMode": "standard",
           "reduceOptions": {
             "calcs": [
               "lastNotNull"
@@ -93,282 +598,79 @@
             "fields": "",
             "values": false
           },
+          "showPercentChange": false,
           "textMode": "auto",
           "wideLayout": true
         },
+        "pluginVersion": "13.1.0-25668120414",
         "targets": [
           {
+            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "machine_cpu_cores{job=\"$job\", instance=~\"$instance\"}",
+            "expr": "machine_cpu_sockets{job=\"$job\", instance=~\"$instance\", asserts_env=~\"$env\", asserts_site=~\"$site\"}",
             "instant": true,
-            "legendFormat": "",
-            "refId": "A"
-          }
-        ],
-        "title": "CPU Cores",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${prometheus_datasource}"
-        },
-        "description": "Total physical memory on this host.",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                }
-              ]
-            },
-            "unit": "decbytes"
-          }
-        },
-        "gridPos": {
-          "h": 3,
-          "w": 4,
-          "x": 4,
-          "y": 4
-        },
-        "id": 1029,
-        "options": {
-          "colorMode": "background",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
+            "legendFormat": "CPU Sockets",
+            "queryType": "instant",
+            "range": false,
+            "refId": "G"
           },
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "targets": [
           {
+            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "machine_memory_bytes{job=\"$job\", instance=~\"$instance\"}",
+            "expr": "machine_cpu_physical_cores{job=\"$job\", instance=~\"$instance\", asserts_env=~\"$env\", asserts_site=~\"$site\"}",
             "instant": true,
-            "legendFormat": "",
-            "refId": "A"
-          }
-        ],
-        "title": "Total RAM",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${prometheus_datasource}"
-        },
-        "description": "Total CPU across all containers as % of host cores.",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                },
-                {
-                  "color": "yellow",
-                  "value": 70
-                },
-                {
-                  "color": "red",
-                  "value": 90
-                }
-              ]
-            },
-            "unit": "percent"
-          }
-        },
-        "gridPos": {
-          "h": 3,
-          "w": 5,
-          "x": 8,
-          "y": 4
-        },
-        "id": 1030,
-        "options": {
-          "colorMode": "background",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
+            "legendFormat": "Physical Cores",
+            "queryType": "instant",
+            "range": false,
+            "refId": "F"
           },
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "targets": [
           {
+            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval])) / scalar(machine_cpu_cores{job=\"$job\", instance=~\"$instance\"}) * 100",
+            "expr": "machine_cpu_cores{job=\"$job\", instance=~\"$instance\", asserts_env=~\"$env\", asserts_site=~\"$site\"}",
             "instant": true,
-            "legendFormat": "",
+            "legendFormat": "CPU Cores",
+            "queryType": "instant",
+            "range": false,
             "refId": "A"
-          }
-        ],
-        "title": "Aggregate CPU %",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${prometheus_datasource}"
-        },
-        "description": "Total working-set memory as % of host RAM.",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                },
-                {
-                  "color": "yellow",
-                  "value": 80
-                },
-                {
-                  "color": "red",
-                  "value": 95
-                }
-              ]
-            },
-            "unit": "percent"
-          }
-        },
-        "gridPos": {
-          "h": 3,
-          "w": 5,
-          "x": 13,
-          "y": 4
-        },
-        "id": 1031,
-        "options": {
-          "colorMode": "background",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
           },
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "targets": [
           {
+            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "sum(container_memory_working_set_bytes{job=\"$job\", instance=~\"$instance\", name!=\"\"}) / scalar(machine_memory_bytes{job=\"$job\", instance=~\"$instance\"}) * 100",
+            "expr": "machine_memory_bytes{job=\"$job\", instance=~\"$instance\", asserts_env=~\"$env\", asserts_site=~\"$site\"}",
             "instant": true,
-            "legendFormat": "",
-            "refId": "A"
-          }
-        ],
-        "title": "Memory %",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${prometheus_datasource}"
-        },
-        "description": "Total OOM kills across all containers in the time range.",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                },
-                {
-                  "color": "red",
-                  "value": 1
-                }
-              ]
-            },
-            "unit": "short"
-          }
-        },
-        "gridPos": {
-          "h": 3,
-          "w": 6,
-          "x": 18,
-          "y": 4
-        },
-        "id": 1032,
-        "options": {
-          "colorMode": "background",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
+            "legendFormat": "Total RAM",
+            "queryType": "instant",
+            "range": false,
+            "refId": "B"
           },
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "targets": [
           {
+            "app": "grafana-assistant-app",
             "datasource": {
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "sum(increase(container_oom_events_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range]))",
+            "expr": "sum(increase(container_oom_events_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__range]))",
             "instant": true,
-            "legendFormat": "",
-            "refId": "A"
+            "legendFormat": "OOM Events",
+            "queryType": "instant",
+            "range": false,
+            "refId": "E"
           }
         ],
-        "title": "OOM Events",
+        "title": "Host Stats",
         "type": "stat"
       },
       {
@@ -420,7 +722,7 @@
               "properties": [
                 {
                   "id": "unit",
-                  "value": "percent"
+                  "value": "percentunit"
                 },
                 {
                   "id": "color",
@@ -439,7 +741,7 @@
               "properties": [
                 {
                   "id": "unit",
-                  "value": "decbytes"
+                  "value": "percentunit"
                 },
                 {
                   "id": "color",
@@ -494,7 +796,7 @@
           "h": 4,
           "w": 24,
           "x": 0,
-          "y": 7
+          "y": 8
         },
         "id": 2,
         "options": {
@@ -523,7 +825,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "count(count by (name) (container_last_seen{job=\"$job\", instance=~\"$instance\", name!=\"\"}))",
+            "expr": "count(count by (name) (container_last_seen{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}))",
             "instant": true,
             "legendFormat": "Containers",
             "queryType": "instant",
@@ -537,7 +839,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "sum(rate(container_cpu_usage_seconds_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range])) * 100",
+            "expr": "sum(irate(container_cpu_usage_seconds_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__range]))",
             "instant": true,
             "legendFormat": "CPU Usage",
             "queryType": "instant",
@@ -550,7 +852,8 @@
               "type": "prometheus",
               "uid": "${prometheus_datasource}"
             },
-            "expr": "sum(container_memory_working_set_bytes{job=\"$job\", instance=~\"$instance\", name!=\"\"})",
+            "editorMode": "code",
+            "expr": "sum(container_memory_working_set_bytes{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}) / scalar(machine_memory_bytes{job=\"$job\", instance=~\"$instance\", asserts_env=~\"$env\", asserts_site=~\"$site\"})",
             "instant": true,
             "legendFormat": "Memory Usage",
             "queryType": "instant",
@@ -564,7 +867,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "sum(rate(container_network_receive_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range])) + sum(rate(container_network_transmit_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range]))",
+            "expr": "sum(irate(container_network_receive_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__range])) + sum(irate(container_network_transmit_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__range]))",
             "instant": true,
             "legendFormat": "Network Traffic",
             "queryType": "instant",
@@ -578,7 +881,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "sum(rate(container_fs_reads_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range])) + sum(rate(container_fs_writes_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__range]))",
+            "expr": "sum(irate(container_fs_reads_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__range])) + sum(irate(container_fs_writes_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__range]))",
             "instant": true,
             "legendFormat": "Disk I/O",
             "queryType": "instant",
@@ -639,7 +942,7 @@
                       "keepTime": true,
                       "targetBlank": false,
                       "title": "Docker - Container Overview",
-                      "url": "/d/tog2fp8?var-prometheus_datasource=${prometheus_datasource}&var-job=${job}&var-instance=${instance}&var-name=${__value.raw}"
+                      "url": "/d/docker-container-overview?var-prometheus_datasource=${prometheus_datasource}&var-job=${job}&var-instance=${instance}&var-name=${__value.raw}"
                     }
                   ]
                 }
@@ -657,7 +960,7 @@
                 },
                 {
                   "id": "unit",
-                  "value": "percent"
+                  "value": "percentunit"
                 },
                 {
                   "id": "color",
@@ -685,12 +988,6 @@
                       }
                     ]
                   }
-                },
-                {
-                  "id": "cellOptions",
-                  "value": {
-                    "type": "sparkline"
-                  }
                 }
               ]
             },
@@ -709,9 +1006,10 @@
                   "value": "decbytes"
                 },
                 {
-                  "id": "cellOptions",
+                  "id": "color",
                   "value": {
-                    "type": "sparkline"
+                    "fixedColor": "green",
+                    "mode": "fixed"
                   }
                 }
               ]
@@ -736,12 +1034,6 @@
                     "fixedColor": "purple",
                     "mode": "fixed"
                   }
-                },
-                {
-                  "id": "cellOptions",
-                  "value": {
-                    "type": "sparkline"
-                  }
                 }
               ]
             },
@@ -764,12 +1056,6 @@
                   "value": {
                     "fixedColor": "purple",
                     "mode": "fixed"
-                  }
-                },
-                {
-                  "id": "cellOptions",
-                  "value": {
-                    "type": "sparkline"
                   }
                 }
               ]
@@ -794,12 +1080,6 @@
                     "fixedColor": "red",
                     "mode": "fixed"
                   }
-                },
-                {
-                  "id": "cellOptions",
-                  "value": {
-                    "type": "sparkline"
-                  }
                 }
               ]
             },
@@ -823,12 +1103,6 @@
                     "fixedColor": "red",
                     "mode": "fixed"
                   }
-                },
-                {
-                  "id": "cellOptions",
-                  "value": {
-                    "type": "sparkline"
-                  }
                 }
               ]
             }
@@ -838,7 +1112,7 @@
           "h": 11,
           "w": 24,
           "x": 0,
-          "y": 11
+          "y": 12
         },
         "id": 3,
         "options": {
@@ -861,7 +1135,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "100 * sum by (name) (rate(container_cpu_usage_seconds_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__rate_interval]))",
             "instant": false,
             "legendFormat": "__auto",
             "queryType": "range",
@@ -875,7 +1149,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "sum by (name) (container_memory_working_set_bytes{job=\"$job\", instance=~\"$instance\", name!=\"\"})",
+            "expr": "sum by (name) (container_memory_working_set_bytes{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"})",
             "instant": false,
             "legendFormat": "__auto",
             "queryType": "range",
@@ -889,7 +1163,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "sum by (name) (rate(container_network_receive_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (name) (rate(container_network_receive_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__rate_interval]))",
             "instant": false,
             "legendFormat": "__auto",
             "queryType": "range",
@@ -903,7 +1177,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "sum by (name) (rate(container_network_transmit_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (name) (rate(container_network_transmit_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__rate_interval]))",
             "instant": false,
             "legendFormat": "__auto",
             "queryType": "range",
@@ -917,7 +1191,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "sum by (name) (rate(container_fs_reads_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (name) (rate(container_fs_reads_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__rate_interval]))",
             "instant": false,
             "legendFormat": "__auto",
             "queryType": "range",
@@ -931,7 +1205,7 @@
               "uid": "${prometheus_datasource}"
             },
             "editorMode": "code",
-            "expr": "sum by (name) (rate(container_fs_writes_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\"}[$__rate_interval]))",
+            "expr": "sum by (name) (rate(container_fs_writes_bytes_total{job=\"$job\", instance=~\"$instance\", name!=\"\", asserts_env=~\"$env\", asserts_site=~\"$site\"}[$__rate_interval]))",
             "instant": false,
             "legendFormat": "__auto",
             "queryType": "range",
@@ -996,449 +1270,6 @@
           }
         ],
         "type": "table"
-      },
-      {
-        "collapsed": true,
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 22
-        },
-        "id": 1037,
-        "panels": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "Physical (non-hyperthreaded) CPU cores.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "short"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 6,
-              "x": 0,
-              "y": 1
-            },
-            "id": 1033,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_cpu_physical_cores{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "Physical Cores",
-            "type": "stat"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "Number of physical CPU sockets.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "short"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 6,
-              "x": 6,
-              "y": 1
-            },
-            "id": 1034,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_cpu_sockets{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "CPU Sockets",
-            "type": "stat"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "NVDIMM capacity, if present on this host.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "decbytes"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 6,
-              "x": 12,
-              "y": 1
-            },
-            "id": 1035,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_nvm_capacity{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "NVM Capacity",
-            "type": "stat"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "NVM average power budget in watts.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "watt"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 6,
-              "x": 18,
-              "y": 1
-            },
-            "id": 1036,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_nvm_avg_power_budget_watts{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "NVM Power Budget",
-            "type": "stat"
-          }
-        ],
-        "title": "Hardware Details",
-        "type": "row"
-      },
-      {
-        "collapsed": true,
-        "gridPos": {
-          "h": 1,
-          "w": 24,
-          "x": 0,
-          "y": 23
-        },
-        "id": 1041,
-        "panels": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "cAdvisor version running on this host.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "displayName": "${__field.labels.version}",
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    }
-                  ]
-                },
-                "unit": "string"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 8,
-              "x": 0,
-              "y": 1
-            },
-            "id": 1038,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": true
-              },
-              "textMode": "name",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "cadvisor_version_info{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "cAdvisor Version",
-            "type": "stat"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "cAdvisor build metadata.",
-            "fieldConfig": {
-              "defaults": {
-                "custom": {
-                  "align": "left",
-                  "cellOptions": {
-                    "type": "auto"
-                  },
-                  "filterable": true,
-                  "footer": {
-                    "reducers": []
-                  },
-                  "inspect": false
-                }
-              },
-              "overrides": []
-            },
-            "gridPos": {
-              "h": 5,
-              "w": 8,
-              "x": 8,
-              "y": 1
-            },
-            "id": 1039,
-            "options": {
-              "cellHeight": "sm",
-              "showHeader": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "cadvisor_build_info{job=\"$job\", instance=~\"$instance\"}",
-                "format": "table",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "Build Info",
-            "transformations": [],
-            "type": "table"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "${prometheus_datasource}"
-            },
-            "description": "1 if cAdvisor had errors collecting host metrics.",
-            "fieldConfig": {
-              "defaults": {
-                "color": {
-                  "mode": "thresholds"
-                },
-                "thresholds": {
-                  "mode": "absolute",
-                  "steps": [
-                    {
-                      "color": "green",
-                      "value": 0
-                    },
-                    {
-                      "color": "red",
-                      "value": 1
-                    }
-                  ]
-                },
-                "unit": "short"
-              }
-            },
-            "gridPos": {
-              "h": 3,
-              "w": 8,
-              "x": 16,
-              "y": 1
-            },
-            "id": 1040,
-            "options": {
-              "colorMode": "background",
-              "graphMode": "none",
-              "justifyMode": "auto",
-              "orientation": "auto",
-              "reduceOptions": {
-                "calcs": [
-                  "lastNotNull"
-                ],
-                "fields": "",
-                "values": false
-              },
-              "textMode": "auto",
-              "wideLayout": true
-            },
-            "targets": [
-              {
-                "datasource": {
-                  "type": "prometheus",
-                  "uid": "${prometheus_datasource}"
-                },
-                "expr": "machine_scrape_error{job=\"$job\", instance=~\"$instance\"}",
-                "instant": true,
-                "legendFormat": "",
-                "refId": "A"
-              }
-            ],
-            "title": "Scrape Errors",
-            "type": "stat"
-          }
-        ],
-        "title": "Integration Status",
-        "type": "row"
       }
     ],
     "preload": false,
@@ -1446,6 +1277,54 @@
     "schemaVersion": 42,
     "templating": {
       "list": [
+        {
+          "current": {},
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prometheus_datasource}"
+          },
+          "definition": "label_values(asserts_env)",
+          "hide": 2,
+          "includeAll": false,
+          "label": "Asserts environment",
+          "multi": false,
+          "name": "env",
+          "options": [],
+          "query": {
+            "qryType": 1,
+            "query": "label_values(asserts_env)",
+            "refId": "PrometheusVariableQueryEditor-VariableQuery"
+          },
+          "refresh": 2,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 1,
+          "type": "query"
+        },
+        {
+          "current": {},
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prometheus_datasource}"
+          },
+          "definition": "label_values(asserts_site)",
+          "hide": 2,
+          "includeAll": false,
+          "label": "Asserts site",
+          "multi": false,
+          "name": "site",
+          "options": [],
+          "query": {
+            "qryType": 1,
+            "query": "label_values(asserts_site)",
+            "refId": "PrometheusVariableQueryEditor-VariableQuery"
+          },
+          "refresh": 2,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 1,
+          "type": "query"
+        },
         {
           "allowCustomValue": true,
           "current": {
@@ -1563,8 +1442,8 @@
     },
     "timezone": "browser",
     "title": "Docker - Host Overview",
-    "uid": "toj7b4l",
-    "version": 15
+    "uid": "docker-host-overview",
+    "version": 23
   },
   "meta": {
     "annotationsPermissions": {
@@ -1593,9 +1472,9 @@
     "provisionedExternalId": "",
     "slug": "docker-host-overview",
     "type": "db",
-    "updated": "2026-05-19T15:52:56Z",
+    "updated": "2026-05-20T07:48:12Z",
     "updatedBy": "REDACTED",
     "url": "/d/toj7b4l/docker-host-overview",
-    "version": 15
+    "version": 23
   }
 }

@@ -77,3 +77,47 @@ All commands are run from the `observability/` directory and target the HAOS hos
 | Config written by `make push` | `/homeassistant/alloy/config.alloy` |
 | Config as seen by Supervisor | `/mnt/data/supervisor/homeassistant/alloy/config.alloy` |
 | Alloy persistent state | Docker volume `alloy-data` |
+
+## Grafana Dashboards
+
+Dashboard JSON files live in `observability/dashboards/`. This repo is the **source of truth** — all edits must be made to files here, then uploaded to Grafana.
+
+### Dashboard inventory
+
+| File | UID | Description |
+|---|---|---|
+| `observability/dashboards/docker-cluster-overview.json` | `docker-cluster-overview` | Cross-host summary — one row per Docker host |
+| `observability/dashboards/docker-container-overview.json` | `docker-container-overview` | Per-container drill-down |
+| `observability/dashboards/docker-host-overview.json` | `docker-host-overview` | Aggregate resource usage for a single host |
+
+### Fetch (re-download to repo)
+
+```bash
+gcx api /api/dashboards/uid/{uid} | jq . > observability/dashboards/{slug}.json
+```
+
+Use `jq .` (not `jq -S`) to preserve the original key ordering so future diffs are minimal. The hint line gcx prints goes to stderr and does not affect the JSON on stdout.
+
+### Diff local vs live
+
+```bash
+diff <(jq -S . observability/dashboards/{slug}.json) \
+     <(gcx api /api/dashboards/uid/{uid} | jq -S .)
+```
+
+### Upload (push local → Grafana)
+
+```bash
+jq '{dashboard: .dashboard, overwrite: true}' observability/dashboards/{slug}.json \
+  | gcx api /api/dashboards/db -d @-
+```
+
+The stored format has `dashboard` + `meta` keys; the upload endpoint (`/api/dashboards/db`) only wants `dashboard` + `overwrite`.
+
+### Workflow
+
+1. **Check for remote changes** before editing — diff local vs live (see above)
+2. Edit `observability/dashboards/{slug}.json` in this repo
+3. Diff to review your outgoing change
+4. Upload to Grafana
+5. Commit to git
