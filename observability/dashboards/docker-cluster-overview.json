@@ -397,6 +397,13 @@
                       }
                     ]
                   }
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "orange",
+                    "mode": "fixed"
+                  }
                 }
               ]
             },
@@ -413,6 +420,13 @@
                 {
                   "id": "unit",
                   "value": "decbytes"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
                 }
               ]
             },
@@ -429,6 +443,13 @@
                 {
                   "id": "unit",
                   "value": "binBps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "purple",
+                    "mode": "fixed"
+                  }
                 }
               ]
             },
@@ -445,6 +466,13 @@
                 {
                   "id": "unit",
                   "value": "binBps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "purple",
+                    "mode": "fixed"
+                  }
                 }
               ]
             },
@@ -461,6 +489,13 @@
                 {
                   "id": "unit",
                   "value": "binBps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
                 }
               ]
             },
@@ -477,6 +512,13 @@
                 {
                   "id": "unit",
                   "value": "binBps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
                 }
               ]
             }
@@ -770,7 +812,7 @@
     "timezone": "browser",
     "title": "Docker - Cluster Overview",
     "uid": "docker-cluster-overview",
-    "version": 4
+    "version": 5
   },
   "meta": {
     "annotationsPermissions": {
@@ -789,19 +831,19 @@
     "created": "2026-05-19T15:52:58Z",
     "createdBy": "REDACTED",
     "expires": "0001-01-01T00:00:00Z",
-    "folderId": 30,
-    "folderTitle": "Integration - Docker",
-    "folderUid": "integration---docker",
-    "folderUrl": "/dashboards/f/integration---docker/integration-docker",
+    "folderId": 0,
+    "folderTitle": "General",
+    "folderUid": "",
+    "folderUrl": "",
     "hasAcl": false,
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
     "slug": "docker-cluster-overview",
     "type": "db",
-    "updated": "2026-05-20T10:25:00Z",
+    "updated": "2026-05-20T11:08:31Z",
     "updatedBy": "REDACTED",
     "url": "/d/docker-cluster-overview/docker-cluster-overview",
-    "version": 4
+    "version": 5
   }
 }
