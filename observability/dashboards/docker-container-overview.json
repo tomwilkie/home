@@ -51,7 +51,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "### 🐳 Docker - Container Overview\n\nPer-container drill-down showing CPU, memory, network, disk, and resource pressure for a single Docker container.",
+          "content": "### 🐳 Docker - Container Overview — ${name} on ${instance}\n\nPer-container drill-down showing CPU, memory, network, disk, and resource pressure for a single Docker container.",
           "mode": "markdown"
         },
         "pluginVersion": "13.1.0-25668120414",
@@ -3093,7 +3093,7 @@
     "timezone": "default",
     "title": "Docker - Container Overview",
     "uid": "docker-container-overview",
-    "version": 3
+    "version": 4
   },
   "meta": {
     "annotationsPermissions": {
@@ -3112,19 +3112,19 @@
     "created": "2026-05-20T10:21:00Z",
     "createdBy": "REDACTED",
     "expires": "0001-01-01T00:00:00Z",
-    "folderId": 30,
-    "folderTitle": "Integration - Docker",
-    "folderUid": "integration---docker",
-    "folderUrl": "/dashboards/f/integration---docker/integration-docker",
+    "folderId": 0,
+    "folderTitle": "General",
+    "folderUid": "",
+    "folderUrl": "",
     "hasAcl": false,
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
     "slug": "docker-container-overview",
     "type": "db",
-    "updated": "2026-05-20T10:27:29Z",
+    "updated": "2026-05-20T11:13:20Z",
     "updatedBy": "REDACTED",
     "url": "/d/docker-container-overview/docker-container-overview",
-    "version": 3
+    "version": 4
   }
 }

@@ -36,7 +36,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "### 🐳 Docker - Host Overview\n\nAggregate resource usage across all containers on a single Docker host.",
+          "content": "### 🐳 Docker - Host Overview — ${instance}\n\nAggregate resource usage across all containers on a single Docker host.",
           "mode": "markdown"
         },
         "pluginVersion": "13.1.0-25668120414",
@@ -1452,7 +1452,7 @@
     "timezone": "browser",
     "title": "Docker - Host Overview",
     "uid": "docker-host-overview",
-    "version": 2
+    "version": 3
   },
   "meta": {
     "annotationsPermissions": {
@@ -1471,19 +1471,19 @@
     "created": "2026-05-20T10:21:01Z",
     "createdBy": "REDACTED",
     "expires": "0001-01-01T00:00:00Z",
-    "folderId": 30,
-    "folderTitle": "Integration - Docker",
-    "folderUid": "integration---docker",
-    "folderUrl": "/dashboards/f/integration---docker/integration-docker",
+    "folderId": 0,
+    "folderTitle": "General",
+    "folderUid": "",
+    "folderUrl": "",
     "hasAcl": false,
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
     "slug": "docker-host-overview",
     "type": "db",
-    "updated": "2026-05-20T10:23:51Z",
+    "updated": "2026-05-20T11:13:19Z",
     "updatedBy": "REDACTED",
     "url": "/d/docker-host-overview/docker-host-overview",
-    "version": 2
+    "version": 3
   }
 }
