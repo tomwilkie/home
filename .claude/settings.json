@@ -1,5 +1,11 @@
 {
   "enabledPlugins": {
     "home-assistant-skills@home-assistant-skills": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(hass-cli *)",
+      "Bash(diff *)"
+    ]
   }
 }
