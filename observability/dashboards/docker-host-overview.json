@@ -36,7 +36,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "### \ud83d\udc33 Docker - Host Overview\n\nAggregate resource usage across all containers on a single Docker host.",
+          "content": "### 🐳 Docker - Host Overview\n\nAggregate resource usage across all containers on a single Docker host.",
           "mode": "markdown"
         },
         "pluginVersion": "13.1.0-25668120414",
@@ -53,7 +53,7 @@
           "x": 0,
           "y": 2
         },
-        "id": 1042,
+        "id": 1047,
         "panels": [
           {
             "datasource": {
@@ -218,6 +218,7 @@
               "mode": "markdown"
             },
             "pluginVersion": "13.1.0-25668120414",
+            "targets": [],
             "title": "Integration version",
             "type": "text"
           },
@@ -475,7 +476,7 @@
           "x": 0,
           "y": 3
         },
-        "id": 1043,
+        "id": 1048,
         "title": "Host Stats",
         "type": "row"
       },
@@ -1278,7 +1279,11 @@
     "templating": {
       "list": [
         {
-          "current": {},
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
           "datasource": {
             "type": "prometheus",
             "uid": "${prometheus_datasource}"
@@ -1302,7 +1307,11 @@
           "type": "query"
         },
         {
-          "current": {},
+          "allowCustomValue": true,
+          "current": {
+            "text": "",
+            "value": ""
+          },
           "datasource": {
             "type": "prometheus",
             "uid": "${prometheus_datasource}"
@@ -1443,7 +1452,7 @@
     "timezone": "browser",
     "title": "Docker - Host Overview",
     "uid": "docker-host-overview",
-    "version": 23
+    "version": 2
   },
   "meta": {
     "annotationsPermissions": {
@@ -1459,7 +1468,7 @@
     "canEdit": true,
     "canSave": true,
     "canStar": true,
-    "created": "2026-05-18T19:21:43Z",
+    "created": "2026-05-20T10:21:01Z",
     "createdBy": "REDACTED",
     "expires": "0001-01-01T00:00:00Z",
     "folderId": 30,
@@ -1472,9 +1481,9 @@
     "provisionedExternalId": "",
     "slug": "docker-host-overview",
     "type": "db",
-    "updated": "2026-05-20T07:48:12Z",
+    "updated": "2026-05-20T10:23:51Z",
     "updatedBy": "REDACTED",
-    "url": "/d/toj7b4l/docker-host-overview",
-    "version": 23
+    "url": "/d/docker-host-overview/docker-host-overview",
+    "version": 2
   }
 }
