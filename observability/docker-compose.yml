@@ -37,6 +37,12 @@ services:
       # Alloy config + persistent state
       - /mnt/data/supervisor/homeassistant/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/12345 && printf \"GET /-/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     command:
       - run
       - /etc/alloy/config.alloy
