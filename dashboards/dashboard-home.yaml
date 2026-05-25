@@ -177,11 +177,6 @@ views:
                         tap_action:
                             action: more-info
                -  type: tile
-                  entity: sensor.kitchen_radiator_pressure
-                  name: Pressure
-               -  type: custom:mushroom-title-card
-                  title: ''
-               -  type: tile
                   grid_options:
                       columns: 12
                       rows: 1
@@ -245,11 +240,6 @@ views:
                         color: state
                         tap_action:
                             action: more-info
-               -  type: tile
-                  entity: sensor.living_room_radiator_rear_right_pressure
-                  name: Pressure
-               -  type: custom:mushroom-title-card
-                  title: ''
                -  type: media-control
                   grid_options:
                       columns: 6
@@ -334,27 +324,6 @@ views:
                         show_state: false
                         show_icon: true
                         entity: binary_sensor.master_bedroom_occupancy
-               -  show_name: true
-                  show_icon: false
-                  show_state: true
-                  type: glance
-                  columns: 3
-                  entities:
-                     -  entity: sensor.master_bedroom_netatmo_co2
-                        name: CO2
-                     -  entity: sensor.master_bedroom_radiator_pressure
-                        name: Pressure
-                     -  entity: sensor.master_bedroom_dyson_fan_hcho
-                        name: Formaldehyde
-                     -  entity: 
-                            sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
-                        name: VOCs
-                     -  entity: sensor.master_bedroom_dyson_fan_pm_2_5
-                        name: PM 2.5
-                     -  entity: sensor.master_bedroom_dyson_fan_pm_10
-                        name: PM 10
-               -  type: custom:mushroom-title-card
-                  title: ''
                -  features:
                      -  type: fan-speed
                   type: tile
@@ -474,14 +443,6 @@ views:
                         color: state
                         tap_action:
                             action: more-info
-               -  type: tile
-                  entity: sensor.nursery_netatmo_co2
-                  name: CO2
-               -  type: tile
-                  entity: sensor.nursery_radiator_pressure
-                  name: Pressure
-               -  type: custom:mushroom-title-card
-                  title: ''
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
@@ -551,30 +512,6 @@ views:
                         color: state
                         tap_action:
                             action: more-info
-               -  show_name: true
-                  show_icon: false
-                  show_state: true
-                  type: glance
-                  entities:
-                     -  entity: sensor.toms_office_netatmo_co2
-                        name: C02
-                     -  entity: sensor.toms_office_netatmo_pressure
-                        name: Pressure
-                     -  entity: sensor.toms_office_airgradient_nox_index
-                        name: NOx
-                     -  entity: sensor.toms_office_airgradient_voc_index
-                        name: VOCs
-                     -  entity: sensor.toms_office_airgradient_pm0_3
-                        name: PM0.3
-                     -  entity: sensor.toms_office_airgradient_pm1
-                        name: PM1
-                     -  entity: sensor.toms_office_airgradient_pm2_5
-                        name: PM2.5
-                     -  entity: sensor.toms_office_airgradient_pm10
-                        name: PM10
-                  columns: 4
-               -  type: custom:mushroom-title-card
-                  title: ''
                -  type: media-control
                   entity: media_player.toms_office_arylic_lp10
                   grid_options:
@@ -883,9 +820,16 @@ views:
                         entities:
                            -  entity: sensor.kitchen_netatmo_co2
                               name: Netatmo
+                     -  entity: sensor.kitchen_radiator_pressure
+                        type: custom:multiple-entity-row
+                        name: Pressure
+                        show_state: false
+                        entities:
+                           -  entity: sensor.kitchen_radiator_pressure
+                              name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 3
+                      rows: 4
                -  type: history-graph
                   entities:
                      -  entity: sensor.kitchen_netatmo_temperature
@@ -916,9 +860,16 @@ views:
                         entities:
                            -  entity: sensor.living_room_multisensor_humidity_2
                               name: Multisensor
+                     -  entity: sensor.living_room_radiator_rear_right_pressure
+                        type: custom:multiple-entity-row
+                        name: Pressure
+                        show_state: false
+                        entities:
+                           -  entity: sensor.living_room_radiator_rear_right_pressure
+                              name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 2
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.living_room_multisensor_air_temperature_2
@@ -988,9 +939,16 @@ views:
                         entities:
                            -  entity: sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
                               name: Dyson
+                     -  entity: sensor.master_bedroom_radiator_pressure
+                        type: custom:multiple-entity-row
+                        name: Pressure
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bedroom_radiator_pressure
+                              name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 3
+                      rows: 4
                -  type: history-graph
                   entities:
                      -  entity: sensor.master_bedroom_netatmo_temperature
@@ -1058,9 +1016,16 @@ views:
                         entities:
                            -  entity: sensor.nursery_netatmo_co2
                               name: Netatmo
+                     -  entity: sensor.nursery_radiator_pressure
+                        type: custom:multiple-entity-row
+                        name: Pressure
+                        show_state: false
+                        entities:
+                           -  entity: sensor.nursery_radiator_pressure
+                              name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 3
+                      rows: 4
                -  type: history-graph
                   entities:
                      -  entity: sensor.nursery_netatmo_temperature
@@ -1114,6 +1079,8 @@ views:
                         name: Particulates
                         show_state: false
                         entities:
+                           -  entity: sensor.toms_office_airgradient_pm0_3
+                              name: PM0.3
                            -  entity: sensor.toms_office_airgradient_pm1
                               name: PM1
                            -  entity: sensor.toms_office_airgradient_pm2_5
@@ -1134,9 +1101,16 @@ views:
                         entities:
                            -  entity: sensor.toms_office_airgradient_nox_index
                               name: AirGradient
+                     -  entity: sensor.toms_office_netatmo_pressure
+                        type: custom:multiple-entity-row
+                        name: Pressure
+                        show_state: false
+                        entities:
+                           -  entity: sensor.toms_office_netatmo_pressure
+                              name: Netatmo
                   grid_options:
                       columns: 12
-                      rows: 3
+                      rows: 4
                -  type: history-graph
                   entities:
                      -  entity: sensor.toms_office_multisensor_air_temperature
