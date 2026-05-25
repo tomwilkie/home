@@ -3,7 +3,7 @@ views:
       max_columns: 4
       title: Settings
       path: settings
-      icon: mdi:home-thermometer
+      icon: mdi:cog
       sections:
          -  type: grid
             cards:
