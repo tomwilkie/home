@@ -948,11 +948,11 @@ views:
       path: climate-new
       icon: mdi:home-thermometer-outline
       theme: Backend-selected
-      max_columns: 4
+      max_columns: 3
       badges: []
       sections:
          -  type: grid
-            column_span: 4
+            column_span: 3
             cards:
                -  type: heading
                   heading: Climate Controls
@@ -961,17 +961,17 @@ views:
                -  type: thermostat
                   entity: climate.house_thermostat
                   grid_options:
-                      columns: 12
+                      columns: 9
                       rows: 4
                -  type: thermostat
                   entity: climate.toms_office_aircon
                   grid_options:
-                      columns: 12
+                      columns: 9
                       rows: 4
                -  type: thermostat
                   entity: climate.master_bedroom_aircon
                   grid_options:
-                      columns: 12
+                      columns: 9
                       rows: 4
                -  type: custom:mushroom-fan-card
                   entity: fan.master_bedroom_dyson_fan
@@ -979,12 +979,12 @@ views:
                   show_percentage_control: true
                   show_oscillate_control: false
                   grid_options:
-                      columns: 12
+                      columns: 9
                       rows: 4
                   layout: vertical
                   icon_animation: true
          -  type: grid
-            column_span: 2
+            column_span: 1
             cards:
                -  type: heading
                   heading: Weather
@@ -993,7 +993,7 @@ views:
                   entity: weather.home
                   forecast_type: daily
                   grid_options:
-                      columns: 24
+                      columns: 12
                       rows: 5
          -  type: grid
             column_span: 2
@@ -1047,24 +1047,32 @@ views:
                -  type: heading
                   heading: Kitchen
                   icon: mdi:countertop
-               -  type: tile
-                  entity: sensor.kitchen_netatmo_temperature
-                  name: Temperature
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.kitchen_netatmo_humidity
-                  name: Humidity
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.kitchen_netatmo_co2
-                  name: CO2
+               -  type: entities
+                  entities:
+                     -  entity: sensor.kitchen_netatmo_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.kitchen_netatmo_temperature
+                              name: Netatmo
+                     -  entity: sensor.kitchen_netatmo_humidity
+                        type: custom:multiple-entity-row
+                        name: Humidity
+                        show_state: false
+                        entities:
+                           -  entity: sensor.kitchen_netatmo_humidity
+                              name: Netatmo
+                     -  entity: sensor.kitchen_netatmo_co2
+                        type: custom:multiple-entity-row
+                        name: CO2
+                        show_state: false
+                        entities:
+                           -  entity: sensor.kitchen_netatmo_co2
+                              name: Netatmo
                   grid_options:
                       columns: 12
-                      rows: 1
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.kitchen_netatmo_temperature
@@ -1079,18 +1087,25 @@ views:
                -  type: heading
                   heading: Living Room
                   icon: mdi:sofa
-               -  type: tile
-                  entity: sensor.living_room_multisensor_air_temperature_2
-                  name: Temperature
+               -  type: entities
+                  entities:
+                     -  entity: sensor.living_room_multisensor_air_temperature_2
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.living_room_multisensor_air_temperature_2
+                              name: Multisensor
+                     -  entity: sensor.living_room_multisensor_humidity_2
+                        type: custom:multiple-entity-row
+                        name: Humidity
+                        show_state: false
+                        entities:
+                           -  entity: sensor.living_room_multisensor_humidity_2
+                              name: Multisensor
                   grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.living_room_multisensor_humidity_2
-                  name: Humidity
-                  grid_options:
-                      columns: 6
-                      rows: 1
+                      columns: 12
+                      rows: 2
                -  type: history-graph
                   entities:
                      -  entity: sensor.living_room_multisensor_air_temperature_2
@@ -1105,30 +1120,64 @@ views:
                -  type: heading
                   heading: Master Bedroom
                   icon: mdi:bed-king
-               -  type: tile
-                  entity: sensor.master_bedroom_netatmo_temperature
-                  name: Temperature (Netatmo)
+               -  type: entities
+                  entities:
+                     -  entity: sensor.master_bedroom_netatmo_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bedroom_netatmo_temperature
+                              name: Netatmo
+                           -  entity: sensor.master_bedroom_dyson_fan_temperature
+                              name: Dyson
+                     -  entity: sensor.master_bedroom_netatmo_humidity
+                        type: custom:multiple-entity-row
+                        name: Humidity
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bedroom_netatmo_humidity
+                              name: Netatmo
+                     -  entity: sensor.master_bedroom_netatmo_co2
+                        type: custom:multiple-entity-row
+                        name: CO2
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bedroom_netatmo_co2
+                              name: Netatmo
+                     -  entity: sensor.master_bedroom_dyson_fan_hcho
+                        type: custom:multiple-entity-row
+                        name: HCHO
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bedroom_dyson_fan_hcho
+                              name: Dyson
+                     -  entity: sensor.master_bedroom_dyson_fan_pm_2_5
+                        type: custom:multiple-entity-row
+                        name: Particulates
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bedroom_dyson_fan_pm_2_5
+                              name: PM2.5
+                           -  entity: sensor.master_bedroom_dyson_fan_pm_10
+                              name: PM10
+                     -  entity: sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
+                        type: custom:multiple-entity-row
+                        name: VOC Index
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
+                              name: Dyson
+                     -  entity: sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
+                        type: custom:multiple-entity-row
+                        name: NO2 Index
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
+                              name: Dyson
                   grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.master_bedroom_dyson_fan_temperature
-                  name: Temperature (Dyson)
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.master_bedroom_netatmo_humidity
-                  name: Humidity
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.master_bedroom_netatmo_co2
-                  name: CO2
-                  grid_options:
-                      columns: 6
-                      rows: 1
+                      columns: 12
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.master_bedroom_netatmo_temperature
@@ -1138,50 +1187,21 @@ views:
                   grid_options:
                       columns: 12
                       rows: 3
-               -  type: heading
-                  heading: Air Quality (Dyson)
-                  heading_style: subtitle
-                  icon: mdi:air-filter
-               -  type: tile
-                  entity: sensor.master_bedroom_dyson_fan_hcho
-                  name: HCHO
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.master_bedroom_dyson_fan_pm_2_5
-                  name: PM 2.5
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.master_bedroom_dyson_fan_pm_10
-                  name: PM 10
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: 
-                      sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
-                  name: VOC Index
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
-                  name: NO2 Index
-                  grid_options:
-                      columns: 6
-                      rows: 1
          -  type: grid
             column_span: 1
             cards:
                -  type: heading
                   heading: Master Bathroom
                   icon: mdi:shower
-               -  type: tile
-                  entity: sensor.master_bathroom_motion_sensor_air_temperature
-                  name: Temperature
+               -  type: entities
+                  entities:
+                     -  entity: sensor.master_bathroom_motion_sensor_air_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.master_bathroom_motion_sensor_air_temperature
+                              name: Motion Sensor
                   grid_options:
                       columns: 12
                       rows: 1
@@ -1200,30 +1220,34 @@ views:
                -  type: heading
                   heading: Nursery
                   icon: mdi:baby
-               -  type: tile
-                  entity: sensor.nursery_netatmo_temperature
-                  name: Temperature (Netatmo)
+               -  type: entities
+                  entities:
+                     -  entity: sensor.nursery_netatmo_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.nursery_netatmo_temperature
+                              name: Netatmo
+                           -  entity: sensor.nursery_motion_sensor_air_temperature
+                              name: Motion
+                     -  entity: sensor.nursery_netatmo_humidity
+                        type: custom:multiple-entity-row
+                        name: Humidity
+                        show_state: false
+                        entities:
+                           -  entity: sensor.nursery_netatmo_humidity
+                              name: Netatmo
+                     -  entity: sensor.nursery_netatmo_co2
+                        type: custom:multiple-entity-row
+                        name: CO2
+                        show_state: false
+                        entities:
+                           -  entity: sensor.nursery_netatmo_co2
+                              name: Netatmo
                   grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.nursery_motion_sensor_air_temperature
-                  name: Temperature (Motion)
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.nursery_netatmo_humidity
-                  name: Humidity
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.nursery_netatmo_co2
-                  name: CO2
-                  grid_options:
-                      columns: 6
-                      rows: 1
+                      columns: 12
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.nursery_netatmo_temperature
@@ -1239,84 +1263,67 @@ views:
                -  type: heading
                   heading: Tom's Office
                   icon: mdi:desk
-               -  type: tile
-                  entity: sensor.toms_office_multisensor_air_temperature
-                  name: Temperature (Multisensor)
+               -  type: entities
+                  entities:
+                     -  entity: sensor.toms_office_netatmo_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.toms_office_netatmo_temperature
+                              name: Netatmo
+                           -  entity: sensor.toms_office_multisensor_air_temperature
+                              name: Multisensor
+                           -  entity: sensor.toms_office_airgradient_temperature
+                              name: AirGradient
+                     -  entity: sensor.toms_office_netatmo_humidity
+                        type: custom:multiple-entity-row
+                        name: Humidity
+                        show_state: false
+                        entities:
+                           -  entity: sensor.toms_office_netatmo_humidity
+                              name: Netatmo
+                           -  entity: sensor.toms_office_multisensor_humidity
+                              name: Multisensor
+                           -  entity: sensor.toms_office_airgradient_humidity
+                              name: AirGradient
+                     -  entity: sensor.toms_office_netatmo_co2
+                        type: custom:multiple-entity-row
+                        name: CO2
+                        show_state: false
+                        entities:
+                           -  entity: sensor.toms_office_netatmo_co2
+                              name: Netatmo
+                           -  entity: sensor.toms_office_airgradient_carbon_dioxide
+                              name: AirGradient
+                     -  entity: sensor.toms_office_airgradient_pm1
+                        type: custom:multiple-entity-row
+                        name: Particulates
+                        show_state: false
+                        entities:
+                           -  entity: sensor.toms_office_airgradient_pm1
+                              name: PM1
+                           -  entity: sensor.toms_office_airgradient_pm2_5
+                              name: PM2.5
+                           -  entity: sensor.toms_office_airgradient_pm10
+                              name: PM10
+                     -  entity: sensor.toms_office_airgradient_voc_index
+                        type: custom:multiple-entity-row
+                        name: VOC Index
+                        show_state: false
+                        entities:
+                           -  entity: sensor.toms_office_airgradient_voc_index
+                              name: AirGradient
+                     -  entity: sensor.toms_office_airgradient_nox_index
+                        type: custom:multiple-entity-row
+                        name: NOx Index
+                        show_state: false
+                        entities:
+                           -  entity: sensor.toms_office_airgradient_nox_index
+                              name: AirGradient
                   grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_netatmo_temperature
-                  name: Temperature (Netatmo)
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_airgradient_temperature
-                  name: Temperature (AirGradient)
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_multisensor_humidity
-                  name: Humidity (Multisensor)
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_netatmo_humidity
-                  name: Humidity (Netatmo)
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_airgradient_humidity
-                  name: Humidity (AirGradient)
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_netatmo_co2
-                  name: CO2 (Netatmo)
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_airgradient_carbon_dioxide
-                  name: CO2 (AirGradient)
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_airgradient_pm1
-                  name: PM1
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_airgradient_pm2_5
-                  name: PM2.5
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_airgradient_pm10
-                  name: PM10
-                  grid_options:
-                      columns: 4
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_airgradient_voc_index
-                  name: VOC Index
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.toms_office_airgradient_nox_index
-                  name: NOx Index
-                  grid_options:
-                      columns: 6
-                      rows: 1
+                      columns: 12
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.toms_office_multisensor_air_temperature
@@ -1333,9 +1340,15 @@ views:
                -  type: heading
                   heading: Hallway
                   icon: mdi:door
-               -  type: tile
-                  entity: sensor.hallway_thermostat_current_temperature
-                  name: Temperature
+               -  type: entities
+                  entities:
+                     -  entity: sensor.hallway_thermostat_current_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.hallway_thermostat_current_temperature
+                              name: Thermostat
                   grid_options:
                       columns: 12
                       rows: 1
@@ -1353,24 +1366,27 @@ views:
                -  type: heading
                   heading: Basement
                   icon: mdi:stairs-down
-               -  type: tile
-                  entity: sensor.basement_multisensor_air_temperature
-                  name: Temperature (Multisensor)
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.basement_water_sensor_air_temperature
-                  name: Temperature (Water Sensor)
-                  grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.basement_multisensor_humidity
-                  name: Humidity
+               -  type: entities
+                  entities:
+                     -  entity: sensor.basement_multisensor_air_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.basement_multisensor_air_temperature
+                              name: Multisensor
+                           -  entity: sensor.basement_water_sensor_air_temperature
+                              name: Water Sensor
+                     -  entity: sensor.basement_multisensor_humidity
+                        type: custom:multiple-entity-row
+                        name: Humidity
+                        show_state: false
+                        entities:
+                           -  entity: sensor.basement_multisensor_humidity
+                              name: Multisensor
                   grid_options:
                       columns: 12
-                      rows: 1
+                      rows: 2
                -  type: history-graph
                   entities:
                      -  entity: sensor.basement_multisensor_air_temperature
@@ -1386,18 +1402,25 @@ views:
                -  type: heading
                   heading: Garage
                   icon: mdi:garage
-               -  type: tile
-                  entity: sensor.garage_netatmo_temperature
-                  name: Temperature
+               -  type: entities
+                  entities:
+                     -  entity: sensor.garage_netatmo_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: sensor.garage_netatmo_temperature
+                              name: Netatmo
+                     -  entity: sensor.garage_netatmo_humidity
+                        type: custom:multiple-entity-row
+                        name: Humidity
+                        show_state: false
+                        entities:
+                           -  entity: sensor.garage_netatmo_humidity
+                              name: Netatmo
                   grid_options:
-                      columns: 6
-                      rows: 1
-               -  type: tile
-                  entity: sensor.garage_netatmo_humidity
-                  name: Humidity
-                  grid_options:
-                      columns: 6
-                      rows: 1
+                      columns: 12
+                      rows: 2
                -  type: history-graph
                   entities:
                      -  entity: sensor.garage_netatmo_temperature
