@@ -829,7 +829,7 @@ views:
                               name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 4
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.kitchen_netatmo_temperature
@@ -869,7 +869,7 @@ views:
                               name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 3
+                      rows: 2
                -  type: history-graph
                   entities:
                      -  entity: sensor.living_room_multisensor_air_temperature_2
@@ -948,7 +948,7 @@ views:
                               name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 4
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.master_bedroom_netatmo_temperature
@@ -1025,7 +1025,7 @@ views:
                               name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 4
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.nursery_netatmo_temperature
@@ -1110,7 +1110,7 @@ views:
                               name: Netatmo
                   grid_options:
                       columns: 12
-                      rows: 4
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.toms_office_multisensor_air_temperature
