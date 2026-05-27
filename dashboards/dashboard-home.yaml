@@ -145,8 +145,8 @@ views:
                               entity: input_select.tom_room_selector
                               state: Auto
                            -  condition: state
-                              entity: sensor.tom_s_iphone_area
-                              state: Basement
+                              entity: sensor.tom_s_room
+                              state: basement
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
@@ -209,8 +209,8 @@ views:
                               entity: input_select.tom_room_selector
                               state: Auto
                            -  condition: state
-                              entity: sensor.tom_s_iphone_area
-                              state: Kitchen
+                              entity: sensor.tom_s_room
+                              state: kitchen
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
@@ -296,8 +296,8 @@ views:
                               entity: input_select.tom_room_selector
                               state: Auto
                            -  condition: state
-                              entity: sensor.tom_s_iphone_area
-                              state: Living Room
+                              entity: sensor.tom_s_room
+                              state: living_room
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
@@ -412,8 +412,8 @@ views:
                               entity: input_select.tom_room_selector
                               state: Auto
                            -  condition: state
-                              entity: sensor.tom_s_iphone_area
-                              state: Master Bedroom
+                              entity: sensor.tom_s_room
+                              state: master_bedroom
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
@@ -474,7 +474,7 @@ views:
                   conditions:
                      -  condition: state
                         entity: input_select.tom_room_selector
-                        state: Rachana's Office
+                        state: Nursery
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
@@ -613,6 +613,23 @@ views:
                   features:
                      -  type: cover-open-close
                   features_position: inline
+            visibility:
+               -  condition: or
+                  conditions:
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: Master Bathroom
+                     -  condition: and
+                        conditions:
+                           -  condition: state
+                              entity: input_select.tom_room_selector
+                              state: Auto
+                           -  condition: state
+                              entity: sensor.tom_s_room
+                              state: master_bathroom
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: All
       max_columns: 3
       cards: []
    -  theme: Backend-selected
