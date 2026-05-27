@@ -69,6 +69,41 @@ The primary dashboard used on mobile and desktop. Has four views:
 | Climate | `climate` | Thermostat controls, per-room sensor cards, weather forecast, central heating history, and boiler status. See [Climate view layout](#climate-view-layout) below. |
 | Cameras | _(default)_ | Live picture-entity feeds: front door, garage (AI Pro), garage door, G5 Turret Ultra. |
 
+#### Home view layout
+
+`type: sections`, `max_columns: 3`
+
+**Section 1 — Header / selector** (`column_span: 3`, full width)
+- `custom:mushroom-select-card` bound to `input_select.tom_room_selector` — lets Tom manually pick a room or switch to Auto/All mode
+- `sensor.tom_s_iphone_area` tile (Tom's current room, display-name format)
+- `sensor.rachanas_iphone_area` tile + `person.rachana_shanbhogue` tile
+- `binary_sensor.house_occupancy` tile
+
+**Sections 2–8 — Rooms**
+
+Each room section has a `visibility` block with an `or` condition:
+1. Selector is set to that room's name (manual override)
+2. Selector is `Auto` **and** `sensor.tom_s_room` equals the room's area slug (e.g. `living_room`)
+3. Selector is `All`
+
+`sensor.tom_s_room` returns the area slug (e.g. `living_room`, `toms_office`) — all Auto-mode conditions use this entity consistently.
+
+Rooms in order, with their area slugs and notable cards:
+
+| Room | Slug | Notable cards |
+|---|---|---|
+| Basement | `basement` | Media player, Auto Lights toggle, Lights toggle, Roomba, Washing Machine state, Tumble Dryer state |
+| Kitchen | `kitchen` | Roomba, Kitchen Display media player |
+| Living Room | `living_room` | Apple TV media player, Auto Lights toggle, Lights toggle, Roomba |
+| Master Bedroom | `master_bedroom` | Dyson fan tile, Aircon tile, Shutters cover, Lights toggle, Electric Blanket |
+| Nursery | `nursery` | Lights toggle, Auto Lights toggle |
+| Tom's Office | `toms_office` | Arylic LP10 media player, Lights toggle, Auto Lights toggle, Roomba, Aircon tile |
+| Master Bathroom | `master_bathroom` | Velux cover |
+
+Each section heading card shows environment sensor badges (temperature, humidity, occupancy) sourced from the area's primary sensor device.
+
+---
+
 #### Climate view layout
 
 `type: sections`, `max_columns: 3`, `theme: Backend-selected`
