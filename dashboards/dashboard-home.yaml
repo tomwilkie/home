@@ -170,6 +170,12 @@ views:
                         tap_action:
                             action: more-info
                      -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.kitchen_netatmo_co2
+                        tap_action:
+                            action: more-info
+                     -  type: entity
                         show_state: false
                         show_icon: true
                         entity: binary_sensor.kitchen_occupancy
@@ -245,6 +251,11 @@ views:
                       columns: 6
                       rows: 2
                   entity: media_player.living_room_apple_tv
+               -  type: media-control
+                  grid_options:
+                      columns: 6
+                      rows: 2
+                  entity: media_player.living_room_arylic_lp10_music_assistant
                -  type: tile
                   entity: automation.living_room_lights
                   layout_options:
@@ -321,9 +332,20 @@ views:
                         tap_action:
                             action: more-info
                      -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.master_bedroom_netatmo_co2
+                        tap_action:
+                            action: more-info
+                     -  type: entity
                         show_state: false
                         show_icon: true
                         entity: binary_sensor.master_bedroom_occupancy
+               -  type: media-control
+                  grid_options:
+                      columns: 6
+                      rows: 2
+                  entity: media_player.master_bedroom_wiim_sound_speaker
                -  features:
                      -  type: fan-speed
                   type: tile
@@ -437,6 +459,12 @@ views:
                         tap_action:
                             action: more-info
                      -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.nursery_netatmo_co2
+                        tap_action:
+                            action: more-info
+                     -  type: entity
                         show_state: false
                         show_icon: true
                         entity: binary_sensor.nursery_occupancy
@@ -506,6 +534,12 @@ views:
                         tap_action:
                             action: more-info
                      -  type: entity
+                        show_state: true
+                        show_icon: true
+                        entity: sensor.toms_office_netatmo_co2
+                        tap_action:
+                            action: more-info
+                     -  type: entity
                         show_state: false
                         show_icon: true
                         entity: binary_sensor.toms_office_occupancy
@@ -513,7 +547,7 @@ views:
                         tap_action:
                             action: more-info
                -  type: media-control
-                  entity: media_player.toms_office_arylic_lp10
+                  entity: media_player.toms_office_arylic_lp10_music_assistant
                   grid_options:
                       columns: 6
                       rows: 2
@@ -627,6 +661,63 @@ views:
                            -  condition: state
                               entity: sensor.tom_s_room
                               state: master_bathroom
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: All
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Rear Guest Room
+                  heading_style: title
+                  icon: mdi:bed-outline
+                  badges:
+                     -  type: entity
+                        show_state: false
+                        show_icon: true
+                        entity: binary_sensor.rear_guest_room_occupancy
+                        color: state
+                        tap_action:
+                            action: more-info
+               -  type: custom:mushroom-template-card
+                  primary: Lights
+                  secondary: ''
+                  icon: mdi:lightbulb
+                  icon_color: "{% set label_entity_ids = label_entities('room-light')
+                      | list %}\n{% if expand(area_entities('Rear Guest Room')) | selectattr('domain',
+                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
+                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
+                      else %}\n  grey\n{% endif %}"
+                  tap_action:
+                      action: perform-action
+                      perform_action: script.call_service
+                      data:
+                          service: light.toggle
+                          domain: light
+                          area_id_filter: rear_guest_room
+                          label_id_filter: room-light
+               -  type: tile
+                  entity: automation.rear_guest_room_lights
+                  layout_options:
+                      grid_columns: 2
+                      grid_rows: 1
+                  name: Auto Lights
+                  tap_action:
+                      action: toggle
+                  icon: mdi:ceiling-light
+            visibility:
+               -  condition: or
+                  conditions:
+                     -  condition: state
+                        entity: input_select.tom_room_selector
+                        state: Rear Guest Room
+                     -  condition: and
+                        conditions:
+                           -  condition: state
+                              entity: input_select.tom_room_selector
+                              state: Auto
+                           -  condition: state
+                              entity: sensor.tom_s_room
+                              state: rear_guest_room
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
