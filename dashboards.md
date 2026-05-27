@@ -64,7 +64,7 @@ The primary dashboard used on mobile and desktop. Has four views:
 
 | View | Path | Purpose |
 |---|---|---|
-| Home | `home` | Per-room controls, shown conditionally based on Tom's location (room selector or auto-detected). Covers Basement, Kitchen, Living Room, Master Bedroom, Nursery, Tom's Office, Master Bathroom. Each section shows environment sensors, lights toggle, media player, and room appliances (vacuum, shutters, aircon, etc.). |
+| Home | `home` | Per-room controls, shown conditionally based on Tom's location (room selector or auto-detected). Covers Basement, Kitchen, Living Room, Master Bedroom, Nursery, Tom's Office, Master Bathroom, Rear Guest Room. Each section shows environment sensors, lights toggle, media player, and room appliances (vacuum, shutters, aircon, etc.). |
 | Lighting | `lighting` | Lists all `room-light`-labelled entities per area for bulk management. |
 | Climate | `climate` | Thermostat controls, per-room sensor cards, weather forecast, central heating history, and boiler status. See [Climate view layout](#climate-view-layout) below. |
 | Cameras | _(default)_ | Live picture-entity feeds: front door, garage (AI Pro), garage door, G5 Turret Ultra. |
@@ -79,7 +79,7 @@ The primary dashboard used on mobile and desktop. Has four views:
 - `sensor.rachanas_iphone_area` tile + `person.rachana_shanbhogue` tile
 - `binary_sensor.house_occupancy` tile
 
-**Sections 2–8 — Rooms**
+**Sections 2–9 — Rooms**
 
 Each room section has a `visibility` block with an `or` condition:
 1. Selector is set to that room's name (manual override)
@@ -92,15 +92,24 @@ Rooms in order, with their area slugs and notable cards:
 
 | Room | Slug | Notable cards |
 |---|---|---|
-| Basement | `basement` | Media player, Auto Lights toggle, Lights toggle, Roomba, Washing Machine state, Tumble Dryer state |
+| Basement | `basement` | Media player (`media_player.basement_home_cinema`), Auto Lights toggle, Lights toggle, Roomba, Washing Machine state, Tumble Dryer state |
 | Kitchen | `kitchen` | Roomba, Kitchen Display media player |
-| Living Room | `living_room` | Apple TV media player, Auto Lights toggle, Lights toggle, Roomba |
-| Master Bedroom | `master_bedroom` | Dyson fan tile, Aircon tile, Shutters cover, Lights toggle, Electric Blanket |
+| Living Room | `living_room` | Apple TV media player, Arylic LP10 media player (Music Assistant), Auto Lights toggle, Lights toggle, Roomba |
+| Master Bedroom | `master_bedroom` | WiiM Sound media player (Music Assistant), Dyson fan tile, Aircon tile, Shutters cover, Lights toggle, Electric Blanket |
 | Nursery | `nursery` | Lights toggle, Auto Lights toggle |
-| Tom's Office | `toms_office` | Arylic LP10 media player, Lights toggle, Auto Lights toggle, Roomba, Aircon tile |
+| Tom's Office | `toms_office` | Arylic LP10 media player (Music Assistant), Lights toggle, Auto Lights toggle, Roomba, Aircon tile |
 | Master Bathroom | `master_bathroom` | Velux cover |
+| Rear Guest Room | `rear_guest_room` | Lights toggle, Auto Lights toggle |
 
-Each section heading card shows environment sensor badges (temperature, humidity, occupancy) sourced from the area's primary sensor device.
+Each section heading card shows environment sensor badges sourced from the area's primary sensor device:
+- **Temperature** and **Humidity**: all rooms except Rear Guest Room (no sensor)
+- **CO2**: rooms with a Netatmo CO2 sensor — Kitchen, Master Bedroom, Nursery, Tom's Office
+- **Occupancy**: all rooms
+- Master Bathroom shows Temperature and Occupancy only (no humidity sensor)
+
+**Media player rule**: when both a native integration entity and a Music Assistant entity exist for the same device, always use the Music Assistant entity. Exception: `media_player.basement_home_cinema` is Apple TV native (`platform: apple_tv`) with no Music Assistant equivalent — use the native entity.
+
+**What does not appear in any section**: adaptive lighting switches (`switch.adaptive_lighting_*`). These are managed from the Settings dashboard only.
 
 ---
 
