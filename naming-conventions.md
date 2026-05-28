@@ -25,6 +25,7 @@ Renaming an entity ID does **not** propagate automatically. Always update:
 2. Automations that reference the old entity ID
 3. Template helpers whose `state` template references the old entity ID
 4. Scripts
+5. Groups — use `ha_get_state("group.entity_id")` or `ha_get_state("media_player.group_entity")` to inspect member lists, then `ha_config_set_helper(helper_type="group", ...)` to update. Use `ha_deep_search(query="old_entity_id")` to find any group or script that references the old ID.
 
 ## Areas
 
