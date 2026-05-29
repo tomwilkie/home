@@ -230,13 +230,13 @@ views:
                      -  type: entity
                         show_state: true
                         show_icon: true
-                        entity: sensor.living_room_multisensor_air_temperature_2
+                        entity: sensor.living_room_environmental_sensor_temperature
                         tap_action:
                             action: more-info
                      -  type: entity
                         show_state: true
                         show_icon: true
-                        entity: sensor.living_room_multisensor_humidity_2
+                        entity: sensor.living_room_environmental_sensor_humidity
                         tap_action:
                             action: more-info
                      -  type: entity
@@ -344,8 +344,28 @@ views:
                -  type: media-control
                   grid_options:
                       columns: 6
-                      rows: 2
+                      rows: 1
                   entity: media_player.master_bedroom_wiim_sound_speaker
+               -  type: custom:mushroom-template-card
+                  primary: Lights
+                  secondary: ''
+                  icon: mdi:lightbulb
+                  icon_color: "{% set label_entity_ids = label_entities('room-light')
+                      | list %}\n{% if expand(area_entities('Master Bedroom')) | selectattr('domain',
+                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
+                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
+                      else %}\n  grey\n{% endif %}"
+                  tap_action:
+                      action: perform-action
+                      perform_action: script.call_service
+                      data:
+                          service: light.toggle
+                          domain: light
+                          area_id_filter: master_bedroom
+                          label_id_filter: room-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  features:
                      -  type: fan-speed
                   type: tile
@@ -391,26 +411,6 @@ views:
                   features:
                      -  type: cover-open-close
                   features_position: inline
-               -  type: custom:mushroom-template-card
-                  primary: Lights
-                  secondary: ''
-                  icon: mdi:lightbulb
-                  icon_color: "{% set label_entity_ids = label_entities('room-light')
-                      | list %}\n{% if expand(area_entities('Master Bedroom')) | selectattr('domain',
-                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
-                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
-                      else %}\n  grey\n{% endif %}"
-                  tap_action:
-                      action: perform-action
-                      perform_action: script.call_service
-                      data:
-                          service: light.toggle
-                          domain: light
-                          area_id_filter: master_bedroom
-                          label_id_filter: room-light
-                  grid_options:
-                      columns: 12
-                      rows: 1
                -  type: tile
                   grid_options:
                       columns: 12
@@ -683,10 +683,10 @@ views:
                   secondary: ''
                   icon: mdi:lightbulb
                   icon_color: "{% set label_entity_ids = label_entities('room-light')
-                      | list %}\n{% if expand(area_entities('Rear Guest Room')) | selectattr('domain',
-                      '==', 'light') | selectattr('state', '==', 'on') | selectattr('entity_id',
-                      'in', label_entity_ids) | list | count > 0  %}\n  yellow\n{%
-                      else %}\n  grey\n{% endif %}"
+                      | list %}\n{% if expand(area_entities('Rear Guest Room')) |
+                      selectattr('domain', '==', 'light') | selectattr('state', '==',
+                      'on') | selectattr('entity_id', 'in', label_entity_ids) | list
+                      | count > 0  %}\n  yellow\n{% else %}\n  grey\n{% endif %}"
                   tap_action:
                       action: perform-action
                       perform_action: script.call_service
@@ -959,8 +959,11 @@ views:
                         name: Temperature
                         show_state: false
                         entities:
-                           -  entity: sensor.living_room_multisensor_air_temperature_2
+                           -  entity:
+                                  sensor.living_room_multisensor_air_temperature_2
                               name: Multisensor
+                           -  entity: sensor.living_room_environmental_sensor_temperature
+                              name: Environmental
                      -  entity: sensor.living_room_multisensor_humidity_2
                         type: custom:multiple-entity-row
                         name: Humidity
@@ -968,19 +971,23 @@ views:
                         entities:
                            -  entity: sensor.living_room_multisensor_humidity_2
                               name: Multisensor
+                           -  entity: sensor.living_room_environmental_sensor_humidity
+                              name: Environmental
                      -  entity: sensor.living_room_radiator_rear_right_pressure
                         type: custom:multiple-entity-row
                         name: Pressure
                         show_state: false
                         entities:
-                           -  entity: sensor.living_room_radiator_rear_right_pressure
+                           -  entity:
+                                  sensor.living_room_radiator_rear_right_pressure
                               name: Radiator
                   grid_options:
                       columns: 12
-                      rows: 2
+                      rows: 3
                -  type: history-graph
                   entities:
                      -  entity: sensor.living_room_multisensor_air_temperature_2
+                     -  entity: sensor.living_room_environmental_sensor_temperature
                   hours_to_show: 24
                   show_names: false
                   grid_options:
@@ -1001,7 +1008,8 @@ views:
                         entities:
                            -  entity: sensor.master_bedroom_netatmo_temperature
                               name: Netatmo
-                           -  entity: sensor.master_bedroom_dyson_fan_temperature
+                           -  entity: 
+                                  sensor.master_bedroom_dyson_fan_temperature
                               name: Dyson
                      -  entity: sensor.master_bedroom_netatmo_humidity
                         type: custom:multiple-entity-row
@@ -1033,19 +1041,23 @@ views:
                               name: PM2.5
                            -  entity: sensor.master_bedroom_dyson_fan_pm_10
                               name: PM10
-                     -  entity: sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
+                     -  entity: 
+                            sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
                         type: custom:multiple-entity-row
                         name: VOC Index
                         show_state: false
                         entities:
-                           -  entity: sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
+                           -  entity: 
+                                  sensor.master_bedroom_dyson_fan_volatile_organic_compounds_index
                               name: Dyson
-                     -  entity: sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
+                     -  entity: 
+                            sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
                         type: custom:multiple-entity-row
                         name: NO2 Index
                         show_state: false
                         entities:
-                           -  entity: sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
+                           -  entity: 
+                                  sensor.master_bedroom_dyson_fan_nitrogen_dioxide_index
                               name: Dyson
                      -  entity: sensor.master_bedroom_radiator_pressure
                         type: custom:multiple-entity-row
@@ -1074,12 +1086,14 @@ views:
                   icon: mdi:shower
                -  type: entities
                   entities:
-                     -  entity: sensor.master_bathroom_motion_sensor_air_temperature
+                     -  entity: 
+                            sensor.master_bathroom_motion_sensor_air_temperature
                         type: custom:multiple-entity-row
                         name: Temperature
                         show_state: false
                         entities:
-                           -  entity: sensor.master_bathroom_motion_sensor_air_temperature
+                           -  entity: 
+                                  sensor.master_bathroom_motion_sensor_air_temperature
                               name: Motion Sensor
                   grid_options:
                       columns: 12
@@ -1108,7 +1122,8 @@ views:
                         entities:
                            -  entity: sensor.nursery_netatmo_temperature
                               name: Netatmo
-                           -  entity: sensor.nursery_motion_sensor_air_temperature
+                           -  entity: 
+                                  sensor.nursery_motion_sensor_air_temperature
                               name: Motion
                      -  entity: sensor.nursery_netatmo_humidity
                         type: custom:multiple-entity-row
@@ -1158,7 +1173,8 @@ views:
                         entities:
                            -  entity: sensor.toms_office_netatmo_temperature
                               name: Netatmo
-                           -  entity: sensor.toms_office_multisensor_air_temperature
+                           -  entity: 
+                                  sensor.toms_office_multisensor_air_temperature
                               name: Multisensor
                            -  entity: sensor.toms_office_airgradient_temperature
                               name: AirGradient
@@ -1180,7 +1196,8 @@ views:
                         entities:
                            -  entity: sensor.toms_office_netatmo_co2
                               name: Netatmo
-                           -  entity: sensor.toms_office_airgradient_carbon_dioxide
+                           -  entity: 
+                                  sensor.toms_office_airgradient_carbon_dioxide
                               name: AirGradient
                      -  entity: sensor.toms_office_airgradient_pm1
                         type: custom:multiple-entity-row
@@ -1242,7 +1259,8 @@ views:
                         name: Temperature
                         show_state: false
                         entities:
-                           -  entity: sensor.hallway_thermostat_current_temperature
+                           -  entity: 
+                                  sensor.hallway_thermostat_current_temperature
                               name: Thermostat
                   grid_options:
                       columns: 12
@@ -1268,9 +1286,11 @@ views:
                         name: Temperature
                         show_state: false
                         entities:
-                           -  entity: sensor.basement_multisensor_air_temperature
+                           -  entity: 
+                                  sensor.basement_multisensor_air_temperature
                               name: Multisensor
-                           -  entity: sensor.basement_water_sensor_air_temperature
+                           -  entity: 
+                                  sensor.basement_water_sensor_air_temperature
                               name: Water Sensor
                      -  entity: sensor.basement_multisensor_humidity
                         type: custom:multiple-entity-row
