@@ -647,6 +647,26 @@ views:
                   features:
                      -  type: cover-open-close
                   features_position: inline
+               -  type: custom:mushroom-template-card
+                  grid_options:
+                      columns: 12
+                      rows: 1
+                  primary: Hot Water
+                  secondary: "{% if is_state('binary_sensor.basement_hotwater_state',
+                      'on') %}\n  Heating (tap to stop)\n{% else %}\n  Last on {{
+                      relative_time(states.binary_sensor.basement_hotwater_state.last_changed)
+                      }} ago (tap to boost)\n{% endif %}\n"
+                  icon: "{% if is_state('binary_sensor.basement_hotwater_state', 'on')
+                      %}\n  mdi:water-boiler\n{% else %}\n  mdi:water-boiler-off\n\
+                      {% endif %}\n"
+                  icon_color: "{% if is_state('binary_sensor.basement_hotwater_state',
+                      'on') %}\n  orange\n{% else %}\n  grey\n{% endif %}\n"
+                  entity: binary_sensor.basement_hotwater_state
+                  tap_action:
+                      action: perform-action
+                      perform_action: script.toggle_hot_water_boost
+                  hold_action:
+                      action: more-info
             visibility:
                -  condition: or
                   conditions:
