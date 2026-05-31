@@ -12,15 +12,48 @@ views:
                   secondary_info: none
                   layout: horizontal
                   icon: mdi:office-building
-               -  type: tile
-                  entity: sensor.tom_s_iphone_area
-                  name: Tom's Location
-                  icon: mdi:home
-               -  type: tile
-                  entity: sensor.rachanas_iphone_area
-                  name: Rachana's Location
-                  vertical: false
-                  features_position: bottom
+               -  type: custom:mushroom-template-card
+                  entity: person.tom_wilkie
+                  primary: |
+                      {% if is_state('person.tom_wilkie', 'home') %}
+                        {{ states('sensor.tom_s_iphone_area') }}
+                      {% else %}
+                        {% set loc = states('sensor.toms_iphone_geocoded_location') %}
+                        {% if loc not in ('unavailable', 'unknown', '') %}
+                          {% set parts = loc.split('\n') | map('trim') | list %}
+                          {{ parts[0] ~ ', ' ~ parts[1] if parts | length >= 2 else parts[0] }}
+                        {% else %}
+                          Away
+                        {% endif %}
+                      {% endif %}
+                  secondary: Tom
+                  icon: |
+                      {% if is_state('person.tom_wilkie', 'home') %}
+                        mdi:home
+                      {% else %}
+                        mdi:map-marker
+                      {% endif %}
+               -  type: custom:mushroom-template-card
+                  entity: person.rachana_shanbhogue
+                  primary: |
+                      {% if is_state('person.rachana_shanbhogue', 'home') %}
+                        {{ states('sensor.rachanas_iphone_area') }}
+                      {% else %}
+                        {% set loc = states('sensor.rachanas_iphone_geocoded_location') %}
+                        {% if loc not in ('unavailable', 'unknown', '') %}
+                          {% set parts = loc.split('\n') | map('trim') | list %}
+                          {{ parts[0] ~ ', ' ~ parts[1] if parts | length >= 2 else parts[0] }}
+                        {% else %}
+                          Away
+                        {% endif %}
+                      {% endif %}
+                  secondary: Rachana
+                  icon: |
+                      {% if is_state('person.rachana_shanbhogue', 'home') %}
+                        mdi:home
+                      {% else %}
+                        mdi:map-marker
+                      {% endif %}
                -  type: tile
                   entity: person.rachana_shanbhogue
                   show_entity_picture: true
@@ -230,7 +263,8 @@ views:
                      -  type: entity
                         show_state: true
                         show_icon: true
-                        entity: sensor.living_room_environmental_sensor_temperature
+                        entity: 
+                            sensor.living_room_environmental_sensor_temperature
                         tap_action:
                             action: more-info
                      -  type: entity
@@ -979,10 +1013,11 @@ views:
                         name: Temperature
                         show_state: false
                         entities:
-                           -  entity:
+                           -  entity: 
                                   sensor.living_room_multisensor_air_temperature_2
                               name: Multisensor
-                           -  entity: sensor.living_room_environmental_sensor_temperature
+                           -  entity: 
+                                  sensor.living_room_environmental_sensor_temperature
                               name: Environmental
                      -  entity: sensor.living_room_multisensor_humidity_2
                         type: custom:multiple-entity-row
@@ -991,14 +1026,15 @@ views:
                         entities:
                            -  entity: sensor.living_room_multisensor_humidity_2
                               name: Multisensor
-                           -  entity: sensor.living_room_environmental_sensor_humidity
+                           -  entity: 
+                                  sensor.living_room_environmental_sensor_humidity
                               name: Environmental
                      -  entity: sensor.living_room_radiator_rear_right_pressure
                         type: custom:multiple-entity-row
                         name: Pressure
                         show_state: false
                         entities:
-                           -  entity:
+                           -  entity: 
                                   sensor.living_room_radiator_rear_right_pressure
                               name: Radiator
                   grid_options:
@@ -1007,7 +1043,8 @@ views:
                -  type: history-graph
                   entities:
                      -  entity: sensor.living_room_multisensor_air_temperature_2
-                     -  entity: sensor.living_room_environmental_sensor_temperature
+                     -  entity: 
+                            sensor.living_room_environmental_sensor_temperature
                   hours_to_show: 24
                   show_names: false
                   grid_options:
