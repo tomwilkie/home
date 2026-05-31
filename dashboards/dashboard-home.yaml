@@ -6,6 +6,18 @@ views:
       sections:
          -  type: grid
             cards:
+               -  type: heading
+                  heading: My Home
+                  heading_style: title
+                  icon: mdi:home
+                  badges:
+                     -  type: entity
+                        entity: binary_sensor.house_occupancy
+                        show_state: false
+                        show_icon: true
+                        color: state
+                        tap_action:
+                            action: more-info
                -  type: custom:mushroom-select-card
                   entity: input_select.tom_room_selector
                   primary_info: none
@@ -54,14 +66,6 @@ views:
                       {% else %}
                         mdi:map-marker
                       {% endif %}
-            badges:
-               -  type: entity
-                  entity: binary_sensor.house_occupancy
-                  show_state: false
-                  show_icon: true
-                  color: state
-                  tap_action:
-                      action: more-info
             column_span: 3
          -  type: grid
             cards:
