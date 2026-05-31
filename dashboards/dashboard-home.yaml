@@ -24,48 +24,38 @@ views:
                   secondary_info: none
                   layout: horizontal
                   icon: mdi:office-building
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  type: custom:mushroom-template-card
                   entity: person.tom_wilkie
-                  primary: |
-                      {% if is_state('person.tom_wilkie', 'home') %}
-                        {{ states('sensor.tom_s_iphone_area') }}
-                      {% else %}
-                        {% set loc = states('sensor.toms_iphone_geocoded_location') %}
-                        {% if loc not in ('unavailable', 'unknown', '') %}
-                          {% set parts = loc.split('\n') | map('trim') | list %}
-                          {{ parts[0] ~ ', ' ~ parts[1] if parts | length >= 2 else parts[0] }}
-                        {% else %}
-                          Away
-                        {% endif %}
-                      {% endif %}
-                  secondary: Tom
-                  icon: |
-                      {% if is_state('person.tom_wilkie', 'home') %}
-                        mdi:home
-                      {% else %}
-                        mdi:map-marker
-                      {% endif %}
+                  secondary: "{% if is_state('person.tom_wilkie', 'home') %}\n  {{
+                      states('sensor.tom_s_iphone_area') }}\n{% else %}\n  {% set
+                      loc = states('sensor.toms_iphone_geocoded_location') %}\n  {%
+                      if loc not in ('unavailable', 'unknown', '') %}\n    {% set
+                      parts = loc.split('\\n') | map('trim') | list %}\n    {{ parts[0]
+                      ~ ', ' ~ parts[1] if parts | length >= 2 else parts[0] }}\n\
+                      \  {% else %}\n    Away\n  {% endif %}\n{% endif %}"
+                  grid_options:
+                      columns: 3
+                      rows: 1
+                  features_position: bottom
+                  primary: Tom
                -  type: custom:mushroom-template-card
                   entity: person.rachana_shanbhogue
-                  primary: |
-                      {% if is_state('person.rachana_shanbhogue', 'home') %}
-                        {{ states('sensor.rachanas_iphone_area') }}
-                      {% else %}
-                        {% set loc = states('sensor.rachanas_iphone_geocoded_location') %}
-                        {% if loc not in ('unavailable', 'unknown', '') %}
-                          {% set parts = loc.split('\n') | map('trim') | list %}
-                          {{ parts[0] ~ ', ' ~ parts[1] if parts | length >= 2 else parts[0] }}
-                        {% else %}
-                          Away
-                        {% endif %}
-                      {% endif %}
-                  secondary: Rachana
-                  icon: |
-                      {% if is_state('person.rachana_shanbhogue', 'home') %}
-                        mdi:home
-                      {% else %}
-                        mdi:map-marker
-                      {% endif %}
+                  secondary: "{% if is_state('person.rachana_shanbhogue', 'home')
+                      %}\n  {{ states('sensor.rachanas_iphone_area') }}\n{% else %}\n\
+                      \  {% set loc = states('sensor.rachanas_iphone_geocoded_location')
+                      %}\n  {% if loc not in ('unavailable', 'unknown', '') %}\n \
+                      \   {% set parts = loc.split('\\n') | map('trim') | list %}\n\
+                      \    {{ parts[0] ~ ', ' ~ parts[1] if parts | length >= 2 else
+                      parts[0] }}\n  {% else %}\n    Away\n  {% endif %}\n{% endif
+                      %}\n"
+                  grid_options:
+                      columns: 3
+                      rows: 1
+                  features_position: bottom
+                  primary: Rachana
             column_span: 3
          -  type: grid
             cards:
