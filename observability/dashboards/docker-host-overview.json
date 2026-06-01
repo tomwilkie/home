@@ -36,7 +36,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "### 🐳 Docker - Host Overview — ${instance}\n\nAggregate resource usage across all containers on a single Docker host.",
+          "content": "### \ud83d\udc33 Docker - Host Overview \u2014 ${instance}\n\nAggregate resource usage across all containers on a single Docker host.",
           "mode": "markdown"
         },
         "pluginVersion": "13.1.0-25668120414",
@@ -1469,7 +1469,6 @@
     "canSave": true,
     "canStar": true,
     "created": "2026-05-20T10:21:01Z",
-    "createdBy": "REDACTED",
     "expires": "0001-01-01T00:00:00Z",
     "folderId": 0,
     "folderTitle": "General",
@@ -1482,7 +1481,6 @@
     "slug": "docker-host-overview",
     "type": "db",
     "updated": "2026-05-20T11:13:19Z",
-    "updatedBy": "REDACTED",
     "url": "/d/docker-host-overview/docker-host-overview",
     "version": 3
   }

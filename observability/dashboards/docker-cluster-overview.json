@@ -51,7 +51,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "### 🐳 Docker - Cluster Overview\n\nCross-host summary — one row per Docker host — for comparing CPU, memory, network, and disk usage across all instances.",
+          "content": "### \ud83d\udc33 Docker - Cluster Overview\n\nCross-host summary \u2014 one row per Docker host \u2014 for comparing CPU, memory, network, and disk usage across all instances.",
           "mode": "markdown"
         },
         "pluginVersion": "13.1.0-25668120414",
@@ -829,7 +829,6 @@
     "canSave": true,
     "canStar": true,
     "created": "2026-05-19T15:52:58Z",
-    "createdBy": "REDACTED",
     "expires": "0001-01-01T00:00:00Z",
     "folderId": 0,
     "folderTitle": "General",
@@ -842,7 +841,6 @@
     "slug": "docker-cluster-overview",
     "type": "db",
     "updated": "2026-05-20T11:08:31Z",
-    "updatedBy": "REDACTED",
     "url": "/d/docker-cluster-overview/docker-cluster-overview",
     "version": 5
   }

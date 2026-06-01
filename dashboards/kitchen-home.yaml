@@ -167,8 +167,7 @@ views:
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
-                  streams:
-                     -  url: REDACTED_RTSP_STREAM
+                  entity: camera.front_door_high_resolution_channel
                   ui: false
                   digital_ptz: false
                   muted: true
@@ -178,8 +177,7 @@ views:
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
-                  streams:
-                     -  url: REDACTED_RTSP_STREAM
+                  entity: camera.garage_ai_pro_high_resolution_channel
                   intersection: 0.75
                   ui: false
                   digital_ptz: false
@@ -189,8 +187,7 @@ views:
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
-                  streams:
-                     -  url: REDACTED_RTSP_STREAM
+                  entity: camera.garage_door_high_resolution_channel
                   intersection: 0.75
                   ui: false
                   digital_ptz: false

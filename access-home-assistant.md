@@ -4,7 +4,7 @@ You can talk to Home Assistant in the following ways
 
 ## Home Assistant MCP server
 
-Use the `mcp__home-assistant__*` tools to read and write live HA configuration. The MCP server connects to `http://homeassistant.local:8123` or `http://homeassistant.local` when on the local network.
+Use the `mcp__home-assistant__*` tools to read and write live HA configuration. The MCP server connects to `http://homeassistant.local:8123` when on the local network.
 
 ## Home Assistant CLI
 
