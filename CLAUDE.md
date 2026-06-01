@@ -10,3 +10,21 @@ The live Home Assistant configuration (automations, scripts, helpers, dashboards
 - Refer to @dashboards.md for the GitOps workflow for managing dashboards and the purpose of each dashboard.
 - Refer to @observability.md for how metrics and logs are shipped to Grafana Cloud via Grafana Alloy.
 
+# PII and Secrets Policy
+
+This is a public repo. Before committing anything, check it against these rules.
+
+## Allowed
+- First names of household members (Tom, Rachana)
+- MAC addresses, private IP addresses (192.168.x.x, 10.x.x.x), Zigbee IEEE addresses
+- Local hostnames (e.g. `homeassistant.local`)
+- Internal HA device IDs and entity IDs (even those derived from hardware identifiers)
+- MQTT credentials for the local broker if they are already embedded in documentation examples
+
+## Never commit
+- The home street address or postcode in any form — in entity IDs, display names, headings, or prose. Use `home` or `My Home` instead (e.g. `weather.home`, `zone.home`).
+- Public IP addresses or external URLs that could identify the home network or expose services
+- API keys, long-lived access tokens, bearer tokens, or any credential that grants access to an external service (Grafana Cloud, GitHub, cloud integrations, etc.)
+- Webhook IDs that are live and secret (placeholder values like `<your-webhook-id>` are fine)
+- Full surnames of non-household third parties
+
