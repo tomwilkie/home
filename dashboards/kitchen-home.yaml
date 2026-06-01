@@ -24,23 +24,22 @@ views:
                         show_state: true
                         show_icon: true
                         entity: sensor.kitchen_netatmo_humidity
-               -  features:
-                     -  type: vacuum-commands
-                        commands:
-                           -  start_pause
-                           -  stop
-                           -  return_home
-                  type: tile
-                  entity: vacuum.kitchen_vacuum
+               -  type: tile
                   layout_options:
                       grid_columns: 4
                       grid_rows: 1
+                  entity: vacuum.kitchen_vacuum
                   show_entity_picture: false
-                  vertical: false
                   hide_state: false
                   state_content:
                      -  state
                      -  last-changed
+                  vertical: false
+                  features:
+                     -  type: vacuum-commands
+                        commands:
+                           -  start_pause
+                           -  return_home
                   features_position: inline
                -  type: custom:mushroom-template-card
                   grid_options:
@@ -167,7 +166,8 @@ views:
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
-                  entity: camera.front_door_high_resolution_channel
+                  streams:
+                     -  url: rtsp://192.168.0.1:7447/TUZpDgpNsqImiS7z
                   ui: false
                   digital_ptz: false
                   muted: true
@@ -177,7 +177,8 @@ views:
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
-                  entity: camera.garage_ai_pro_high_resolution_channel
+                  streams:
+                     -  url: rtsp://192.168.0.1:7447/ZVBs30zbVO5F2z8c
                   intersection: 0.75
                   ui: false
                   digital_ptz: false
@@ -187,7 +188,8 @@ views:
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
-                  entity: camera.garage_door_high_resolution_channel
+                  streams:
+                     -  url: rtsp://192.168.0.1:7447/z677UHdKrmoaCbVr
                   intersection: 0.75
                   ui: false
                   digital_ptz: false
