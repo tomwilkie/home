@@ -1,0 +1,165 @@
+blueprint:
+  name: Motion Activated Light (with brightness, sun & labels)
+  description: Turn on a light when motion is detected.  Optionally only when its dark outside, or when the room is dark.
+  author: Tom Wilkie <tom.wilkie@gmail.com>
+  domain: automation
+  homeassistant:
+    min_version: "2024.6.0"
+  input:
+    motion_entity:
+      name: Motion Sensor
+      selector:
+        entity:
+          filter:
+            domain: binary_sensor
+            # Want to be able to use groups here, so can't have a device_class
+            # device_class: motion
+    area_id:
+      name: Area of lights to control
+      selector:
+        area:
+          entity:
+            domain: light
+    options:
+      name: Optional Settings
+      collapsed: true
+      input:
+        label_filter:
+          name: Label Filter
+          description: Only control lights with this label filter
+          default:
+          selector:
+            label:
+        no_motion_wait:
+          name: Wait time
+          description: Time to leave the light on after last motion is detected.
+          default: 120
+          selector:
+            number:
+              min: 0
+              max: 3600
+              unit_of_measurement: seconds
+    brightness:
+      name: Brightness Controls
+      collapsed: true
+      input:
+        use_brightness:
+          name: Use Brightness
+          description: Only turn the lights on if brightness in the room is above a certain level.
+          default: false
+          selector:
+            boolean:
+        brightness_entity:
+          name: Lux/Brightness Sensor
+          default: none
+          selector:
+            entity:
+              filter:
+                device_class: illuminance
+                domain: sensor
+        brightness_trigger:
+          name: Maximum brightness
+          description: Brightness trigger level. If it gets any brighter the lights will not be turned on.
+          default: 20
+          selector:
+            number:
+              min: 0
+              max: 1000
+              unit_of_measurement: lx
+    sun:
+      name: Sunrise/Sunset Controls
+      collapsed: true
+      input:
+        use_sun:
+          name: Use Sunrise/Sunset
+          description: Only control the lights at night.
+          default: false
+          selector:
+            boolean:
+        sunrise_offset:
+          name: Offset from Sunrise
+          description: "Positive = after sunrise, Negative = before sunrise (e.g. -00:30:00)"
+          default: "00:00:00"
+        sunset_offset:
+          name: Offset from Sunset
+          description: "Positive = after sunset, Negative = before sunset (e.g. 00:30:00)"
+          default: "00:00:00"
+
+# If motion is detected within the delay, we restart the script.
+mode: restart
+max_exceeded: silent
+
+# Making the input variable usable in the condition
+variables:
+  area_id: !input "area_id"
+  label_filter: !input "label_filter"
+  use_brightness: !input "use_brightness"
+  brightness_entity: !input "brightness_entity"
+  brightness_trigger: !input "brightness_trigger"
+  light_entities: >
+    {{ expand(area_entities(area_id))
+      | selectattr('domain', '==', 'light')
+      | selectattr('entity_id', 'in', label_entities(label_filter))
+      | map(attribute='entity_id')
+      | list }}
+  lights_on: >
+    {{ expand(light_entities)
+      | selectattr('state', '==', 'on')
+      | list | count > 0 }}
+  current_brightness: >
+    {% if use_brightness  %}
+      {{ states(brightness_entity) }}
+    {% else %}
+      0
+    {% endif %}
+
+triggers:
+  - trigger: state
+    entity_id: !input motion_entity
+    from: "off"
+    to: "on"
+
+condition:
+  - condition: or
+    enabled: !input use_brightness
+    conditions:
+      # Either some lights in the group are on...
+      - condition: template
+        value_template: "{{ lights_on }}"
+      # ...or the room is dark.
+      - condition: template
+        value_template: "{{ current_brightness < brightness_trigger }}"
+  - condition: or
+    enabled: !input use_sun
+    conditions:
+      - condition: sun
+        after: sunset
+        after_offset: !input sunset_offset
+      - condition: sun
+        before: sunrise
+        before_offset: !input sunrise_offset
+
+actions:
+  - action: system_log.write
+    data_template:
+      level: info
+      logger: my_debug
+      message: "Turning on {{ light_entities | join(', ') }}"
+
+  - action: light.turn_on
+    continue_on_error: true
+    target:
+      entity_id: "{{ light_entities }}"
+  #    data_template:
+  #      kelvin: "{{ state_attr('switch.adaptive_lighting_default', 'color_temp_kelvin') | int }}"
+  #      brightness_pct: "{{ state_attr('switch.adaptive_lighting_default', 'brightness_pct') | int }}"
+  #      transition: 2
+  - wait_for_trigger:
+      trigger: state
+      entity_id: !input motion_entity
+      from: "on"
+      to: "off"
+  - delay: !input no_motion_wait
+  - action: light.turn_off
+    target:
+      entity_id: "{{ light_entities }}"

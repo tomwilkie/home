@@ -113,6 +113,44 @@ Some areas may be intentionally excluded from parts of the pattern:
 
 ---
 
+## Blueprint Management
+
+The blueprint lives at `blueprints/automation/twilkie/motion_lights.yaml` in this repo. This repo is the **source of truth** — all edits must be made here, then uploaded to HA.
+
+### File path on HA
+
+```
+/config/blueprints/automation/twilkie/motion_lights.yaml
+```
+
+### Workflow
+
+1. **Check for remote changes** before editing — if HA has changes not in this repo, pull them first:
+   ```bash
+   diff -u blueprints/automation/twilkie/motion_lights.yaml \
+     <(ssh root@homeassistant.local -C "cat /config/blueprints/automation/twilkie/motion_lights.yaml")
+   ```
+   If there are differences, download the live version before proceeding:
+   ```bash
+   ssh root@homeassistant.local -C "cat /config/blueprints/automation/twilkie/motion_lights.yaml" \
+     > blueprints/automation/twilkie/motion_lights.yaml
+   ```
+2. Edit `blueprints/automation/twilkie/motion_lights.yaml` in this repo
+3. Diff to review your outgoing change:
+   ```bash
+   diff -u <(ssh root@homeassistant.local -C "cat /config/blueprints/automation/twilkie/motion_lights.yaml") \
+     blueprints/automation/twilkie/motion_lights.yaml
+   ```
+4. Push to HA:
+   ```bash
+   scp blueprints/automation/twilkie/motion_lights.yaml \
+     root@homeassistant.local:/config/blueprints/automation/twilkie/motion_lights.yaml
+   ```
+5. Reload blueprints in HA (Settings → Automations → Blueprints → Reload, or restart HA)
+6. Commit to git
+
+---
+
 ## Blueprint Reference
 
 **`twilkie/motion_lights.yaml`** — "Motion Activated Light (with brightness, sun & labels)"
