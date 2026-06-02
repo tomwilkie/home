@@ -154,14 +154,11 @@ views:
                         name: Tree Pollen
                      -  entity: sensor.kleenex_pollen_radar_weeds
                         name: Weed Pollen
-                     -  entity: 
-                            sensor.kleenex_pollen_radar_grass_level
+                     -  entity: sensor.kleenex_pollen_radar_grass_level
                         name: Grass Pollen
-                     -  entity: 
-                            sensor.kleenex_pollen_radar_trees_level
+                     -  entity: sensor.kleenex_pollen_radar_trees_level
                         name: Tree Pollen
-                     -  entity: 
-                            sensor.kleenex_pollen_radar_weeds_level
+                     -  entity: sensor.kleenex_pollen_radar_weeds_level
                         name: Weed Pollen
          -  type: grid
             cards:
@@ -195,8 +192,7 @@ views:
                   digital_ptz: false
                   muted: true
                   background: true
-                  style: '.mode {display: none}, video {aspect-ratio: 16/9; object-fit:
-                      cover;}'
+                  style: '.mode {display: none}'
          -  type: grid
             cards:
                -  type: custom:mushroom-template-card
