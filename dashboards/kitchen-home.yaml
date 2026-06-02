@@ -195,7 +195,7 @@ views:
                   muted: true
                   background: true
                   style: '.mode {display: none} video::-webkit-media-controls {display:
-                      none}'
+                      none} video { width: 100%; height: 100%; object-fit: cover; }'
                   card_mod:
                       style: |
                           ha-card {
