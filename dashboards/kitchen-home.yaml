@@ -170,7 +170,8 @@ views:
                   muted: true
                   background: true
                   intersection: 0.75
-                  style: '.mode {display: none} .controls {display: none}'
+                  style: '.mode {display: none} video::-webkit-media-controls {display:
+                      none}'
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
@@ -181,7 +182,8 @@ views:
                   digital_ptz: false
                   muted: true
                   background: true
-                  style: '.mode {display: none} .controls {display: none}'
+                  style: '.mode {display: none} video::-webkit-media-controls {display:
+                      none}'
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
@@ -192,7 +194,8 @@ views:
                   digital_ptz: false
                   muted: true
                   background: true
-                  style: '.mode {display: none} .controls {display: none}'
+                  style: '.mode {display: none} video::-webkit-media-controls {display:
+                      none}'
          -  type: grid
             cards:
                -  type: custom:mushroom-template-card
