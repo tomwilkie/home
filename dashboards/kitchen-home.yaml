@@ -142,24 +142,17 @@ views:
                   sun_entity: sun.sun
                   show_humidity: true
                   forecast_rows: 3
-               -  show_name: true
-                  show_icon: false
-                  show_state: true
-                  type: glance
-                  columns: 3
-                  entities:
-                     -  entity: sensor.kleenex_pollen_radar_grass
-                        name: Grass Pollen
-                     -  entity: sensor.kleenex_pollen_radar_trees
-                        name: Tree Pollen
-                     -  entity: sensor.kleenex_pollen_radar_weeds
-                        name: Weed Pollen
-                     -  entity: sensor.kleenex_pollen_radar_grass_level
-                        name: Grass Pollen
-                     -  entity: sensor.kleenex_pollen_radar_trees_level
-                        name: Tree Pollen
-                     -  entity: sensor.kleenex_pollen_radar_weeds_level
-                        name: Weed Pollen
+               -  type: custom:mushroom-chips-card
+                  chips:
+                     -  type: state
+                        entity: sensor.kleenex_pollen_radar_grass_level
+                        name: Grass
+                     -  type: state
+                        entity: sensor.kleenex_pollen_radar_trees_level
+                        name: Trees
+                     -  type: state
+                        entity: sensor.kleenex_pollen_radar_weeds_level
+                        name: Weeds
          -  type: grid
             cards:
                -  type: custom:webrtc-camera
@@ -195,13 +188,11 @@ views:
                   muted: true
                   background: true
                   style: '.mode {display: none} video::-webkit-media-controls {display:
-                      none} video { width: 100%; height: 100%; object-fit: cover; }'
+                      none} video { width: 100%; height: 100%; object-fit: cover;
+                      }'
                   card_mod:
-                      style: |
-                          ha-card {
-                            aspect-ratio: 16/9;
-                            overflow: hidden;
-                          }
+                      style: "ha-card {\n  aspect-ratio: 16/9;\n  overflow: hidden;\n\
+                          }\n"
          -  type: grid
             cards:
                -  type: custom:mushroom-template-card
