@@ -195,7 +195,7 @@ views:
                   muted: true
                   background: true
                   style: '.mode {display: none} video::-webkit-media-controls {display:
-                      none}'
+                      none} :host { aspect-ratio: 16/9; }'
          -  type: grid
             cards:
                -  type: custom:mushroom-template-card
