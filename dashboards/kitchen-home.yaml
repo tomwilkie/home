@@ -142,16 +142,17 @@ views:
                   sun_entity: sun.sun
                   show_humidity: true
                   forecast_rows: 3
-               -  type: custom:mushroom-chips-card
-                  chips:
-                     -  type: state
-                        entity: sensor.kleenex_pollen_radar_grass_level
+               -  type: glance
+                  show_name: true
+                  show_icon: false
+                  show_state: true
+                  columns: 3
+                  entities:
+                     -  entity: sensor.kleenex_pollen_radar_grass_level
                         name: Grass
-                     -  type: state
-                        entity: sensor.kleenex_pollen_radar_trees_level
+                     -  entity: sensor.kleenex_pollen_radar_trees_level
                         name: Trees
-                     -  type: state
-                        entity: sensor.kleenex_pollen_radar_weeds_level
+                     -  entity: sensor.kleenex_pollen_radar_weeds_level
                         name: Weeds
          -  type: grid
             cards:
