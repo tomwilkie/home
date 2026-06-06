@@ -91,8 +91,10 @@ The table below lists every non-default value that all instances must share. Set
 | `brightness_mode_time_dark` | `900` | Seconds over which brightness ramps at night |
 | `brightness_mode_time_light` | `1800` | Seconds over which brightness ramps at day |
 | `min_sunrise_time` | `08:00` | Earliest time adaptive lighting treats as sunrise |
+| `max_sunset_time` | `21:00` | Latest time adaptive lighting treats as sunset (prevents bright lights on long summer evenings) |
 | `take_over_control` | `true` | Pause adaptive control when lights are manually adjusted |
 | `take_over_control_mode` | `pause_all` | |
+| `autoreset_control_seconds` | `14400` | Auto-resume adaptive control 4 hours after manual override |
 | `intercept` | `true` | |
 | `multi_light_intercept` | `true` | |
 

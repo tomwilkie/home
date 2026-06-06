@@ -580,7 +580,7 @@ views:
                         tap_action:
                             action: more-info
                -  type: media-control
-                  entity: media_player.toms_office_arylic_lp10_music_assistant
+                  entity: media_player.toms_office_arylic_lp10_ma_player
                   grid_options:
                       columns: 6
                       rows: 2
