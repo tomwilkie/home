@@ -72,6 +72,24 @@ Examples:
 | Master Bedroom | Lamp Tom's | `Master Bedroom - Lamp Tom's` |
 | Front Guest Room | Nest Protect | `Front Guest Room - Nest Protect` |
 
+### Sub-location qualifiers
+
+When a device needs a qualifier to distinguish it from others in the same area (e.g. a Nest Protect positioned outside a specific room within the hallway), append the qualifier in parentheses after the device name:
+
+```
+{Area Display Name} - {Device Specific Name} ({Sub-location})
+```
+
+Examples:
+
+| Full Name |
+|---|
+| `Hallway - Nest Protect (Outside Main Bath)` |
+| `Hallway - Nest Protect (Outside Tom's Office)` |
+| `Hallway - Nest Protect (Ground Floor)` |
+
+Parentheses are dropped during HA slugification, so entity IDs remain clean — `binary_sensor.hallway_nest_protect_outside_main_bath_smoke_status` not `…_outside_main_bath_…`.
+
 ### Scope
 
 - Devices **with** an assigned area must follow this convention, regardless of type (including networking gear, infrastructure devices, etc.)
