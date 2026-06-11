@@ -10,6 +10,15 @@ The live Home Assistant configuration (automations, scripts, helpers, dashboards
 - Refer to @dashboards.md for the GitOps workflow for managing dashboards and the purpose of each dashboard.
 - Refer to @observability.md for how metrics and logs are shipped to Grafana Cloud via Grafana Alloy.
 
+# Entity IDs, not Device IDs
+
+Always reference entities by `entity_id` — never by `device_id` — in automations, dashboards, scripts, and scenes. Device IDs are regenerated whenever an integration re-creates a device (e.g. a Music Assistant update once re-created the WiiM speaker, silently breaking every automation that targeted its device ID), while entity IDs survive. When editing any automation or dashboard that still contains a hardcoded `device_id`, convert it to the corresponding `entity_id` while you're there. Prefer native conditions/actions (`condition: state`, `climate.set_hvac_mode`, etc.) over `condition: device` / device actions, which embed device IDs.
+
+Permitted exceptions:
+- Zigbee2MQTT autodiscovered **device triggers** for buttons/remotes (`trigger: device` with `domain: mqtt`) — button presses have no entity to trigger on.
+- Services that only accept device targets (e.g. `fully_kiosk.load_url`, `fully_kiosk.start_application`).
+- Jinja template calls to the `device_id(...)` function — these resolve dynamically and are fine.
+
 # PII and Secrets Policy
 
 This is a public repo. Before committing anything, check it against these rules.
