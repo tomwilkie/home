@@ -378,7 +378,7 @@ views:
                   grid_options:
                       columns: 6
                       rows: 1
-                  entity: media_player.master_bedroom_wiim_sound_speaker
+                  entity: media_player.master_bedroom_wiim_sound_speaker_ma_player
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
