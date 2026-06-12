@@ -95,8 +95,8 @@ Rooms in order, with their area slugs and notable cards:
 | Basement | `basement` | Media player (`media_player.basement_home_cinema`), Auto Lights toggle, Lights toggle, Roomba, Washing Machine state, Tumble Dryer state |
 | Kitchen | `kitchen` | Roomba, Kitchen Display media player |
 | Living Room | `living_room` | Apple TV media player, Arylic LP10 media player (Music Assistant), Auto Lights toggle, Lights toggle, Roomba |
-| Master Bedroom | `master_bedroom` | WiiM Sound media player (Music Assistant), Dyson fan tile, Aircon tile, Shutters cover, Lights toggle, Electric Blanket |
-| Nursery | `nursery` | Lights toggle, Auto Lights toggle |
+| Master Bedroom | `master_bedroom` | HomePod Mini media player (Music Assistant), Dyson fan tile, Aircon tile, Shutters cover, Lights toggle, Electric Blanket |
+| Nursery | `nursery` | WiiM Sound media player (Music Assistant), Lights toggle, Auto Lights toggle |
 | Tom's Office | `toms_office` | Arylic LP10 media player (Music Assistant), Lights toggle, Auto Lights toggle, Roomba, Aircon tile |
 | Master Bathroom | `master_bathroom` | Velux cover |
 | Rear Guest Room | `rear_guest_room` | Lights toggle, Auto Lights toggle |
