@@ -107,13 +107,16 @@ Tracks whether someone is currently at the front door.
 
 ### Automation: Front Door State (`automation.front_door_state`)
 
-Manages all transitions of the `front_door_state` helper. Triggered by three events:
+Manages all transitions of the `front_door_state` helper. Triggered by four events:
 
 | Trigger ID | Source | Event |
 |---|---|---|
 | `knocking` | `binary_sensor.front_door_vibration_vibration` | Vibration detected (`off` → `on`) |
-| `webhook` | Webhook `<your-webhook-id>` | GET request received |
+| `doorbell` | `binary_sensor.front_door_doorbell` | Doorbell pressed (`off` → `on`, UniFi Protect) |
+| `webhook` | Webhook `<your-webhook-id>` | GET request received (legacy path — the external sender stopped calling it; kept in case it resumes) |
 | `door_open` | `binary_sensor.front_door_contact_contact` | Door opens (state → `on`) |
+
+> The `doorbell` trigger uses `from: off` (not just `to: on`) so that `unavailable` → `on` transitions during the nightly restart or UniFi Protect reconnects cannot fire it.
 
 #### Transition logic
 
@@ -125,7 +128,7 @@ Each branch guards on the current state before acting, so spurious triggers are 
 **`knocking` trigger** — only if current state is `Absent` AND `front_door_contact_contact` has been `off` for ≥ 1 minute (door was closed, not just opened):
 - Sets state → `Someone at the Door`
 
-**`webhook` trigger** — only if current state is `Absent`:
+**`doorbell` or `webhook` trigger** — only if current state is `Absent`:
 - Sets state → `Someone at the Door`
 
 #### Auto-reset
