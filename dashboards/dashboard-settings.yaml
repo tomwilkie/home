@@ -136,11 +136,11 @@ views:
                       ['unavailable'])\n  | map(attribute='entity_id')\n  | reject('is_hidden_entity')\n\
                       \  | map('device_id')\n  | reject('none')\n  | unique\n  | list\n\
                       \  | sort %}\n\n{% if device_ids | length == 0 %}\n_All good_\n\
-                      {% endif %}\n\n{% for device_id in device_ids %}\n<a href=\"/config/devices/device/{{
-                      device_id }}\"><ha-alert alert-type=\"error\">{{ device_attr(device_id,
-                      'name') if device_attr(device_id, 'name_by_user') == None else
-                      device_attr(device_id, 'name_by_user') }} has unavailable entities</ha-alert></a>\n{%
-                      endfor %}"
+                      {% endif %}\n\n{% for device_id in device_ids %}\n<a href=\"\
+                      /config/devices/device/{{ device_id }}\"><ha-alert alert-type=\"\
+                      error\">{{ device_attr(device_id, 'name') if device_attr(device_id,
+                      'name_by_user') == None else device_attr(device_id, 'name_by_user')
+                      }} has unavailable entities</ha-alert></a>\n{% endfor %}"
          -  type: grid
             cards:
                -  type: heading
@@ -275,4 +275,33 @@ views:
               type: markdown
               text_only: true
               content: '# Debugging'
+   -  type: sections
+      max_columns: 4
+      title: Broadcast
+      path: broadcast
+      icon: mdi:bullhorn
+      sections:
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Broadcast a Message
+                  heading_style: title
+                  icon: mdi:bullhorn
+               -  type: entities
+                  entities:
+                     -  entity: input_text.broadcast_message
+                        name: Message
+               -  type: button
+                  name: Send
+                  icon: mdi:send
+                  tap_action:
+                      action: call-service
+                      service: script.turn_on
+                      target:
+                          entity_id: script.broadcast
+      header:
+          card:
+              type: markdown
+              text_only: true
+              content: '# Broadcast'
 

@@ -4,10 +4,14 @@
 
 ### `script.annouce`
 
-Delivers a message to the house. Accepts `title`, `message`, and optional `important` fields. Actions:
+Delivers a message to the house. Accepts `title`, `message`, and optional `important` and `persistent` fields. Actions:
 1. Temporarily lowers Tom's office speaker volume if it is playing
 2. Speaks the message via ChimeTTS to all notification players (time-gated: 06:00–23:00, or always if `important: true`)
-3. Creates a persistent notification in the HA UI — `notification_id` is derived from `title | slugify` so it can be addressed for later dismissal
+3. Creates a persistent notification in the HA UI, unless `persistent: false` (default `true`) — `notification_id` is derived from `title | slugify` so it can be addressed for later dismissal
+
+### `script.broadcast`
+
+Backs the Broadcast view on the Settings dashboard. Guards against an empty `input_text.broadcast_message`, calls `script.annouce` with the box's contents (`title: Broadcast`, `important: true`, `persistent: false`), then clears the box.
 
 ### `script.cancel_announce`
 

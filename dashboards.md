@@ -153,9 +153,10 @@ Tom's Office includes additional AirGradient rows: Particulates (PM1/PM2.5/PM10)
 
 ### `dashboard-settings` — Settings
 
-Diagnostic and configuration views. Has two views:
+Diagnostic and configuration views. Has three views:
 
 | View | Path | Purpose |
 |---|---|---|
 | Debugging | _(default)_ | Low batteries, unavailable entities, stale entities (not updated in 24 h), vacuum run times, active/recently-triggered automations, adaptive lighting brightness history and on/off switches. |
 | Settings | `settings` | Comfort mode schedule, weekday/weekend wakeup time inputs, bedroom clock alarm. |
+| Broadcast | `broadcast` | Text box (`input_text.broadcast_message`) and Send button for broadcasting a spoken message to the house via `script.broadcast`, which calls `script.annouce` with `important: true` and `persistent: false`, then clears the box. |
