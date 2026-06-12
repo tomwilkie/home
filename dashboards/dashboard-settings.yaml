@@ -291,22 +291,20 @@ views:
                   entities:
                      -  entity: input_text.broadcast_message
                         name: Message
+                        extend_paper_buttons_row:
+                            position: right
+                            buttons:
+                               -  icon: mdi:send
+                                  name: false
+                                  tooltip: Send
+                                  tap_action:
+                                      action: call-service
+                                      service: script.turn_on
+                                      target:
+                                          entity_id: script.broadcast
                   grid_options:
-                      columns: 9
-                      rows: 2
-               -  show_name: false
-                  show_icon: true
-                  type: button
-                  icon: mdi:send
-                  tap_action:
-                      action: call-service
-                      service: script.turn_on
-                      target:
-                          entity_id: script.broadcast
-                  grid_options:
-                      columns: 3
-                      rows: 2
-                  show_state: false
+                      columns: 12
+                      rows: auto
       header:
           card:
               type: markdown
