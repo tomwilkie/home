@@ -305,6 +305,36 @@ views:
                   grid_options:
                       columns: 12
                       rows: auto
+         -  type: grid
+            cards:
+               -  type: heading
+                  heading: Notification Players
+                  heading_style: title
+                  icon: mdi:speaker-multiple
+               -  type: entities
+                  show_header_toggle: false
+                  state_color: true
+                  entities:
+                     -  entity: 
+                            input_boolean.hallway_doorbell_speaker_notifications
+                        name: Hallway (Doorbell)
+                     -  entity: input_boolean.kitchen_display_notifications
+                        name: Kitchen (Display)
+                     -  entity: 
+                            input_boolean.garage_ai_pro_speaker_notifications
+                        name: Garage
+                     -  entity: 
+                            input_boolean.basement_voice_assistant_media_player_notifications
+                        name: Basement
+                     -  entity: 
+                            input_boolean.rear_guest_room_voice_assistant_media_player_notifications
+                        name: Rear Guest Room
+                     -  entity: 
+                            input_boolean.toms_office_voice_assistant_notifications
+                        name: Tom's Office
+                     -  entity: 
+                            input_boolean.living_room_arylic_lp10_music_assistant_notifications
+                        name: Living Room (Arylic)
       header:
           card:
               type: markdown

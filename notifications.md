@@ -6,8 +6,14 @@
 
 Delivers a message to the house. Accepts `title`, `message`, and optional `important` and `persistent` fields. Actions:
 1. Temporarily lowers Tom's office speaker volume if it is playing
-2. Speaks the message via ChimeTTS to all notification players (time-gated: 06:00–23:00, or always if `important: true`)
+2. Speaks the message via ChimeTTS to the selected notification players (time-gated: 06:00–23:00, or always if `important: true`)
 3. Creates a persistent notification in the HA UI, unless `persistent: false` (default `true`) — `notification_id` is derived from `title | slugify` so it can be addressed for later dismissal
+
+#### Notification player selection
+
+`media_player.notification_players` (a media player group helper) is the master list of candidate speakers. Each member has a matching toggle named `input_boolean.{player_slug}_notifications` (e.g. `media_player.kitchen_display` → `input_boolean.kitchen_display_notifications`); the script's `notification_targets` variable computes the TTS targets as *group members whose toggle is on*, and the TTS step is skipped entirely if none are selected. The toggles are controlled from the Broadcast view on the Settings dashboard.
+
+When adding a player to the group, also create its `input_boolean.{player_slug}_notifications` toggle (display name `Notifications`, assigned to the player's area, turned on) and add it to the Broadcast view's Notification Players card — a group member without a toggle is never announced to, because its toggle lookup resolves to a non-existent entity.
 
 ### `script.broadcast`
 
