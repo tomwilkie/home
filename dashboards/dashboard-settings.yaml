@@ -291,14 +291,22 @@ views:
                   entities:
                      -  entity: input_text.broadcast_message
                         name: Message
-               -  type: button
-                  name: Send
+                  grid_options:
+                      columns: 12
+                      rows: auto
+               -  type: custom:mushroom-template-card
+                  primary: Send
+                  secondary: Broadcast to the whole house
                   icon: mdi:send
+                  icon_color: blue
                   tap_action:
                       action: call-service
                       service: script.turn_on
                       target:
                           entity_id: script.broadcast
+                  grid_options:
+                      columns: 12
+                      rows: 1
       header:
           card:
               type: markdown
