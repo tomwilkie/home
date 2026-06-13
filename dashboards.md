@@ -107,7 +107,7 @@ Each section heading card shows environment sensor badges sourced from the area'
 - **Occupancy**: all rooms
 - Master Bathroom shows Temperature and Occupancy only (no humidity sensor)
 
-**Media player rule**: when both a native integration entity and a Music Assistant entity exist for the same device, always use the Music Assistant entity. Exception: `media_player.basement_home_cinema` is Apple TV native (`platform: apple_tv`) with no Music Assistant equivalent — use the native entity.
+**Media player rule**: when both a native integration entity and a Music Assistant entity exist for the same device, always use the Music Assistant entity. Exception: `media_player.basement_home_cinema` is Apple TV native (`platform: apple_tv`) with no Music Assistant equivalent — use the native entity. This rule applies to dashboard cards only; the notification players group is the opposite — it uses the **native** entity for each speaker (see [@notifications.md](notifications.md)).
 
 **What does not appear in any section**: adaptive lighting switches (`switch.adaptive_lighting_*`). These are managed from the Settings dashboard only.
 

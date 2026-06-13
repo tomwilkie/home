@@ -13,6 +13,8 @@ Delivers a message to the house. Accepts `title`, `message`, and optional `impor
 
 `media_player.notification_players` (a media player group helper) is the master list of candidate speakers. Each member has a matching toggle named `input_boolean.{player_slug}_notifications` (e.g. `media_player.kitchen_display` → `input_boolean.kitchen_display_notifications`); the script's `notification_targets` variable computes the TTS targets as *group members whose toggle is on*, and the TTS step is skipped entirely if none are selected. The toggles are controlled from the Broadcast view on the Settings dashboard.
 
+**Group members must be the native integration entity** for each speaker (e.g. the `apple_tv`, `esphome`, `linkplay`, `fully_kiosk`, or `unifiprotect` entity) — **not** the Music Assistant proxy, even for a device that also has a Music Assistant entity. This is the opposite of the dashboard convention, which uses the Music Assistant entity for the same device (see the "Media player rule" in [@dashboards.md](dashboards.md)). The `{player_slug}` in the toggle name is therefore derived from the *native* entity ID (e.g. `media_player.master_bedroom_homepod_mini` → `input_boolean.master_bedroom_homepod_mini_notifications`).
+
 When adding a player to the group, also create its `input_boolean.{player_slug}_notifications` toggle (display name `Notifications`, assigned to the player's area, turned on) and add it to the Broadcast view's Notification Players card — a group member without a toggle is never announced to, because its toggle lookup resolves to a non-existent entity.
 
 ### `script.broadcast`

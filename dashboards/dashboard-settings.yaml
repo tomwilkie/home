@@ -333,10 +333,10 @@ views:
                             input_boolean.toms_office_voice_assistant_notifications
                         name: Tom's Office
                      -  entity: 
-                            input_boolean.living_room_arylic_lp10_music_assistant_notifications
+                            input_boolean.living_room_arylic_lp10_notifications
                         name: Living Room (Arylic)
                      -  entity: 
-                            input_boolean.master_bedroom_homepod_mini_ma_player_notifications
+                            input_boolean.master_bedroom_homepod_mini_notifications
                         name: Master Bedroom (HomePod)
       header:
           card:
