@@ -103,8 +103,13 @@ views:
                   show_header_toggle: false
                   state_color: true
                   card_mod:
-                      style: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                          \  padding: 0 4px;\n}\n#states { flex: 1; }\n"
+                      style:
+                          hui-toggle-entity-row$: ":host { padding: 0 !important;
+                              }\nstate-badge { margin-left: 0 !important; }\n.info
+                              { margin-left: 12px !important; }\n"
+                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
+                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
+                              #states { flex: 1; padding: 0 !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -322,8 +327,13 @@ views:
                   show_header_toggle: false
                   state_color: true
                   card_mod:
-                      style: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                          \  padding: 0 4px;\n}\n#states { flex: 1; }\n"
+                      style:
+                          hui-toggle-entity-row$: ":host { padding: 0 !important;
+                              }\nstate-badge { margin-left: 0 !important; }\n.info
+                              { margin-left: 12px !important; }\n"
+                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
+                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
+                              #states { flex: 1; padding: 0 !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -585,8 +595,13 @@ views:
                   show_header_toggle: false
                   state_color: true
                   card_mod:
-                      style: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                          \  padding: 0 4px;\n}\n#states { flex: 1; }\n"
+                      style:
+                          hui-toggle-entity-row$: ":host { padding: 0 !important;
+                              }\nstate-badge { margin-left: 0 !important; }\n.info
+                              { margin-left: 12px !important; }\n"
+                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
+                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
+                              #states { flex: 1; padding: 0 !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -679,8 +694,13 @@ views:
                   show_header_toggle: false
                   state_color: true
                   card_mod:
-                      style: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                          \  padding: 0 4px;\n}\n#states { flex: 1; }\n"
+                      style:
+                          hui-toggle-entity-row$: ":host { padding: 0 !important;
+                              }\nstate-badge { margin-left: 0 !important; }\n.info
+                              { margin-left: 12px !important; }\n"
+                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
+                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
+                              #states { flex: 1; padding: 0 !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -835,8 +855,13 @@ views:
                   show_header_toggle: false
                   state_color: true
                   card_mod:
-                      style: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                          \  padding: 0 4px;\n}\n#states { flex: 1; }\n"
+                      style:
+                          hui-toggle-entity-row$: ":host { padding: 0 !important;
+                              }\nstate-badge { margin-left: 0 !important; }\n.info
+                              { margin-left: 12px !important; }\n"
+                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
+                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
+                              #states { flex: 1; padding: 0 !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
