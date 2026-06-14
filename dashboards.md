@@ -92,14 +92,14 @@ Rooms in order, with their area slugs and notable cards:
 
 | Room | Slug | Notable cards |
 |---|---|---|
-| Basement | `basement` | Media player (`media_player.basement_home_cinema`), Auto Lights toggle, Lights toggle, Roomba, Washing Machine state, Tumble Dryer state |
+| Basement | `basement` | Media player (`media_player.basement_home_cinema`), Lights, Auto lights, Roomba, Washing Machine state, Tumble Dryer state |
 | Kitchen | `kitchen` | Roomba, Kitchen Display media player |
-| Living Room | `living_room` | Apple TV media player, Arylic LP10 media player (Music Assistant), Auto Lights toggle, Lights toggle, Roomba |
-| Master Bedroom | `master_bedroom` | HomePod Mini media player (Music Assistant), Dyson fan tile, Aircon tile, Shutters cover, Lights toggle, Electric Blanket |
-| Nursery | `nursery` | WiiM Sound media player (Music Assistant), Lights toggle, Auto Lights toggle |
-| Tom's Office | `toms_office` | Arylic LP10 media player (Music Assistant), Lights toggle, Auto Lights toggle, Roomba, Aircon tile |
+| Living Room | `living_room` | Apple TV media player, Arylic LP10 media player (Music Assistant), Lights, Auto lights, Roomba |
+| Master Bedroom | `master_bedroom` | HomePod Mini media player (Music Assistant), Dyson fan tile, Aircon tile, Shutters cover, Lights, Electric Blanket |
+| Nursery | `nursery` | WiiM Sound media player (Music Assistant), Lights, Auto lights |
+| Tom's Office | `toms_office` | Arylic LP10 media player (Music Assistant), Lights, Auto lights, Roomba, Aircon tile |
 | Master Bathroom | `master_bathroom` | Velux cover |
-| Rear Guest Room | `rear_guest_room` | Lights toggle, Auto Lights toggle |
+| Rear Guest Room | `rear_guest_room` | Lights, Auto lights |
 
 Each section heading card shows environment sensor badges sourced from the area's primary sensor device:
 - **Temperature** and **Humidity**: all rooms except Rear Guest Room (no sensor)
@@ -110,6 +110,26 @@ Each section heading card shows environment sensor badges sourced from the area'
 **Media player rule**: when both a native integration entity and a Music Assistant entity exist for the same device, always use the Music Assistant entity. Exception: `media_player.basement_home_cinema` is Apple TV native (`platform: apple_tv`) with no Music Assistant equivalent — use the native entity. This rule applies to dashboard cards only; the notification players group is the opposite — it uses the **native** entity for each speaker (see [@notifications.md](notifications.md)).
 
 **What does not appear in any section**: adaptive lighting switches (`switch.adaptive_lighting_*`). These are managed from the Settings dashboard only.
+
+#### Visual consistency & verification
+
+Cards that sit alongside each other in a section must look like a set. When adding or restyling a panel, match it to its neighbours on:
+
+- **Height** — set `grid_options.rows` so paired half-width cards (`columns: 6`) are the same height. A `tile` with a feature (e.g. a `toggle`) enforces a minimum width and will **not** sit at half-width, so it can't be paired — use an `entities` card or a `mushroom-template-card` instead.
+- **Spacing & padding** — icon inset, icon-to-text gap, and internal card padding.
+- **Icon** — size and alignment. Beware that two MDI glyphs of the same nominal size can have different *visible* widths (e.g. `mdi:lightbulb-auto` draws a narrow bulb plus a small "A", leaving empty space inside its box), so matching bounding boxes is not the same as matching the visual gap.
+- **Font** — size, weight, and letter-spacing of the label. The mushroom-template-card primary text is **weight 500, letter-spacing 0.1px** (Roboto 14px); a plain `entities` row name is weight 400 — restyle it to match.
+
+**Consistent ordering**: keep the same card order within every room section. The Lights / Auto lights pair is always **Lights first, then Auto lights**.
+
+**Verify layout changes in the browser — don't trust the YAML alone.** After pushing, load the dashboard in Chrome (`http://homeassistant.local:8123/dashboard-home/home`) and look at the actual render. For pixel-level alignment, inspect the live DOM rather than eyeballing: recursively traverse shadow roots and compare `getBoundingClientRect()` of the icon/text against the neighbouring card you're matching (HA buries card content several shadow roots deep — e.g. an `entities` toggle row is `hui-entities-card → #states → hui-toggle-entity-row → hui-generic-entity-row → state-badge`/`.info`). Also test at a realistic mobile/iPad column width: a half-width card has far less room than on desktop, and a long label (with a toggle eating ~40px) can truncate.
+
+**Auto lights panels** (Basement, Living Room, Nursery, Tom's Office, Rear Guest Room) are the worked example of the above: an `entities` card on `automation.{area}_lights` (which renders a visible toggle switch), styled with `card-mod` to match the adjacent Lights `mushroom-template-card`. Key points learnt:
+
+- `ha-card { display: block }` — **not** `flex`. `display: flex` makes the card size to its content and overflow its sections-grid column, which silently drops padding and pins the icon out of alignment.
+- `#states { padding: 8px }` for the row-height fit; `grid_options: { columns: 6, rows: 1 }`.
+- A **nested** shadow pierce reaches the icon/text — `hui-toggle-entity-row: { $: { hui-generic-entity-row: { $: ".info { … }" } } }` — to set the icon-to-text gap, `font-weight: 500` and `letter-spacing: 0.1px`. A single-level `hui-toggle-entity-row$ …` pierce does **not** reach them (they live one shadow root deeper, in `hui-generic-entity-row`).
+- A small **negative** `margin-left` on `.info` compensates for the narrow `mdi:lightbulb-auto` glyph so its visual gap matches the plain `mdi:lightbulb` beside it.
 
 ---
 
