@@ -97,9 +97,9 @@ views:
                       rows: 2
                -  type: tile
                   entity: automation.basement_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
+                  grid_options:
+                      columns: 6
+                      rows: 1
                   name: Auto Lights
                   show_entity_picture: false
                   icon: mdi:ceiling-light
@@ -312,9 +312,9 @@ views:
                       rows: 2
                -  type: tile
                   entity: automation.living_room_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
+                  grid_options:
+                      columns: 6
+                      rows: 1
                   name: Auto Lights
                   icon: mdi:ceiling-light
                   vertical: false
@@ -567,9 +567,9 @@ views:
                           label_id_filter: room-light
                -  type: tile
                   entity: automation.nursery_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
+                  grid_options:
+                      columns: 6
+                      rows: 1
                   name: Auto Lights
                   icon: mdi:ceiling-light
                   vertical: false
@@ -656,9 +656,9 @@ views:
                           label_id_filter: room-light
                -  type: tile
                   entity: automation.toms_office_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
+                  grid_options:
+                      columns: 6
+                      rows: 1
                   name: Auto Lights
                   icon: mdi:ceiling-light
                   vertical: false
@@ -807,9 +807,9 @@ views:
                           label_id_filter: room-light
                -  type: tile
                   entity: automation.rear_guest_room_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
+                  grid_options:
+                      columns: 6
+                      rows: 1
                   name: Auto Lights
                   icon: mdi:ceiling-light
                   vertical: false
