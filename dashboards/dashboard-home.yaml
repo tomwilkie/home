@@ -25,7 +25,7 @@ views:
                   layout: horizontal
                   icon: mdi:office-building
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                -  type: custom:mushroom-template-card
                   entity: person.tom_wilkie
@@ -37,7 +37,7 @@ views:
                       ~ ', ' ~ parts[1] if parts | length >= 2 else parts[0] }}\n\
                       \  {% else %}\n    Away\n  {% endif %}\n{% endif %}"
                   grid_options:
-                      columns: 3
+                      columns: 6
                       rows: 1
                   features_position: bottom
                   primary: Tom
@@ -52,11 +52,11 @@ views:
                       parts[0] }}\n  {% else %}\n    Away\n  {% endif %}\n{% endif
                       %}\n"
                   grid_options:
-                      columns: 3
+                      columns: 6
                       rows: 1
                   features_position: bottom
                   primary: Rachana
-            column_span: 3
+            column_span: 6
          -  type: grid
             cards:
                -  type: heading
@@ -93,12 +93,12 @@ views:
                   tap_action:
                       action: more-info
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 2
                -  type: tile
                   entity: automation.basement_lights
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                   name: Auto Lights
                   show_entity_picture: false
@@ -125,11 +125,11 @@ views:
                           area_id_filter: basement
                           label_id_filter: room-light
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                -  type: tile
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   entity: vacuum.basement_roomba
                   vertical: false
@@ -192,6 +192,7 @@ views:
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
+            column_span: 2
          -  type: grid
             cards:
                -  type: heading
@@ -226,7 +227,7 @@ views:
                             action: more-info
                -  type: tile
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   entity: vacuum.kitchen_vacuum
                   vertical: false
@@ -241,7 +242,7 @@ views:
                   features_position: inline
                   vertical: false
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   features:
                      -  type: media-player-volume-slider
@@ -262,6 +263,7 @@ views:
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
+            column_span: 2
          -  type: grid
             cards:
                -  type: heading
@@ -299,7 +301,7 @@ views:
                   tap_action:
                       action: more-info
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 2
                -  type: custom:mushroom-media-player-card
                   entity: media_player.living_room_arylic_lp10_music_assistant
@@ -311,12 +313,12 @@ views:
                   tap_action:
                       action: more-info
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 2
                -  type: tile
                   entity: automation.living_room_lights
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                   name: Auto Lights
                   icon: mdi:ceiling-light
@@ -343,11 +345,11 @@ views:
                           label_id_filter: room-light
                       target: {}
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                -  type: tile
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   entity: vacuum.living_room_roomba
                   vertical: false
@@ -374,6 +376,7 @@ views:
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
+            column_span: 2
          -  type: grid
             cards:
                -  type: heading
@@ -415,7 +418,7 @@ views:
                   tap_action:
                       action: more-info
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 2
                -  type: custom:mushroom-template-card
                   primary: Lights
@@ -435,7 +438,7 @@ views:
                           area_id_filter: master_bedroom
                           label_id_filter: room-light
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                -  features:
                      -  type: fan-speed
@@ -445,7 +448,7 @@ views:
                   features_position: inline
                   vertical: false
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   hide_state: false
                -  type: tile
@@ -466,14 +469,14 @@ views:
                   features_position: inline
                   vertical: false
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   features:
                      -  style: dropdown
                         type: climate-hvac-modes
                -  type: tile
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   entity: cover.master_bedroom_norman_hub_all_shutters
                   name: Shutters
@@ -484,7 +487,7 @@ views:
                   features_position: inline
                -  type: tile
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   entity: switch.master_bedroom_electric_blanket
                   name: Electric Blanket
@@ -510,6 +513,7 @@ views:
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
+            column_span: 2
          -  type: grid
             cards:
                -  type: heading
@@ -552,7 +556,7 @@ views:
                   tap_action:
                       action: more-info
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 2
                -  type: custom:mushroom-template-card
                   primary: Lights
@@ -572,12 +576,12 @@ views:
                           area_id_filter: nursery
                           label_id_filter: room-light
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                -  type: tile
                   entity: automation.nursery_lights
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                   name: Auto Lights
                   icon: mdi:ceiling-light
@@ -602,6 +606,7 @@ views:
                            -  condition: state
                               entity: sensor.tom_s_room
                               state: nursery
+            column_span: 2
          -  type: grid
             cards:
                -  type: heading
@@ -644,7 +649,7 @@ views:
                   tap_action:
                       action: more-info
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 2
                -  type: custom:mushroom-template-card
                   primary: Lights
@@ -664,12 +669,12 @@ views:
                           area_id_filter: toms_office
                           label_id_filter: room-light
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                -  type: tile
                   entity: automation.toms_office_lights
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                   name: Auto Lights
                   icon: mdi:ceiling-light
@@ -696,7 +701,7 @@ views:
                   features_position: inline
                   vertical: false
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   features:
                      -  style: dropdown
@@ -718,6 +723,7 @@ views:
                            -  condition: state
                               entity: sensor.tom_s_room
                               state: toms_office
+            column_span: 2
          -  type: grid
             cards:
                -  type: heading
@@ -740,7 +746,7 @@ views:
                             action: more-info
                -  type: tile
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   entity: cover.master_bathroom_veluxes
                   name: Veluxes
@@ -751,7 +757,7 @@ views:
                   features_position: inline
                -  type: custom:mushroom-template-card
                   grid_options:
-                      columns: 12
+                      columns: 24
                       rows: 1
                   primary: Hot Water
                   secondary: "{% if is_state('binary_sensor.basement_hotwater_state',
@@ -786,6 +792,7 @@ views:
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
+            column_span: 2
          -  type: grid
             cards:
                -  type: heading
@@ -818,12 +825,12 @@ views:
                           area_id_filter: rear_guest_room
                           label_id_filter: room-light
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                -  type: tile
                   entity: automation.rear_guest_room_lights
                   grid_options:
-                      columns: 6
+                      columns: 12
                       rows: 1
                   name: Auto Lights
                   icon: mdi:ceiling-light
@@ -848,7 +855,8 @@ views:
                      -  condition: state
                         entity: input_select.tom_room_selector
                         state: All
-      max_columns: 3
+            column_span: 2
+      max_columns: 6
       cards: []
    -  theme: Backend-selected
       title: Lighting
