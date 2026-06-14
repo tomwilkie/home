@@ -109,7 +109,7 @@ views:
                           hui-toggle-entity-row:
                               $:
                                   hui-generic-entity-row:
-                                      $: ".info { margin-left: 8px !important; }\n"
+                                      $: ".info { margin-left: -6px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -333,7 +333,7 @@ views:
                           hui-toggle-entity-row:
                               $:
                                   hui-generic-entity-row:
-                                      $: ".info { margin-left: 8px !important; }\n"
+                                      $: ".info { margin-left: -6px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -601,7 +601,7 @@ views:
                           hui-toggle-entity-row:
                               $:
                                   hui-generic-entity-row:
-                                      $: ".info { margin-left: 8px !important; }\n"
+                                      $: ".info { margin-left: -6px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -700,7 +700,7 @@ views:
                           hui-toggle-entity-row:
                               $:
                                   hui-generic-entity-row:
-                                      $: ".info { margin-left: 8px !important; }\n"
+                                      $: ".info { margin-left: -6px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -861,7 +861,7 @@ views:
                           hui-toggle-entity-row:
                               $:
                                   hui-generic-entity-row:
-                                      $: ".info { margin-left: 8px !important; }\n"
+                                      $: ".info { margin-left: -6px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
