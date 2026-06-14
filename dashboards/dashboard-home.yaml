@@ -98,18 +98,18 @@ views:
                -  type: entities
                   entities:
                      -  entity: automation.basement_lights
-                        name: Auto Lights
+                        name: Auto
                         icon: mdi:lightbulb-auto
                   show_header_toggle: false
                   state_color: true
                   card_mod:
                       style:
-                          hui-toggle-entity-row$: ":host { padding: 0 !important;
-                              }\nstate-badge { margin-left: 0 !important; }\n.info
-                              { margin-left: 12px !important; }\n"
-                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
-                              #states { flex: 1; padding: 0 !important; }\n"
+                          .: "ha-card { display: block !important; padding: 0 !important;
+                              }\n#states { padding: 8px !important; }\n"
+                          hui-toggle-entity-row:
+                              $:
+                                  hui-generic-entity-row:
+                                      $: ".info { margin-left: 8px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -322,18 +322,18 @@ views:
                -  type: entities
                   entities:
                      -  entity: automation.living_room_lights
-                        name: Auto Lights
+                        name: Auto
                         icon: mdi:lightbulb-auto
                   show_header_toggle: false
                   state_color: true
                   card_mod:
                       style:
-                          hui-toggle-entity-row$: ":host { padding: 0 !important;
-                              }\nstate-badge { margin-left: 0 !important; }\n.info
-                              { margin-left: 12px !important; }\n"
-                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
-                              #states { flex: 1; padding: 0 !important; }\n"
+                          .: "ha-card { display: block !important; padding: 0 !important;
+                              }\n#states { padding: 8px !important; }\n"
+                          hui-toggle-entity-row:
+                              $:
+                                  hui-generic-entity-row:
+                                      $: ".info { margin-left: 8px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -590,18 +590,18 @@ views:
                -  type: entities
                   entities:
                      -  entity: automation.nursery_lights
-                        name: Auto Lights
+                        name: Auto
                         icon: mdi:lightbulb-auto
                   show_header_toggle: false
                   state_color: true
                   card_mod:
                       style:
-                          hui-toggle-entity-row$: ":host { padding: 0 !important;
-                              }\nstate-badge { margin-left: 0 !important; }\n.info
-                              { margin-left: 12px !important; }\n"
-                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
-                              #states { flex: 1; padding: 0 !important; }\n"
+                          .: "ha-card { display: block !important; padding: 0 !important;
+                              }\n#states { padding: 8px !important; }\n"
+                          hui-toggle-entity-row:
+                              $:
+                                  hui-generic-entity-row:
+                                      $: ".info { margin-left: 8px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -689,18 +689,18 @@ views:
                -  type: entities
                   entities:
                      -  entity: automation.toms_office_lights
-                        name: Auto Lights
+                        name: Auto
                         icon: mdi:lightbulb-auto
                   show_header_toggle: false
                   state_color: true
                   card_mod:
                       style:
-                          hui-toggle-entity-row$: ":host { padding: 0 !important;
-                              }\nstate-badge { margin-left: 0 !important; }\n.info
-                              { margin-left: 12px !important; }\n"
-                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
-                              #states { flex: 1; padding: 0 !important; }\n"
+                          .: "ha-card { display: block !important; padding: 0 !important;
+                              }\n#states { padding: 8px !important; }\n"
+                          hui-toggle-entity-row:
+                              $:
+                                  hui-generic-entity-row:
+                                      $: ".info { margin-left: 8px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -850,18 +850,18 @@ views:
                -  type: entities
                   entities:
                      -  entity: automation.rear_guest_room_lights
-                        name: Auto Lights
+                        name: Auto
                         icon: mdi:lightbulb-auto
                   show_header_toggle: false
                   state_color: true
                   card_mod:
                       style:
-                          hui-toggle-entity-row$: ":host { padding: 0 !important;
-                              }\nstate-badge { margin-left: 0 !important; }\n.info
-                              { margin-left: 12px !important; }\n"
-                          .: "ha-card {\n  display: flex;\n  align-items: center;\n\
-                              \  padding: 0 12px;\n  box-sizing: border-box;\n}\n\
-                              #states { flex: 1; padding: 0 !important; }\n"
+                          .: "ha-card { display: block !important; padding: 0 !important;
+                              }\n#states { padding: 8px !important; }\n"
+                          hui-toggle-entity-row:
+                              $:
+                                  hui-generic-entity-row:
+                                      $: ".info { margin-left: 8px !important; }\n"
                   grid_options:
                       columns: 6
                       rows: 1
