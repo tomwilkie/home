@@ -95,14 +95,18 @@ views:
                   grid_options:
                       columns: 6
                       rows: 2
-               -  type: entities
-                  entities:
-                     -  entity: automation.basement_lights
-                        name: Auto Lights
-                  show_header_toggle: false
-                  state_color: true
+               -  type: custom:mushroom-template-card
+                  primary: Auto Lights
+                  secondary: ''
+                  icon: mdi:lightbulb-auto
+                  icon_color: "{% if is_state('automation.basement_lights', 'on')
+                      %}\n  blue\n{% else %}\n  grey\n{% endif %}"
+                  entity: automation.basement_lights
+                  tap_action:
+                      action: toggle
                   grid_options:
                       columns: 6
+                      rows: 1
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
@@ -309,14 +313,18 @@ views:
                   grid_options:
                       columns: 6
                       rows: 2
-               -  type: entities
-                  entities:
-                     -  entity: automation.living_room_lights
-                        name: Auto Lights
-                  show_header_toggle: false
-                  state_color: true
+               -  type: custom:mushroom-template-card
+                  primary: Auto Lights
+                  secondary: ''
+                  icon: mdi:lightbulb-auto
+                  icon_color: "{% if is_state('automation.living_room_lights', 'on')
+                      %}\n  blue\n{% else %}\n  grey\n{% endif %}"
+                  entity: automation.living_room_lights
+                  tap_action:
+                      action: toggle
                   grid_options:
                       columns: 6
+                      rows: 1
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
@@ -567,14 +575,18 @@ views:
                   grid_options:
                       columns: 6
                       rows: 1
-               -  type: entities
-                  entities:
-                     -  entity: automation.nursery_lights
-                        name: Auto Lights
-                  show_header_toggle: false
-                  state_color: true
+               -  type: custom:mushroom-template-card
+                  primary: Auto Lights
+                  secondary: ''
+                  icon: mdi:lightbulb-auto
+                  icon_color: "{% if is_state('automation.nursery_lights', 'on') %}\n\
+                      \  blue\n{% else %}\n  grey\n{% endif %}"
+                  entity: automation.nursery_lights
+                  tap_action:
+                      action: toggle
                   grid_options:
                       columns: 6
+                      rows: 1
             visibility:
                -  condition: or
                   conditions:
@@ -656,14 +668,18 @@ views:
                   grid_options:
                       columns: 6
                       rows: 1
-               -  type: entities
-                  entities:
-                     -  entity: automation.toms_office_lights
-                        name: Auto Lights
-                  show_header_toggle: false
-                  state_color: true
+               -  type: custom:mushroom-template-card
+                  primary: Auto Lights
+                  secondary: ''
+                  icon: mdi:lightbulb-auto
+                  icon_color: "{% if is_state('automation.toms_office_lights', 'on')
+                      %}\n  blue\n{% else %}\n  grey\n{% endif %}"
+                  entity: automation.toms_office_lights
+                  tap_action:
+                      action: toggle
                   grid_options:
                       columns: 6
+                      rows: 1
                -  type: tile
                   entity: vacuum.toms_office_roomba
                   vertical: false
@@ -807,14 +823,18 @@ views:
                   grid_options:
                       columns: 6
                       rows: 1
-               -  type: entities
-                  entities:
-                     -  entity: automation.rear_guest_room_lights
-                        name: Auto Lights
-                  show_header_toggle: false
-                  state_color: true
+               -  type: custom:mushroom-template-card
+                  primary: Auto Lights
+                  secondary: ''
+                  icon: mdi:lightbulb-auto
+                  icon_color: "{% if is_state('automation.rear_guest_room_lights',
+                      'on') %}\n  blue\n{% else %}\n  grey\n{% endif %}"
+                  entity: automation.rear_guest_room_lights
+                  tap_action:
+                      action: toggle
                   grid_options:
                       columns: 6
+                      rows: 1
             visibility:
                -  condition: or
                   conditions:
