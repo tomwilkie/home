@@ -95,16 +95,14 @@ views:
                   grid_options:
                       columns: 6
                       rows: 2
-               -  type: tile
-                  entity: automation.basement_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
-                  name: Auto Lights
-                  show_entity_picture: false
-                  tap_action:
-                      action: toggle
-                  icon: mdi:ceiling-light
+               -  type: entities
+                  entities:
+                     -  entity: automation.basement_lights
+                        name: Auto Lights
+                  show_header_toggle: false
+                  state_color: true
+                  grid_options:
+                      columns: 6
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
@@ -122,6 +120,9 @@ views:
                           domain: light
                           area_id_filter: basement
                           label_id_filter: room-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  type: tile
                   grid_options:
                       columns: 12
@@ -308,15 +309,14 @@ views:
                   grid_options:
                       columns: 6
                       rows: 2
-               -  type: tile
-                  entity: automation.living_room_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
-                  name: Auto Lights
-                  tap_action:
-                      action: toggle
-                  icon: mdi:ceiling-light
+               -  type: entities
+                  entities:
+                     -  entity: automation.living_room_lights
+                        name: Auto Lights
+                  show_header_toggle: false
+                  state_color: true
+                  grid_options:
+                      columns: 6
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
@@ -335,6 +335,9 @@ views:
                           area_id_filter: living_room
                           label_id_filter: room-light
                       target: {}
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  type: tile
                   grid_options:
                       columns: 12
@@ -561,15 +564,17 @@ views:
                           domain: light
                           area_id_filter: nursery
                           label_id_filter: room-light
-               -  type: tile
-                  entity: automation.nursery_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
-                  name: Auto Lights
-                  tap_action:
-                      action: toggle
-                  icon: mdi:ceiling-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
+               -  type: entities
+                  entities:
+                     -  entity: automation.nursery_lights
+                        name: Auto Lights
+                  show_header_toggle: false
+                  state_color: true
+                  grid_options:
+                      columns: 6
             visibility:
                -  condition: or
                   conditions:
@@ -648,15 +653,17 @@ views:
                           domain: light
                           area_id_filter: toms_office
                           label_id_filter: room-light
-               -  type: tile
-                  entity: automation.toms_office_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
-                  name: Auto Lights
-                  icon: mdi:ceiling-light
-                  tap_action:
-                      action: toggle
+                  grid_options:
+                      columns: 6
+                      rows: 1
+               -  type: entities
+                  entities:
+                     -  entity: automation.toms_office_lights
+                        name: Auto Lights
+                  show_header_toggle: false
+                  state_color: true
+                  grid_options:
+                      columns: 6
                -  type: tile
                   entity: vacuum.toms_office_roomba
                   vertical: false
@@ -797,15 +804,17 @@ views:
                           domain: light
                           area_id_filter: rear_guest_room
                           label_id_filter: room-light
-               -  type: tile
-                  entity: automation.rear_guest_room_lights
-                  layout_options:
-                      grid_columns: 2
-                      grid_rows: 1
-                  name: Auto Lights
-                  tap_action:
-                      action: toggle
-                  icon: mdi:ceiling-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
+               -  type: entities
+                  entities:
+                     -  entity: automation.rear_guest_room_lights
+                        name: Auto Lights
+                  show_header_toggle: false
+                  state_color: true
+                  grid_options:
+                      columns: 6
             visibility:
                -  condition: or
                   conditions:
