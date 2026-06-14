@@ -310,7 +310,7 @@ views:
                       columns: 6
                       rows: 2
                -  type: custom:mushroom-media-player-card
-                  entity: media_player.living_room_arylic_lp10_music_assistant
+                  entity: media_player.living_room_arylic_lp10_ma_player
                   use_media_info: true
                   media_controls:
                      -  play_pause_stop
