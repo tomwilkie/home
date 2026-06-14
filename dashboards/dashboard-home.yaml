@@ -124,6 +124,9 @@ views:
                           domain: light
                           area_id_filter: basement
                           label_id_filter: room-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  type: tile
                   grid_options:
                       columns: 12
@@ -339,6 +342,9 @@ views:
                           area_id_filter: living_room
                           label_id_filter: room-light
                       target: {}
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  type: tile
                   grid_options:
                       columns: 12
@@ -565,6 +571,9 @@ views:
                           domain: light
                           area_id_filter: nursery
                           label_id_filter: room-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  type: tile
                   entity: automation.nursery_lights
                   grid_options:
@@ -654,6 +663,9 @@ views:
                           domain: light
                           area_id_filter: toms_office
                           label_id_filter: room-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  type: tile
                   entity: automation.toms_office_lights
                   grid_options:
@@ -805,6 +817,9 @@ views:
                           domain: light
                           area_id_filter: rear_guest_room
                           label_id_filter: room-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
                -  type: tile
                   entity: automation.rear_guest_room_lights
                   grid_options:
