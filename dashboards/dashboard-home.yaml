@@ -95,24 +95,6 @@ views:
                   grid_options:
                       columns: 6
                       rows: 2
-               -  type: entities
-                  entities:
-                     -  entity: automation.basement_lights
-                        name: Auto
-                        icon: mdi:lightbulb-auto
-                  show_header_toggle: false
-                  state_color: true
-                  card_mod:
-                      style:
-                          .: "ha-card { display: block !important; padding: 0 !important;
-                              }\n#states { padding: 8px !important; }\n"
-                          hui-toggle-entity-row:
-                              $:
-                                  hui-generic-entity-row:
-                                      $: ".info { margin-left: -6px !important; }\n"
-                  grid_options:
-                      columns: 6
-                      rows: 1
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
@@ -130,6 +112,26 @@ views:
                           domain: light
                           area_id_filter: basement
                           label_id_filter: room-light
+                  grid_options:
+                      columns: 6
+                      rows: 1
+               -  type: entities
+                  entities:
+                     -  entity: automation.basement_lights
+                        name: Auto lights
+                        icon: mdi:lightbulb-auto
+                  show_header_toggle: false
+                  state_color: true
+                  card_mod:
+                      style:
+                          .: "ha-card { display: block !important; padding: 0 !important;
+                              }\n#states { padding: 8px !important; }\n"
+                          hui-toggle-entity-row:
+                              $:
+                                  hui-generic-entity-row:
+                                      $: ".info { margin-left: -6px !important; font-weight:
+                                          500 !important; letter-spacing: 0.1px !important;
+                                          }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -319,24 +321,6 @@ views:
                   grid_options:
                       columns: 6
                       rows: 2
-               -  type: entities
-                  entities:
-                     -  entity: automation.living_room_lights
-                        name: Auto
-                        icon: mdi:lightbulb-auto
-                  show_header_toggle: false
-                  state_color: true
-                  card_mod:
-                      style:
-                          .: "ha-card { display: block !important; padding: 0 !important;
-                              }\n#states { padding: 8px !important; }\n"
-                          hui-toggle-entity-row:
-                              $:
-                                  hui-generic-entity-row:
-                                      $: ".info { margin-left: -6px !important; }\n"
-                  grid_options:
-                      columns: 6
-                      rows: 1
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
@@ -355,6 +339,26 @@ views:
                           area_id_filter: living_room
                           label_id_filter: room-light
                       target: {}
+                  grid_options:
+                      columns: 6
+                      rows: 1
+               -  type: entities
+                  entities:
+                     -  entity: automation.living_room_lights
+                        name: Auto lights
+                        icon: mdi:lightbulb-auto
+                  show_header_toggle: false
+                  state_color: true
+                  card_mod:
+                      style:
+                          .: "ha-card { display: block !important; padding: 0 !important;
+                              }\n#states { padding: 8px !important; }\n"
+                          hui-toggle-entity-row:
+                              $:
+                                  hui-generic-entity-row:
+                                      $: ".info { margin-left: -6px !important; font-weight:
+                                          500 !important; letter-spacing: 0.1px !important;
+                                          }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -590,7 +594,7 @@ views:
                -  type: entities
                   entities:
                      -  entity: automation.nursery_lights
-                        name: Auto
+                        name: Auto lights
                         icon: mdi:lightbulb-auto
                   show_header_toggle: false
                   state_color: true
@@ -601,7 +605,9 @@ views:
                           hui-toggle-entity-row:
                               $:
                                   hui-generic-entity-row:
-                                      $: ".info { margin-left: -6px !important; }\n"
+                                      $: ".info { margin-left: -6px !important; font-weight:
+                                          500 !important; letter-spacing: 0.1px !important;
+                                          }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -689,7 +695,7 @@ views:
                -  type: entities
                   entities:
                      -  entity: automation.toms_office_lights
-                        name: Auto
+                        name: Auto lights
                         icon: mdi:lightbulb-auto
                   show_header_toggle: false
                   state_color: true
@@ -700,7 +706,9 @@ views:
                           hui-toggle-entity-row:
                               $:
                                   hui-generic-entity-row:
-                                      $: ".info { margin-left: -6px !important; }\n"
+                                      $: ".info { margin-left: -6px !important; font-weight:
+                                          500 !important; letter-spacing: 0.1px !important;
+                                          }\n"
                   grid_options:
                       columns: 6
                       rows: 1
@@ -850,7 +858,7 @@ views:
                -  type: entities
                   entities:
                      -  entity: automation.rear_guest_room_lights
-                        name: Auto
+                        name: Auto lights
                         icon: mdi:lightbulb-auto
                   show_header_toggle: false
                   state_color: true
@@ -861,7 +869,9 @@ views:
                           hui-toggle-entity-row:
                               $:
                                   hui-generic-entity-row:
-                                      $: ".info { margin-left: -6px !important; }\n"
+                                      $: ".info { margin-left: -6px !important; font-weight:
+                                          500 !important; letter-spacing: 0.1px !important;
+                                          }\n"
                   grid_options:
                       columns: 6
                       rows: 1
