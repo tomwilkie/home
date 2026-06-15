@@ -115,8 +115,10 @@ Manages all transitions of the `front_door_state` helper. Triggered by four even
 |---|---|---|
 | `knocking` | `binary_sensor.front_door_vibration_vibration` | Vibration detected (`off` → `on`) |
 | `doorbell` | `binary_sensor.front_door_doorbell` | Doorbell pressed (`off` → `on`, UniFi Protect) |
-| `webhook` | Webhook `<your-webhook-id>` | GET request received (legacy path — the external sender stopped calling it; kept in case it resumes) |
+| `webhook` | UniFi Protect "Ring" alarm rule → HA webhook `<your-webhook-id>` | GET request received |
 | `door_open` | `binary_sensor.front_door_contact_contact` | Door opens (state → `on`) |
+
+> The `doorbell` and `webhook` triggers are **redundant paths for the same doorbell press** — both fire within milliseconds of each other. In `restart` mode one supersedes the other, and the `Absent`-only state guard means only one announcement is produced. The native `doorbell` trigger is the primary path; the `webhook` is belt-and-suspenders (see [Webhook source](#webhook-source-unifi-protect) below).
 
 > The `doorbell` trigger uses `from: off` (not just `to: on`) so that `unavailable` → `on` transitions during the nightly restart or UniFi Protect reconnects cannot fire it.
 
@@ -138,6 +140,14 @@ Each branch guards on the current state before acting, so spurious triggers are 
 After the choose block, if the state is now `Someone at the Door` (i.e. one of the above branches fired), the automation waits **2 minutes** then resets to `Absent`. The door-open trigger can fire earlier to reset sooner.
 
 Runs in `restart` mode — if the door opens during the 2-minute wait, the reset fires immediately rather than waiting for the current run to finish.
+
+#### Webhook source (UniFi Protect)
+
+The `webhook` trigger is fed by a **UniFi Protect Alarm Manager rule** named **"Ring"** on the Dream Machine Pro Max, scoped to the front-door doorbell camera (trigger: `ring`). The rule's Custom Webhook action does a `GET` to HA at `http://<ha-lan-ip>:8123/api/webhook/<your-webhook-id>`; the same rule also sends UniFi push notifications to household phones.
+
+Originally the rule pointed at the **external** (Nabu Casa) HA URL, which forced the UDM to round-trip every ring out to the internet and back. That path silently stopped delivering — no webhook reached HA for 7+ days, consistent with the 2026 UniFi Alarm Manager / Protect 7.x transition — which is why the native `doorbell` trigger was added as the primary path. The rule was then repointed to HA's **local LAN IP**, which the UDM delivers directly without leaving the network. HA's IP is held stable by a **DHCP reservation** on the UDM (keyed to HA's NIC MAC); HAOS itself stays on DHCP.
+
+Edit this rule in the **UniFi Protect UI** — the UniFi MCP server can read alarm rules but cannot write the console's legacy Protect automations (see the UniFi MCP **Limitations** in [@access-home-assistant.md](access-home-assistant.md)).
 
 ---
 

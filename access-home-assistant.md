@@ -61,6 +61,30 @@ jq '[.data.deleted_devices[] | .identifiers[0][0]] | group_by(.) | map({integrat
 jq '[.data.deleted_entities[] | select(.platform == "some_integration") | .entity_id]' /config/.storage/core.entity_registry
 ```
 
+## UniFi MCP servers
+
+The home network and cameras run on a UniFi **Dream Machine Pro Max** (UniFi Network + Protect). Two MCP plugin servers from the [`sirkirby/unifi-mcp`](https://github.com/sirkirby/unifi-mcp) marketplace expose it to Claude:
+
+- **`unifi-protect`** — cameras, NVR, events, and Alarm Manager rules
+- **`unifi-network`** — clients, devices, firewall, and DHCP reservations
+
+### Setup
+
+- Installed via the Claude Code plugin marketplace (`/plugin marketplace add sirkirby/unifi-mcp`, then `/plugin install unifi-protect@unifi-plugins` and `unifi-network@unifi-plugins`).
+- Auth uses a **dedicated local admin account on the UDM** (UniFi OS → Admins & Users, "Restrict to Local Access Only", no MFA) — **not** a Ubiquiti SSO cloud account.
+- Credentials live in `~/.claude/settings.json` env (`UNIFI_PROTECT_*` and `UNIFI_NETWORK_*`, host `192.168.0.1`) — **never** in this repo. Changing them requires a **full Claude Code restart** (MCP servers read env only at process startup; `/reload-plugins` is not enough).
+- Both servers use lazy tool loading: call `protect_tool_index` / `unifi_tool_index` to discover tools, then `protect_execute` / `unifi_execute` to run them. Write tools take `confirm: false` (returns a preview) then `confirm: true` (applies).
+
+### Useful operations
+
+- DHCP reservation: `unifi_set_client_ip_settings(mac_address, use_fixedip=true, fixed_ip=...)`. Clients are matched by **lowercase** MAC; if a MAC lookup returns "not found", find the record with `unifi_lookup_by_ip`.
+- Read Protect alarm rules: `protect_alarm_list_rules` / `protect_alarm_get_rule`.
+
+### Limitations
+
+- The Protect server is **beta**. Its Alarm Manager **write** tools cannot modify this console's **legacy Protect alarm automations**: `protect_alarm_update_rule` rejects their `_new`-suffixed rule ids ("must be a v2 UUID or 24-char ObjectID"), and `protect_alarm_create_rule` fails because the normalized read shape is lossy and omits `trigger_id`. **Reads work fine** — edit alarm rules in the UniFi Protect UI instead (see the Front Door webhook note in [@notifications.md](notifications.md)).
+- The unified UniFi-OS Alarm Manager API (`/api/v2/alarms`) is **not active** on this console; only the legacy Protect automations are present.
+
 ## Grafana
 
 Home Assistant logs and metrics are sent to Grafana Cloud.
