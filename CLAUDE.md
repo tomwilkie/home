@@ -9,6 +9,7 @@ The live Home Assistant configuration (automations, scripts, helpers, dashboards
 - Refer to @notifications.md for information on how e.g. the front door, washing machine and tumble dryer notifications are configured.
 - Refer to @dashboards.md for the GitOps workflow for managing dashboards and the purpose of each dashboard.
 - Refer to @observability.md for how metrics and logs are shipped to Grafana Cloud via Grafana Alloy.
+- Refer to @network-security.md for how the IOT and Camera VLANs are isolated on the UniFi gateway and how to audit the isolation.
 
 # Entity IDs, not Device IDs
 
