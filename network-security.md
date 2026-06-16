@@ -146,10 +146,10 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
       - Norman Hub (IOT) — `USW Pro Max 16 PoE` port 5.
       - Garage Door camera, G5 Turret Ultra (Cameras) — `Garage Switch` port 5.
       - Garage camera, AI Pro (Cameras) — `Garage Switch` port 7.
+      - Back-garden camera, G5 Turret Ultra (Cameras) — `Basement Switch` port 3.
       Port isolation is per-switch, so it does not block same-VLAN traffic between
       devices on *different* switches (inherent L2 limit; minor residual for
-      trusted cams). The back-garden cam on `Basement Switch` port 3 is **not**
-      isolated — optional to add.
+      trusted cams).
 - [x] mDNS reflector already enabled (`mdns_enabled: true`), left as-is.
 - [x] Functional verification: camera entities `recording`, IOT Voice satellites
       connected after the change.
