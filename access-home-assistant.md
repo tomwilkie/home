@@ -72,13 +72,25 @@ The home network and cameras run on a UniFi **Dream Machine Pro Max** (UniFi Net
 
 - Installed via the Claude Code plugin marketplace (`/plugin marketplace add sirkirby/unifi-mcp`, then `/plugin install unifi-protect@unifi-plugins` and `unifi-network@unifi-plugins`).
 - Auth uses a **dedicated local admin account on the UDM** (UniFi OS → Admins & Users, "Restrict to Local Access Only", no MFA) — **not** a Ubiquiti SSO cloud account.
-- Credentials live in `~/.claude/settings.json` env (`UNIFI_PROTECT_*` and `UNIFI_NETWORK_*`, host `192.168.0.1`) — **never** in this repo. Changing them requires a **full Claude Code restart** (MCP servers read env only at process startup; `/reload-plugins` is not enough).
+- Credentials live in `~/.claude/settings.json` env (`UNIFI_PROTECT_*`, `UNIFI_NETWORK_*`, and `UNIFI_API_KEY` — the last is required for the firewall integration API; host `192.168.0.1`) — **never** in this repo. Changing them requires a **full Claude Code restart** (MCP servers read env only at process startup; `/reload-plugins` is not enough).
 - Both servers use lazy tool loading: call `protect_tool_index` / `unifi_tool_index` to discover tools, then `protect_execute` / `unifi_execute` to run them. Write tools take `confirm: false` (returns a preview) then `confirm: true` (applies).
+- ⚠️ The UniFi **site name is the home street address**, so `unifi_get_site_settings` and some device payloads return it. **Never** echo it into repo files or commit messages (see the PII policy in [CLAUDE.md](CLAUDE.md)).
 
 ### Useful operations
 
 - DHCP reservation: `unifi_set_client_ip_settings(mac_address, use_fixedip=true, fixed_ip=...)`. Clients are matched by **lowercase** MAC; if a MAC lookup returns "not found", find the record with `unifi_lookup_by_ip`.
 - Read Protect alarm rules: `protect_alarm_list_rules` / `protect_alarm_get_rule`.
+- Find a wired device's switch + port (e.g. to apply port isolation): `unifi_get_client_details(mac_address, summary=false)` → `sw_mac`, `sw_port`, `last_uplink_name`. Read/confirm port isolation via `unifi_get_switch_ports(device_mac)` → `port_overrides[].isolation`.
+
+### Firewall (Zone-Based Firewall)
+
+The full VLAN/firewall design and audit procedure live in [@network-security.md](network-security.md). MCP operating notes:
+
+- The firewall tools (`unifi_list_firewall_zones` / `_policies` / `_groups`, `unifi_create_firewall_policy`, the ordering tools) need **`UNIFI_API_KEY`** set **and** **Zone-Based Firewall enabled** on the UDM. If either is missing the reads return `success: true` with an **empty** list — *not* an auth error. To disambiguate, call a key-only endpoint like `unifi_get_firewall_policy_ordering`: a `401` means the key is missing/wrong; a `400` (argument validation) means the key works and the gap is elsewhere (e.g. ZBF not enabled).
+- The MCP can create/update firewall **policies** and **groups**, but **not zones** — create zones and assign networks in the UniFi UI, then reference their ids. After ZBF migration, all corporate LANs default into the `Internal` zone; dedicated per-VLAN zones give a default-deny posture.
+- `unifi_create_firewall_policy` takes a `policy_data` object; `source`/`destination` each are `{zone_id, matching_target}` where `matching_target` is `ANY`, or `IP` + `matching_target_type: SPECIFIC` + `ips: [...]`, or `NETWORK` + `OBJECT` + `network_ids: [...]`. Set `logging: true` on BLOCK rules. New custom rules auto-index above predefined ones; within a zone-pair order ALLOW above BLOCK.
+- `unifi_update_wlan` / `unifi_update_network` take changed fields inside an **`update_data`** object (e.g. WLAN client isolation = `update_data: {l2_isolation: true}`).
+- **Traffic Flows** (`unifi_get_traffic_flows`) is read-only, **batches/lags** (not real-time), and only logs traffic that **matches a policy** — so containment audits depend on the BLOCK policies having `logging` enabled.
 
 ### Limitations
 
