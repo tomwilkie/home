@@ -6,9 +6,37 @@ You can talk to Home Assistant in the following ways
 
 Use the `mcp__home-assistant__*` tools to read and write live HA configuration. The MCP server connects to `http://homeassistant.local:8123` when on the local network.
 
+The server is **[`ha-mcp`](https://github.com/homeassistant-ai/ha-mcp)** (the "unofficial" Home Assistant MCP server, [`ha-mcp` on PyPI](https://pypi.org/project/ha-mcp/)) — its tool set is the `ha_*` family (`ha_get_state`, `ha_set_entity`, `ha_get_integration`, `ha_deep_search`, `ha_config_get_dashboard`, etc.).
+
+### Setup
+
+Added with the server name `home-assistant` (so the tools resolve as `mcp__home-assistant__*`), run via `uvx` (needs `uv` — `brew install uv`):
+
+```sh
+claude mcp add home-assistant -- uvx ha-mcp
+```
+
+- Credentials are read from the **shell environment**, never from files: export `HA_URL` and `HA_TOKEN` (a long-lived access token, created in HA → profile → Security) in your `~/.zshrc` or a sourced secrets file. Do **not** pass them via `--env` on `claude mcp add` — the server inherits them from the environment of the shell that launches `claude`.
+- The same `HA_URL`/`HA_TOKEN` (token) is reused by `hass-cli` below (it reads `HASS_SERVER`/`HASS_TOKEN`).
+
 ## Home Assistant CLI
 
 There is the `hass-cli` command which can be used to e.g. download & upload dashboards.
+
+### Setup
+
+The `dashboard` subcommands used below are **not yet in upstream** [`home-assistant/home-assistant-cli`](https://github.com/home-assistant/home-assistant-cli) — they live on the `add-dashboard-commands` branch of the fork [`tomwilkie/home-assistant-cli`](https://github.com/tomwilkie/home-assistant-cli/tree/add-dashboard-commands) (PR pending). Install from the fork until it's merged:
+
+```sh
+pipx install git+https://github.com/tomwilkie/home-assistant-cli.git@add-dashboard-commands
+```
+
+`hass-cli` reads the HA connection from the environment (the same token as the MCP server above — see [PII policy](CLAUDE.md), keep it out of files):
+
+```sh
+export HASS_SERVER=http://homeassistant.local:8123
+export HASS_TOKEN=<your-long-lived-token>
+```
 
 To list dashboards in home assistant:
 ```sh
@@ -72,7 +100,7 @@ The home network and cameras run on a UniFi **Dream Machine Pro Max** (UniFi Net
 
 - Installed via the Claude Code plugin marketplace (`/plugin marketplace add sirkirby/unifi-mcp`, then `/plugin install unifi-protect@unifi-plugins` and `unifi-network@unifi-plugins`).
 - Auth uses a **dedicated local admin account on the UDM** (UniFi OS → Admins & Users, "Restrict to Local Access Only", no MFA) — **not** a Ubiquiti SSO cloud account.
-- Credentials live in `~/.claude/settings.json` env (`UNIFI_PROTECT_*`, `UNIFI_NETWORK_*`, and `UNIFI_API_KEY` — the last is required for the firewall integration API; host `192.168.0.1`) — **never** in this repo. Changing them requires a **full Claude Code restart** (MCP servers read env only at process startup; `/reload-plugins` is not enough).
+- Credentials are read from the **shell environment** (`UNIFI_PROTECT_*`, `UNIFI_NETWORK_*`, and `UNIFI_API_KEY` — the last is required for the firewall integration API; host `192.168.0.1`) — exported from `~/.zshrc` or a sourced secrets file, **never** in this repo or in `settings.json`. Changing them requires a **full Claude Code restart** (MCP servers read env only at process startup; `/reload-plugins` is not enough).
 - Both servers use lazy tool loading: call `protect_tool_index` / `unifi_tool_index` to discover tools, then `protect_execute` / `unifi_execute` to run them. Write tools take `confirm: false` (returns a preview) then `confirm: true` (applies).
 - ⚠️ The UniFi **site name is the home street address**, so `unifi_get_site_settings` and some device payloads return it. **Never** echo it into repo files or commit messages (see the PII policy in [CLAUDE.md](CLAUDE.md)).
 
