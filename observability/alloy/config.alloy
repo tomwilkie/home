@@ -261,3 +261,50 @@ prometheus.scrape "unpoller" {
   targets         = discovery.relabel.unpoller.output
   scrape_interval = "60s"
 }
+
+// ── UniFi gateway syslog ──────────────────────────────────────────────────────
+// The UDM Pro Max's remote logging ("Activity Logging" / SIEM export) emits
+// CEF over UDP, not RFC-compliant syslog: each datagram looks like
+//   "Jun 17 12:42:00 <site name> CEF:0|Ubiquiti|UniFi ...|name|severity|..."
+// with no <PRI> prefix, so the strict rfc3164/rfc5424 parsers reject it. We
+// listen in "raw" mode (passes the whole datagram through unparsed) and forward
+// the full line; loki.process below only extracts a few labels for querying.
+//
+// "raw" is an experimental Alloy feature, so the container runs with
+// --stability.level=experimental (see docker-compose.yml).
+//
+// Alloy runs with host networking (and as root), so this listener is reachable
+// on the LAN at <HA host>:514. Point the UDM's Remote Logging at
+// 192.168.0.12:514 (UDP).
+
+loki.source.syslog "unifi" {
+  listener {
+    address       = "0.0.0.0:514"
+    protocol      = "udp"
+    syslog_format = "raw"
+    labels = {
+      job      = "integrations/unifi",
+      instance = "udm",
+    }
+  }
+  forward_to = [loki.process.unifi_cef.receiver]
+}
+
+loki.process "unifi_cef" {
+  forward_to = [grafana_cloud.stack.receivers.logs]
+
+  // Pull low-cardinality header fields from the CEF for querying; the full raw
+  // line is kept as the log body. CEF header layout:
+  // CEF:Version|Vendor|Product|Version|SignatureID|Name|Severity|Extension
+  stage.regex {
+    expression = "CEF:[^|]*\\|[^|]*\\|(?P<product>[^|]*)\\|[^|]*\\|[^|]*\\|(?P<name>[^|]*)\\|(?P<severity>[^|]*)\\|"
+  }
+
+  stage.labels {
+    values = {
+      product  = "product",
+      name     = "name",
+      severity = "severity",
+    }
+  }
+}

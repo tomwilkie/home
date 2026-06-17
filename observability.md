@@ -20,7 +20,8 @@ HAOS host
 │   ├── scrapes Docker socket        → container metrics (cAdvisor) + container logs
 │   ├── reads /var/log/journal       → systemd journal logs
 │   ├── scrapes localhost:8123       → Home Assistant metrics
-│   └── discovers unpoller addon     → UniFi network metrics
+│   ├── discovers unpoller addon     → UniFi network metrics
+│   └── receives UDM syslog on :514  → UniFi CEF events (raw/UDP, parsed)
 └── ships everything → Grafana Cloud (Prometheus + Loki)
 ```
 
@@ -44,6 +45,42 @@ Alloy runs with `network_mode: host` so it can reach Home Assistant on `localhos
 |---|---|
 | Systemd journal (`/var/log/journal`) | `unit`, `level`, `container` |
 | Docker container logs | `container`, `stream`, `compose_service` |
+| UniFi syslog (CEF, UDP 514) | `job=integrations/unifi`, `instance=udm`, `product`, `name`, `severity` |
+
+#### UniFi syslog (CEF)
+
+The UDM Pro Max's remote logging (UniFi's "Activity Logging" / SIEM exporter)
+does **not** emit RFC-compliant syslog — it sends **CEF** over **UDP**, with no
+`<PRI>` prefix and the site name (the home address) in the hostname position:
+
+```
+Jun 17 12:42:00 <site name> CEF:0|Ubiquiti|UniFi Protect|7.1.83|2159|motion|3|UNIFIcategory=detection ... msg="..."
+```
+
+Because the strict RFC3164/RFC5424 parsers reject this, Alloy's
+`loki.source.syslog "unifi"` listens in **`syslog_format = "raw"`** mode (passes
+each datagram through unparsed). `raw` is an **experimental** Alloy feature, so
+the container is started with `--stability.level=experimental` (see
+`docker-compose.yml`). The listener binds `0.0.0.0:514`; with
+`network_mode: host` (and root) it's reachable on the LAN at the Home Assistant
+host IP `192.168.0.12` (the DHCP-reserved address — see
+[@network-security.md](network-security.md)).
+
+The full raw line is forwarded as the log body; a `loki.process "unifi_cef"`
+only extracts the low-cardinality CEF header fields `product`, `name`, and
+`severity` as labels for querying.
+
+> The syslog "hostname" field is the UniFi site name (the home address); it is
+> intentionally **not** stripped — these logs go to a private Grafana Cloud
+> stack. If that ever changes, add a `stage.regex` keeping only `CEF:…` plus a
+> `stage.output`.
+
+Configure the UDM side in the **UniFi UI** (not the MCP — the site-settings
+payload echoes the home address, which is PII per [CLAUDE.md](CLAUDE.md)): enable
+Activity Logging / Remote Logging, **Server Address** = `192.168.0.12`, **Port**
+= `514` (UDP), select the desired categories. No firewall rule is needed —
+gateway→Internal traffic on the Default network is allowed by the ZBF predefined
+matrix. Query in Grafana Cloud with `{job="integrations/unifi"}`.
 
 ## Environment variables
 

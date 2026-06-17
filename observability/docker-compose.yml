@@ -48,6 +48,9 @@ services:
       - /etc/alloy/config.alloy
       - --storage.path=/var/lib/alloy
       - --server.http.listen-addr=0.0.0.0:12345
+      # Required for loki.source.syslog "raw" format (UniFi sends CEF, not
+      # RFC-compliant syslog). See alloy/config.alloy → loki.source.syslog.unifi.
+      - --stability.level=experimental
 
 volumes:
   alloy-data:
