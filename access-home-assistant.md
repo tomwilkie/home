@@ -129,3 +129,26 @@ The full VLAN/firewall design and audit procedure live in [@network-security.md]
 
 Home Assistant logs and metrics are sent to Grafana Cloud.
 For access metrics & logs related to this home assistant instance, use the `gcx` skill & tools.
+
+`gcx` is the [Grafana Cloud CLI](https://github.com/grafana/gcx); the Claude skills/workflows are a thin layer over it, so the **CLI and the plugin are installed separately**.
+
+### Setup
+
+1. **CLI** — via Homebrew (installs to `/opt/homebrew/bin/gcx`):
+
+   ```sh
+   brew install grafana/grafana/gcx
+   ```
+
+   Verify with `gcx version`. (An older build installed from source under `~/go/bin` would shadow the brew binary on `PATH` — remove it so `gcx` resolves to the brew copy.)
+
+2. **Claude skills/workflows** — via the Claude Code plugin marketplace (`grafana/gcx`):
+
+   ```sh
+   claude plugin marketplace add grafana/gcx
+   claude plugin install gcx@gcx-marketplace
+   ```
+
+   This ships the `gcx:*` namespaced skills (e.g. `gcx:debug-with-grafana`, `gcx:setup-gcx`, `gcx:slo-manage`, `gcx:oncall-triage`). Run `gcx:setup-gcx` for first-run authentication.
+
+- `gcx` stores its own config/credentials under `~/.config/gcx` (written by its auth flow) — **never** commit those into this repo.
