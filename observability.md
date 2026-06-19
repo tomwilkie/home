@@ -45,7 +45,8 @@ Alloy runs with `network_mode: host` so it can reach Home Assistant on `localhos
 |---|---|
 | Systemd journal (`/var/log/journal`) | `unit`, `level`, `container` |
 | Docker container logs | `container`, `stream`, `compose_service` |
-| UniFi syslog (CEF, UDP 514) | `job=integrations/unifi`, `instance=udm`, `product`, `name`, `severity` |
+| UniFi syslog — CEF activity events (UDP 514) | `job=integrations/unifi`, `instance=udm`, `product`, `name`, `severity` |
+| UniFi syslog — firewall (iptables) + CoreDNS lines (UDP 514, non-CEF) | `job=integrations/unifi`, `instance=udm` (filter by line content) |
 
 #### UniFi syslog (CEF)
 
@@ -81,6 +82,40 @@ Activity Logging / Remote Logging, **Server Address** = `192.168.0.12`, **Port**
 = `514` (UDP), select the desired categories. No firewall rule is needed —
 gateway→Internal traffic on the Default network is allowed by the ZBF predefined
 matrix. Query in Grafana Cloud with `{job="integrations/unifi"}`.
+
+#### UniFi firewall traffic & DNS logs (non-CEF)
+
+When the UDM's Remote Logging **firewall** category is enabled, the same UDP/514
+stream *also* carries non-CEF lines, which Alloy passes through verbatim (raw
+mode). These share `instance="udm"` but are **not** CEF, so the
+`product`/`name`/`severity` labels are absent — filter by line content
+(`|=`/`|~`) instead.
+
+- **Kernel firewall (iptables) per-flow logs** — emitted by any firewall policy
+  with `logging: true` (e.g. `Log IOT to Internet (ALLOW)`, see
+  [@network-security.md](network-security.md)):
+  ```
+  <13>Jun 19 09:09:37 <site> [CUSTOM1_WAN-A-10000] DESCR="Log IOT to Internet (ALLOW)"
+  IN=br2 OUT=eth8 SRC=192.168.2.18 DST=8.8.8.8 PROTO=TCP SPT=... DPT=443 ...
+  ```
+  This is the only reliable source of **per-device internet destinations** (as
+  IPs) — Insights → Flows only retains *blocked* flows. Query:
+  `{instance="udm"} |= "SRC=192.168.2"` or `|~ "DESCR=.Log IOT to Internet"`.
+
+- **CoreDNS query logs** — JSON, but only ad-blocked queries
+  (`"type":"dnsAdBlock"`), not full resolution:
+  ```
+  coredns[…]: {"type":"dnsAdBlock","category":"ADVERTISEMENT","domain":"…","src_ip":"…", …}
+  ```
+  Query: `{instance="udm"} |= "coredns"`.
+
+> **Verifying syslog ingestion** (to tell "UDM isn't sending" from "Alloy is
+> dropping"): tcpdump on the host sees packets *before* Alloy
+> (`tcpdump -ni any udp port 514 -A`); Alloy's own metrics confirm
+> ingestion/drops (`curl -s localhost:12345/metrics | grep -E
+> 'loki_source_syslog_entries_total|loki_write_(dropped|sent)_entries_total'`).
+> Firewall traffic logs are high-volume; CEF activity events are sporadic (a few
+> per minute), so a short quiet capture window is normal for CEF alone.
 
 ## Environment variables
 

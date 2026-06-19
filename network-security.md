@@ -39,6 +39,17 @@ stay pinned (the front-door webhook also depends on this reservation — see
 > subnet move an adopted Protect camera may briefly show offline until the NVR
 > re-discovers it (reboot / power-cycle its PoE port if it doesn't recover).
 
+> **Hive Hub** was moved off the main network onto the **IOT VLAN** (now
+> `192.168.2.125`, DHCP; wired on `Basement Switch` port 8, port isolation on).
+> The Hive HA integration is **cloud-only**, so the hub only needs internet
+> (IOT→External, allowed) — no HA exception required. Gotcha for legacy wired
+> devices on a VLAN move: reassigning the port's VLAN does **not** drop the link,
+> so the device keeps its old-subnet DHCP lease and loses its gateway. Bounce the
+> switch-port link (disable/enable; it's **not** PoE, so a PoE power-cycle is a
+> no-op) to force a fresh lease, then **power-cycle the hub** so it re-registers
+> with its cloud. (The hub being self-powered, not PoE, also means it isn't
+> rebootable from the controller.)
+
 > **Why HA needs an explicit exception:** HA is on the *main* network, not on
 > IOT. So this is **not** the per-network "Network Isolation" checkbox (which
 > would also cut IOT off from HA). It requires explicit firewall policies that
@@ -110,6 +121,83 @@ The reflector runs at the gateway, so it keeps working despite the IOT→Interna
 block. This was **already enabled** (`mdns_enabled: true` on the IOT network) —
 left as-is.
 
+## IOT internet-destination visibility & DNS forcing
+
+Two related goals: see *which internet hosts* each IOT device reaches, and stop
+IOT devices using public DNS so their lookups are visible/controllable.
+
+### Why Insights → Flows wasn't enough
+
+UniFi's Insights → Flows (and the `unifi_get_traffic_flows` /
+`unifi_get_traffic_flow_statistics` MCP tools) only retain **blocked** flows on
+this console — even a custom ALLOW policy with `logging: true` does **not**
+surface its allowed per-flow records there (`allowed_count_by_risk` is always
+empty). So the top-destination data those tools return is exclusively
+ad-block/DPI **blocks**, mostly from the main LAN — useless for "where is IOT
+going".
+
+### How per-flow destinations are actually captured
+
+The working path is **UDM firewall log → remote syslog → Alloy → Loki** (see
+[@observability.md](observability.md)):
+
+1. A logged ALLOW policy **`Log IOT to Internet (ALLOW)`** (IOT→External, any,
+   `logging: true`) makes the gateway emit a kernel iptables LOG line per IOT
+   internet connection:
+   ```
+   [CUSTOM1_WAN-A-10000] DESCR="Log IOT to Internet (ALLOW)" IN=br2 OUT=eth8
+   SRC=192.168.2.18 DST=8.8.8.8 PROTO=TCP SPT=... DPT=443 ...
+   ```
+2. Enabling the **firewall** log category in the UDM's Remote Logging exports
+   those lines over the same UDP/514 syslog already feeding Loki.
+3. Query in Grafana Cloud: `{instance="udm"} |= "SRC=192.168.2"` — destinations
+   are **IPs**, not domains (reverse-resolve as needed).
+
+> **Ordering gotcha.** The catch-all `Log IOT to Internet (ALLOW)` matches *all*
+> IOT→External, so it must sit **below** the DNS BLOCK rules or it shadows them
+> (first match wins; lowest `index` evaluated first). The integration-API reorder
+> endpoint currently **500s** (`unifi_reorder_firewall_policies`), and direct
+> `index` edits via `unifi_update_firewall_policy` are silently ignored
+> ("accepted but did not apply"). Workaround: **delete and recreate** the rule
+> that needs to move down — a freshly created custom rule is appended *last*
+> (highest index) within its zone-pair. (That's why the ALLOW rule's policy ID
+> below differs from the one originally created.)
+
+### DNS forcing (block public resolvers)
+
+IOT devices were found going **directly to public DNS** (8.8.8.8, 8.8.4.4,
+1.1.1.1/1.0.0.1, 9.9.9.9/149.112.112.112, …) — including **DoH on 443** —
+bypassing the gateway resolver entirely, so their lookups never reached CoreDNS
+and couldn't be logged. Two BLOCK rules (IOT→External, logged, ordered **above**
+the ALLOW) force them back onto the gateway resolver:
+
+| Rule | Matches | Catches |
+|---|---|---|
+| `Block IOT DNS to Internet` | proto tcp_udp, dst **port group `DNS Ports` {53, 853}**, any internet host | plain DNS + DoT to *any* resolver |
+| `Block IOT to Public DNS Providers` | **all ports**, dst **address group `Public DNS Resolvers`** (15 IPs) | DoH (`:443`) + anything to the known public resolvers |
+
+IOT→Gateway DNS stays allowed (ZBF predefined matrix), so devices that honour the
+DHCP-handed resolver keep working; the blocks only hit *external* destinations.
+Verify the blocks fire: `{instance="udm"} |~ "DESCR=.Block IOT"`.
+
+> **Caveats / known gaps:**
+> - **DoH to providers not in the IP list** (NextDNS, other Google/Cloudflare
+>   ranges) still slips through on 443 — no clean fix without SNI filtering.
+> - **IPv6 DoH** isn't covered (the address group is IPv4-only; the port rule's
+>   `ip_version: BOTH` does cover IPv6 plain DNS/DoT).
+> - **Hardcoded-DNS devices may break.** Several IOT devices (e.g. Hive Hub
+>   `.125`, Kitchen Display `.18`) just *retry* public DNS rather than fall back,
+>   so they may have degraded resolution until a local resolver (gateway CoreDNS
+>   / AdGuard) answers them.
+
+### DNS query logging (limited)
+
+The UDM's CoreDNS also exports query logs to syslog/Loki, but **only**
+`type:"dnsAdBlock"` entries (queries its ad-blocker dropped) — not full
+resolution — and almost entirely for the main LAN, since IOT used public DNS.
+Full per-domain IOT visibility needs **AdGuard Home / Pi-hole** as the IOT
+resolver (not yet deployed).
+
 ## Auditing the isolation
 
 Repeatable, no UI needed, via the `unifi-network` MCP `unifi_get_traffic_flows`
@@ -144,6 +232,7 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
 - [x] `l2_isolation` enabled on `iot` + `cameras` WLANs.
 - [x] **Switch-port isolation for wired devices** (`isolation: true` confirmed):
       - Norman Hub (IOT) — `USW Pro Max 16 PoE` port 5.
+      - Hive Hub (IOT) — `Basement Switch` port 8.
       - Garage Door camera, G5 Turret Ultra (Cameras) — `Garage Switch` port 5.
       - Garage camera, AI Pro (Cameras) — `Garage Switch` port 7.
       - Back-garden camera, G5 Turret Ultra (Cameras) — `Basement Switch` port 3.
@@ -153,6 +242,13 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
 - [x] mDNS reflector already enabled (`mdns_enabled: true`), left as-is.
 - [x] Functional verification: camera entities `recording`, IOT Voice satellites
       connected after the change.
+- [x] IOT internet-destination logging live (`Log IOT to Internet (ALLOW)` →
+      UDM firewall syslog → Loki; verified per-flow `SRC=/DST=` lines arriving).
+- [x] DNS forcing live: IOT→public-DNS blocked (53/853 to any + known resolver
+      IPs incl. DoH/443); verified `Block IOT to Public DNS Providers` firing.
+- [ ] AdGuard Home / Pi-hole as the IOT resolver (for full per-domain query
+      logging, and to give hardcoded-DNS devices a working resolver).
+- [ ] Watch for IOT devices broken by the DNS block (Hive Hub, Kitchen Display).
 - [ ] Ongoing audit (re-run the traffic-flow queries above periodically).
 
 ### Live policy IDs (created via MCP)
@@ -166,3 +262,17 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
 | Block Cameras to LAN (BLOCK, logged) | `6a311724631d350c25c1423f` |
 | Block Cameras to Internet (BLOCK, logged) | `6a311725631d350c25c14242` |
 | Home Assistant to Cameras (ALLOW) | `6a311709631d350c25c14236` |
+| Block IOT DNS to Internet (BLOCK, logged) | `6a3502392753ee32cc1f26e8` |
+| Block IOT to Public DNS Providers (BLOCK, logged) | `6a35023a2753ee32cc1f26eb` |
+| Log IOT to Internet (ALLOW, logged) | `6a3502dc2753ee32cc1f2955` |
+
+> Within the IOT→External zone-pair these must stay ordered **blocks first, ALLOW
+> last** (see the ordering gotcha above). Current `index`: DNS block `10001`,
+> public-DNS block `10002`, ALLOW `10003`.
+
+### Firewall groups (created via MCP)
+
+| Name | Type | Group ID | Members |
+|---|---|---|---|
+| Public DNS Resolvers | address-group | `6a3502122753ee32cc1f2645` | 8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1, 9.9.9.9, 149.112.112.112, 208.67.222.222, 208.67.220.220, 94.140.14.14, 94.140.15.15, 4.2.2.1, 4.2.2.2, 4.4.4.4, 64.6.64.6, 64.6.65.6 |
+| DNS Ports | port-group | `6a3502132753ee32cc1f2648` | 53, 853 |
