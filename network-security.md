@@ -150,8 +150,10 @@ The working path is **UDM firewall log → remote syslog → Alloy → Loki** (s
    ```
 2. Enabling the **firewall** log category in the UDM's Remote Logging exports
    those lines over the same UDP/514 syslog already feeding Loki.
-3. Query in Grafana Cloud: `{instance="udm"} |= "SRC=192.168.2"` — destinations
-   are **IPs**, not domains (reverse-resolve as needed).
+3. Query in Grafana Cloud (Alloy tags these `log_type="firewall"` with the policy
+   name as the `rule` label — see [@observability.md](observability.md)):
+   `{log_type="firewall", rule="Log IOT to Internet (ALLOW)"} |= "SRC=192.168.2"`
+   — destinations are **IPs**, not domains (reverse-resolve as needed).
 
 > **Ordering gotcha.** The catch-all `Log IOT to Internet (ALLOW)` matches *all*
 > IOT→External, so it must sit **below** the DNS BLOCK rules or it shadows them
@@ -178,7 +180,8 @@ the ALLOW) force them back onto the gateway resolver:
 
 IOT→Gateway DNS stays allowed (ZBF predefined matrix), so devices that honour the
 DHCP-handed resolver keep working; the blocks only hit *external* destinations.
-Verify the blocks fire: `{instance="udm"} |~ "DESCR=.Block IOT"`.
+Verify the blocks fire: `{log_type="firewall", rule=~"Block IOT.*"}` (or the
+older content filter `{instance="udm"} |~ "DESCR=.Block IOT"`).
 
 > **Caveats / known gaps:**
 > - **DoH to providers not in the IP list** (NextDNS, other Google/Cloudflare

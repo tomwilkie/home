@@ -23,8 +23,9 @@ loki.process "alloy" {
 
   stage.static_labels {
     values = {
-      instance = constants.hostname,
-      job = "integrations/alloy",
+      instance     = constants.hostname,
+      job          = "integrations/alloy",
+      service_name = "alloy",
     }
   }
 }
@@ -135,7 +136,7 @@ loki.source.journal "system" {
   relabel_rules = loki.relabel.journal.rules
 
   labels = {
-    job      = "journal",
+    job      = "integrations/linux",
     instance = constants.hostname,
   }
 }
@@ -143,6 +144,10 @@ loki.source.journal "system" {
 loki.relabel "journal" {
   forward_to = []
 
+  rule {
+    target_label = "service_name"
+    replacement  = "linux"
+  }
   rule {
     source_labels = ["__journal__systemd_unit"]
     target_label  = "unit"
@@ -166,6 +171,13 @@ discovery.docker "logs_integrations_docker" {
 discovery.relabel "logs_integrations_docker" {
   targets = []
 
+  // Alloy's own stdout is already captured by the dedicated logging{} block
+  // (service_name="alloy"); dropping its container here avoids duplicate logs.
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/observability[-_]alloy[-_].*"
+    action        = "drop"
+  }
   rule {
     target_label = "job"
     replacement  = "integrations/docker"
@@ -178,6 +190,13 @@ discovery.relabel "logs_integrations_docker" {
     source_labels = ["__meta_docker_container_name"]
     regex         = "/(.*)"
     target_label  = "container"
+  }
+  // service_name = container name with any HAOS addon_<hash>_ prefix stripped.
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(?:addon_[a-z0-9]+_)?(.*)"
+    target_label  = "service_name"
+    replacement   = "$1"
   }
   rule {
     source_labels = ["__meta_docker_container_log_stream"]
@@ -283,28 +302,78 @@ loki.source.syslog "unifi" {
     protocol      = "udp"
     syslog_format = "raw"
     labels = {
-      job      = "integrations/unifi",
-      instance = "udm",
+      job          = "integrations/unifi",
+      instance     = "udm",
+      service_name = "unifi",
     }
   }
-  forward_to = [loki.process.unifi_cef.receiver]
+  forward_to = [loki.process.unifi.receiver]
 }
 
-loki.process "unifi_cef" {
+// The single UDP/514 stream multiplexes four unrelated kinds of line. We split
+// them into separate Loki streams with a low-cardinality "log_type" label so a
+// query for, say, camera events is not buried under firewall flow logs:
+//
+//   log_type=firewall  kernel iptables per-flow logs  "[CUSTOM..._WAN-A/D-...] DESCR=..."
+//   log_type=dns       CoreDNS query logs (JSON)      "coredns[...]: {...}"
+//   log_type=cef       CEF activity events            "CEF:0|Ubiquiti|UniFi Protect|..."
+//   log_type=system    everything else (UniFi-OS daemons: mcad, earlyoom, ...)
+//
+// High-cardinality fields (SRC/DST IPs, ports, domains) stay in the log body and
+// are queried with |= / |~ — only bounded fields (rule/policy name, CEF header)
+// become labels.
+loki.process "unifi" {
   forward_to = [grafana_cloud.stack.receivers.logs]
 
-  // Pull low-cardinality header fields from the CEF for querying; the full raw
-  // line is kept as the log body. CEF header layout:
-  // CEF:Version|Vendor|Product|Version|SignatureID|Name|Severity|Extension
-  stage.regex {
-    expression = "CEF:[^|]*\\|[^|]*\\|(?P<product>[^|]*)\\|[^|]*\\|[^|]*\\|(?P<name>[^|]*)\\|(?P<severity>[^|]*)\\|"
+  // Default; the content matches below override it for the recognised kinds.
+  stage.static_labels {
+    values = { log_type = "system" }
   }
 
-  stage.labels {
-    values = {
-      product  = "product",
-      name     = "name",
-      severity = "severity",
+  // CEF activity events (Protect cameras, Network, Access). Pull the
+  // low-cardinality header fields for querying; the full raw line is kept as the
+  // body. Header layout:
+  // CEF:Version|Vendor|Product|Version|SignatureID|Name|Severity|Extension
+  stage.match {
+    selector = "{job=\"integrations/unifi\"} |= \"CEF:\""
+
+    stage.regex {
+      expression = "CEF:[^|]*\\|[^|]*\\|(?P<product>[^|]*)\\|[^|]*\\|[^|]*\\|(?P<name>[^|]*)\\|(?P<severity>[^|]*)\\|"
+    }
+    stage.labels {
+      values = {
+        product  = "product",
+        name     = "name",
+        severity = "severity",
+      }
+    }
+    stage.static_labels {
+      values = { log_type = "cef" }
+    }
+  }
+
+  // Kernel firewall (iptables) per-flow logs from any policy with logging=true.
+  // Capture the policy name (DESCR) as a bounded "rule" label; IPs stay in body.
+  stage.match {
+    selector = "{job=\"integrations/unifi\"} |= \"[CUSTOM\""
+
+    stage.regex {
+      expression = "\\[CUSTOM[0-9]*_WAN-[AD]-[0-9]+\\] DESCR=\"(?P<rule>[^\"]*)\""
+    }
+    stage.labels {
+      values = { rule = "rule" }
+    }
+    stage.static_labels {
+      values = { log_type = "firewall" }
+    }
+  }
+
+  // CoreDNS query logs (JSON; currently only type=dnsAdBlock entries).
+  stage.match {
+    selector = "{job=\"integrations/unifi\"} |= \"coredns[\""
+
+    stage.static_labels {
+      values = { log_type = "dns" }
     }
   }
 }

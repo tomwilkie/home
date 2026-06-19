@@ -21,7 +21,7 @@ HAOS host
 │   ├── reads /var/log/journal       → systemd journal logs
 │   ├── scrapes localhost:8123       → Home Assistant metrics
 │   ├── discovers unpoller addon     → UniFi network metrics
-│   └── receives UDM syslog on :514  → UniFi CEF events (raw/UDP, parsed)
+│   └── receives UDM syslog on :514  → UniFi events (raw/UDP, split by log_type)
 └── ships everything → Grafana Cloud (Prometheus + Loki)
 ```
 
@@ -41,12 +41,30 @@ Alloy runs with `network_mode: host` so it can reach Home Assistant on `localhos
 
 ### Logs
 
+Every log stream is given an explicit **`service_name`** label in Alloy (the bare
+name; its `job` is `integrations/<name>`). This overrides Loki's default
+`discover_service_name` auto-detection, which otherwise derives `service_name`
+from the first matching label and produced surprises: it used the raw `container`
+name for Docker (incl. the `addon_<hash>_` prefix) and, worse, the per-event CEF
+`name` label for UniFi (`motion`, `Ring`, …) — yielding many noisy `service_name`
+values on the UniFi stream. The explicit values are:
+
+| `service_name` | `job` | `instance` | Source |
+|---|---|---|---|
+| `alloy` | `integrations/alloy` | hostname | Alloy's own logs (`logging{}` block) |
+| container name (`addon_<hash>_` stripped) | `integrations/docker` | hostname | Docker container logs |
+| `linux` | `integrations/linux` | hostname | Systemd journal |
+| `unifi` | `integrations/unifi` | `udm` | UniFi syslog |
+
 | Source | Labels |
 |---|---|
-| Systemd journal (`/var/log/journal`) | `unit`, `level`, `container` |
-| Docker container logs | `container`, `stream`, `compose_service` |
-| UniFi syslog — CEF activity events (UDP 514) | `job=integrations/unifi`, `instance=udm`, `product`, `name`, `severity` |
-| UniFi syslog — firewall (iptables) + CoreDNS lines (UDP 514, non-CEF) | `job=integrations/unifi`, `instance=udm` (filter by line content) |
+| Systemd journal (`/var/log/journal`) | `service_name=linux`, `unit`, `level`, `container` |
+| Docker container logs | `service_name` (container name, addon prefix stripped), `container`, `stream`, `compose_service` |
+| UniFi syslog (UDP 514) — all kinds share `service_name=unifi`, `job=integrations/unifi`, `instance=udm`, and are split by a `log_type` label (see below) | `log_type` ∈ {`firewall`, `dns`, `cef`, `system`} |
+| └ `log_type=firewall` — kernel iptables per-flow logs | + `rule` (firewall policy name) |
+| └ `log_type=dns` — CoreDNS query logs (JSON) | — |
+| └ `log_type=cef` — CEF activity events (Protect cameras, Network, Access) | + `product`, `name`, `severity` |
+| └ `log_type=system` — everything else (UniFi-OS daemons: `mcad`, `earlyoom`, `wevent`, …) | — |
 
 #### UniFi syslog (CEF)
 
@@ -67,9 +85,25 @@ the container is started with `--stability.level=experimental` (see
 host IP `192.168.0.12` (the DHCP-reserved address — see
 [@network-security.md](network-security.md)).
 
-The full raw line is forwarded as the log body; a `loki.process "unifi_cef"`
-only extracts the low-cardinality CEF header fields `product`, `name`, and
-`severity` as labels for querying.
+The full raw line is forwarded as the log body. A single UDP/514 stream actually
+multiplexes **four unrelated kinds of line** (firewall flow logs, CoreDNS
+queries, CEF activity events, and UniFi-OS daemon noise), so `loki.process
+"unifi"` classifies each line by content into a low-cardinality **`log_type`**
+label — `firewall`, `dns`, `cef`, or `system` (the default) — putting each kind
+in its own Loki stream. Without this, sporadic camera events are buried under the
+firehose of firewall flow logs. Per-`log_type` extra labels:
+
+| `log_type` | Matches lines containing | Extra labels |
+|---|---|---|
+| `firewall` | `[CUSTOM` (iptables policy log prefix) | `rule` — the policy name (DESCR) |
+| `dns` | `coredns[` | — |
+| `cef` | `CEF:` | `product`, `name`, `severity` (CEF header) |
+| `system` | _(default — anything unmatched)_ | — |
+
+High-cardinality fields (SRC/DST IPs, ports, DNS domains) stay in the log **body**
+and are queried with `|=`/`|~`; only bounded fields become labels. The
+classification is done with `stage.match` blocks whose `selector` uses a `|=`
+line filter, each overriding the default `log_type=system` static label.
 
 > The syslog "hostname" field is the UniFi site name (the home address); it is
 > intentionally **not** stripped — these logs go to a private Grafana Cloud
@@ -83,31 +117,31 @@ Activity Logging / Remote Logging, **Server Address** = `192.168.0.12`, **Port**
 gateway→Internal traffic on the Default network is allowed by the ZBF predefined
 matrix. Query in Grafana Cloud with `{job="integrations/unifi"}`.
 
-#### UniFi firewall traffic & DNS logs (non-CEF)
+#### UniFi firewall traffic & DNS logs (`log_type=firewall` / `dns`)
 
 When the UDM's Remote Logging **firewall** category is enabled, the same UDP/514
 stream *also* carries non-CEF lines, which Alloy passes through verbatim (raw
-mode). These share `instance="udm"` but are **not** CEF, so the
-`product`/`name`/`severity` labels are absent — filter by line content
-(`|=`/`|~`) instead.
+mode) and tags with `log_type` (above). Query by label rather than line content.
 
-- **Kernel firewall (iptables) per-flow logs** — emitted by any firewall policy
-  with `logging: true` (e.g. `Log IOT to Internet (ALLOW)`, see
-  [@network-security.md](network-security.md)):
+- **Kernel firewall (iptables) per-flow logs** (`log_type=firewall`) — emitted by
+  any firewall policy with `logging: true` (e.g. `Log IOT to Internet (ALLOW)`,
+  see [@network-security.md](network-security.md)); the policy name is the `rule`
+  label:
   ```
-  <13>Jun 19 09:09:37 <site> [CUSTOM1_WAN-A-10000] DESCR="Log IOT to Internet (ALLOW)"
-  IN=br2 OUT=eth8 SRC=192.168.2.18 DST=8.8.8.8 PROTO=TCP SPT=... DPT=443 ...
+  Jun 19 10:14:06 <host> [CUSTOM1_WAN-A-10003] DESCR="Log IOT to Internet (ALLOW)"
+  IN=br2 OUT=eth8 SRC=192.168.2.67 DST=34.159.33.52 PROTO=TCP SPT=... DPT=443 ...
   ```
   This is the only reliable source of **per-device internet destinations** (as
   IPs) — Insights → Flows only retains *blocked* flows. Query:
-  `{instance="udm"} |= "SRC=192.168.2"` or `|~ "DESCR=.Log IOT to Internet"`.
+  `{log_type="firewall", rule="Log IOT to Internet (ALLOW)"}`, then `|= "SRC=192.168.2"`
+  to narrow to a device.
 
-- **CoreDNS query logs** — JSON, but only ad-blocked queries
+- **CoreDNS query logs** (`log_type=dns`) — JSON, but only ad-blocked queries
   (`"type":"dnsAdBlock"`), not full resolution:
   ```
   coredns[…]: {"type":"dnsAdBlock","category":"ADVERTISEMENT","domain":"…","src_ip":"…", …}
   ```
-  Query: `{instance="udm"} |= "coredns"`.
+  Query: `{log_type="dns"}`.
 
 > **Verifying syslog ingestion** (to tell "UDM isn't sending" from "Alloy is
 > dropping"): tcpdump on the host sees packets *before* Alloy
