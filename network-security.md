@@ -306,6 +306,79 @@ which a recording rule turns into a metric and an alert watches. See
 rule + `IOT DNAT redirect removed` alert). Remediation in the alert: re-run
 `apply.sh`.
 
+## Per-device internet control (client groups + OON)
+
+The DNS/NTP forcing above governs *how* IOT devices resolve and sync time, but
+every IOT device is still allowed out to the internet generally (the blanket
+IOT→External ALLOW). Some IOT devices are **local-only integrations** that never
+legitimately need the internet, so their WAN access can be cut entirely for
+containment — a compromised local-only device then can't exfiltrate or phone home.
+
+UniFi offers two grouping primitives, feeding two different engines:
+
+| Primitive | Keyed by | Engine | Expresses |
+|---|---|---|---|
+| Firewall **address-group** | IP/CIDR | Zone-Based Firewall policies | full L3/L4 allow/block, per-port, logged (the containment model above) |
+| **Client group** | **MAC** | **OON policy** | internet on/off + schedule, app block, QoS, VPN route |
+
+For a simple per-device internet kill-switch the **MAC-based client group + OON
+policy** path is used (not an IP address-group + ZBF rule), because:
+
+- **MAC is stable** — no IP address-group to maintain, and **no DHCP reservation
+  needed** (none of the IOT devices are reserved; an IP-based group would drift).
+- OON's `secure.internet_access_enabled: false` (stored as
+  `secure.internet.mode: "TURN_OFF_INTERNET"`) is UniFi's native internet block.
+- It blocks **WAN only** — LAN→HA (`192.168.0.12`) is untouched, and the DNS
+  (AdGuard) / NTP (chrony) DNAT redirects to `.12` are LAN-local, so blocked
+  devices keep working time + resolution. Coexists with the ZBF rules (a per-MAC
+  WAN block layered on top of the IOT→External ALLOW).
+
+### `IOT - No Internet` group
+
+A client group **`IOT - No Internet`** (id `6a36c6732753ee32cc248cc4`) holds the
+MACs of IOT devices verified to have a **local** HA path (so HA control survives
+the block); an OON policy **`IOT - No Internet`** (id `6a36c6932753ee32cc248d20`,
+`target_type: GROUPS` → that group) turns their internet off.
+
+| Device | IP | MAC | Local path |
+|---|---|---|---|
+| Master Bedroom - Norman Hub | .225 | `80:5e:4f:9d:da:a3` | norman_shutters |
+| Master Bedroom - Clock | .42 | `c0:4e:30:13:33:d8` | esphome |
+| Hallway - Doorbell | .49 | `d8:3b:da:45:62:b8` | esphome |
+| Tom's Office - AirGradient | .177 | `34:b7:da:9f:7e:10` | airgradient (local API) |
+| Master Bedroom - Dyson Fan | .19 | `44:6f:f8:42:ba:f7` | dyson_local |
+| Nursery - VELUX Gateway | .196 | `70:ee:50:6a:51:2d` | homekit_controller |
+| Tom's Office - Aircon | .24 | `10:68:38:47:dc:b5` | daikin (local) |
+| Master Bedroom - Aircon | .27 | `10:68:38:47:4c:7f` | daikin (local) |
+| Living Room - Arylic LP10 | .237 | `00:22:6c:23:38:56` | linkplay |
+| Tom's Office - Arylic LP10 | .245 | `00:22:6c:67:19:56` | linkplay |
+| Nursery - WiiM Sound | .10 | `40:fd:f3:66:ac:e4` | wiim |
+| Basement - Dryer | .68 | `94:27:70:e6:c1:3d` | mqtt / hcpy (local bridge) |
+
+> **Notes / gotchas:**
+> - **Daikin / Dyson / VELUX / Norman** are local integrations; the block kills
+>   only the vendor *cloud app* (Onecta, MyDyson, VELUX Active), not HA control.
+> - **Dryer is local** despite being a Home Connect appliance — it's bridged by a
+>   local **hcpy → MQTT** add-on (HA device `integration_type: mqtt`, identifier
+>   `["mqtt","dryer"]`), which reads the appliance directly over the LAN. So the
+>   block does **not** break the "Tumble Drier finished" notification (that would
+>   only be true if it used the cloud `home_connect` integration). The washing
+>   machine is unaffected regardless (local Zigbee power sensor).
+> - **Streamers (Arylic ×2, WiiM)** keep working *via Music Assistant* — MA fetches
+>   the stream on the HA server and serves it to the player over the LAN, and
+>   ChimeTTS announcements are LAN-served. Only *direct* native streaming (Spotify
+>   Connect straight to the device, the vendor app, on-device internet radio) stops.
+> - **Deliberately excluded** (kept on the internet so they can pull firmware):
+>   the 4 Everything Presence Lites and the 2 Voice Assistants. Cloud-dependent
+>   devices (Nest Protect, Hive, Deebot, Netatmo, Kitchen Display kiosk, Prusa
+>   cameras, alarm module) are out of scope by design.
+
+**Editing membership:** update the client group's `members` only
+(`unifi_update_client_group`); the OON policy needs no change. **OON create
+gotcha:** `qos.mode` must be a valid enum (`LIMIT`/`PRIORITIZE`/…) even when
+`qos.enabled: false` — `"OFF"` and a null mode are both rejected by the backend
+(the MCP `confirm:false` preview does *not* catch this; only the real create does).
+
 ## Auditing the isolation
 
 Repeatable, no UI needed, via the `unifi-network` MCP `unifi_get_traffic_flows`
@@ -372,6 +445,14 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
 - [x] **Drift alert**: Grafana `IOT DNAT redirect removed` (on the
       `iot_dnat_block_hits:count5m` recording rule). Tested by removing the DNAT —
       alert fired, then resolved on restore. See [@observability.md](observability.md).
+- [x] **`IOT - No Internet` group**: MAC-based client group
+      (`6a36c6732753ee32cc248cc4`, 12 local-only devices) + OON internet-block
+      policy (`6a36c6932753ee32cc248d20`). Verified LAN→HA intact post-block
+      (aircons, Norman shutters still responsive). See
+      [Per-device internet control](#per-device-internet-control-client-groups--oon).
+- [ ] Confirm WAN actually dropped for the 12 devices once flows/Loki catch up
+      (`{log_type="firewall", rule="Log IOT to Internet (ALLOW)"}` should no longer
+      show their SRC IPs; or `unifi_get_traffic_flows` shows them blocked).
 - [ ] Watch for IOT devices broken by the DNS block (Hive Hub, Kitchen Display).
 - [ ] Persistence is boot-only — a controller *provision* can flush the DNAT until
       the next reboot/manual re-apply. Revisit a self-healing timer if it recurs.
