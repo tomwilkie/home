@@ -21,7 +21,8 @@ HAOS host
 │   ├── reads /var/log/journal       → systemd journal logs
 │   ├── scrapes localhost:8123       → Home Assistant metrics
 │   ├── discovers unpoller addon     → UniFi network metrics
-│   └── receives UDM syslog on :514  → UniFi events (raw/UDP, split by log_type)
+│   ├── receives UDM syslog on :514  → UniFi events (raw/UDP, split by log_type)
+│   └── tails AdGuard querylog.json  → IOT DNS query log (per-domain, permanent)
 └── ships everything → Grafana Cloud (Prometheus + Loki)
 ```
 
@@ -55,11 +56,20 @@ values on the UniFi stream. The explicit values are:
 | container name (`addon_<hash>_` stripped) | `integrations/docker` | hostname | Docker container logs |
 | `linux` | `integrations/linux` | hostname | Systemd journal |
 | `unifi` | `integrations/unifi` | `udm` | UniFi syslog |
+| `adguard` | `integrations/adguard` | hostname | AdGuard Home query log (file tail) |
+
+> Note: the AdGuard add-on's **container stdout** is also collected by the Docker
+> pipeline and (addon prefix stripped) lands as `service_name=adguard`,
+> `job=integrations/docker` — that's AdGuard's operational log (dnsproxy errors,
+> etc.), **not** the query log. The per-domain query log is the file-tail stream
+> `job=integrations/adguard`. Select on `job`, not `service_name`, to tell them
+> apart.
 
 | Source | Labels |
 |---|---|
 | Systemd journal (`/var/log/journal`) | `service_name=linux`, `unit`, `level`, `container` |
 | Docker container logs | `service_name` (container name, addon prefix stripped), `container`, `stream`, `compose_service` |
+| AdGuard Home query log (`querylog.json`, file tail) | `service_name=adguard`, `job=integrations/adguard`, `instance=<hostname>` |
 | UniFi syslog (UDP 514) — all kinds share `service_name=unifi`, `job=integrations/unifi`, `instance=udm`, and are split by a `log_type` label (see below) | `log_type` ∈ {`firewall`, `dns`, `cef`, `system`} |
 | └ `log_type=firewall` — kernel iptables per-flow logs | + `rule` (firewall policy name) |
 | └ `log_type=dns` — CoreDNS query logs (JSON) | — |
@@ -150,6 +160,62 @@ mode) and tags with `log_type` (above). Query by label rather than line content.
 > 'loki_source_syslog_entries_total|loki_write_(dropped|sent)_entries_total'`).
 > Firewall traffic logs are high-volume; CEF activity events are sporadic (a few
 > per minute), so a short quiet capture window is normal for CEF alone.
+
+#### AdGuard Home query log (`job=integrations/adguard`)
+
+AdGuard Home (the IOT DNS resolver, HA add-on `a0d7b954_adguard` — see
+[@network-security.md](network-security.md)) is the authoritative source of
+per-domain IOT DNS visibility, but its own query log is **rotation- and
+retention-capped** (`interval: 90d`), so it is not durable. To keep a permanent
+history we tail its on-disk query log into Loki via the existing Alloy container.
+
+AdGuard has **no native log export**, so Alloy reads the file directly:
+
+- The add-on's data directory is bind-mounted **read-only** into Alloy at
+  `/adguard` (host path
+  `/mnt/data/supervisor/apps/data/a0d7b954_adguard/adguard/data` — see
+  `docker-compose.yml`). The *directory* is mounted, not the file, so the tail
+  survives rotation (which recreates `querylog.json` with a new inode).
+- `local.file_match` + `loki.source.file` tail **only** `querylog.json` (not the
+  rotated `querylog.json.1`, to avoid re-ingesting a whole file on rotation).
+- Each line is one JSON object; the full line is the log body. A `loki.process`
+  `stage.json` + `stage.timestamp` sets the Loki timestamp from AdGuard's own `T`
+  field (RFC3339Nano), so a catch-up after Alloy downtime keeps real query times.
+
+```
+{"T":"…","QH":"connect.prusa3d.com","QT":"AAAA","IP":"192.168.2.67",
+ "Upstream":"https://dns10.quad9.net:443/dns-query","Result":{},"Cached":true,…}
+```
+
+Query in Grafana Cloud — high-cardinality fields (domain `QH`, client `IP`) stay
+in the body, parsed at query time:
+
+```
+{job="integrations/adguard"} | json                          # all IOT DNS queries
+{job="integrations/adguard"} | json | IP="192.168.2.67"      # one device's domains
+```
+
+> **Near-real-time delivery via `size_memory: 0`.** AdGuard normally buffers the
+> most recent `size_memory` queries in RAM and flushes to `querylog.json` only
+> when that buffer fills (count-based, **no timer**) — at the default `1000` that
+> meant the file (and therefore Loki) updated in roughly hourly batches. We set
+> **`size_memory: 0`** in `AdGuardHome.yaml`, which AdGuard internally treats as a
+> buffer of **1** (it does *not* fall back to the 1000 default), so it flushes
+> **after every query** → Alloy ships each line within seconds. Tradeoff: a small
+> file append per DNS query (~24–36k/day) — negligible on SSD, a minor
+> write-amplification note on eMMC/SD.
+>
+> `size_memory` is **not exposed in the AdGuard UI/API**, so changing it means
+> editing `AdGuardHome.yaml` and restarting the add-on. AdGuard owns and rewrites
+> that file, so **stop** the add-on first, edit, then **start** (editing while it
+> runs risks being overwritten on shutdown):
+> ```sh
+> # via the HA add-on lifecycle (slug a0d7b954_adguard): stop → edit → start
+> # host path: /mnt/data/supervisor/apps/data/a0d7b954_adguard/adguard/AdGuardHome.yaml
+> ```
+>
+> Only devices that use AdGuard appear here; hardcoded-DNS/DoH IOT devices are
+> visible only as destination IPs in `{log_type="firewall"}` (above).
 
 ## Environment variables
 

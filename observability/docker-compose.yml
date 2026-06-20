@@ -34,6 +34,10 @@ services:
       # Logs — journal (volatile) and traditional /var/log
       - /var/log/journal:/var/log/journal:ro,rslave
       - /var/log:/var/log:ro,rslave
+      # AdGuard Home add-on query log (read-only) — tailed and shipped to Loki.
+      # Mount the data *directory* (not the file) so the tail survives the
+      # add-on's log rotation, which recreates querylog.json with a new inode.
+      - /mnt/data/supervisor/apps/data/a0d7b954_adguard/adguard/data:/adguard:ro
       # Alloy config + persistent state
       - /mnt/data/supervisor/homeassistant/alloy/config.alloy:/etc/alloy/config.alloy:ro
       - alloy-data:/var/lib/alloy

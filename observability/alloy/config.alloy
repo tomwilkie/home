@@ -377,3 +377,46 @@ loki.process "unifi" {
     }
   }
 }
+
+// ── AdGuard Home query log ────────────────────────────────────────────────────
+// AdGuard Home (HA add-on a0d7b954_adguard) is the IOT DNS resolver. It has no
+// native log export, so we tail its on-disk query log and ship it to Loki for
+// permanent per-domain history — the add-on's own querylog.json is rotation- and
+// retention-capped, so it is not durable storage. The add-on's data directory is
+// bind-mounted read-only into Alloy at /adguard (see docker-compose.yml).
+//
+// Only the live querylog.json is matched (not the rotated querylog.json.1), so a
+// rotation does not re-ingest the whole previous file. One JSON object per line:
+//   {"T":...,"QH":"<domain>","QT":"A","IP":"<client>","Upstream":...,
+//    "Result":{...},"Elapsed":...,"Cached":...}
+// High-cardinality fields (domain QH, client IP) stay in the body — query with
+//   {service_name="adguard"} | json
+// e.g. per-client domains:  {service_name="adguard"} | json | IP="192.168.2.67"
+local.file_match "adguard" {
+  path_targets = [{
+    __path__     = "/adguard/querylog.json",
+    job          = "integrations/adguard",
+    instance     = constants.hostname,
+    service_name = "adguard",
+  }]
+}
+
+loki.source.file "adguard" {
+  targets    = local.file_match.adguard.targets
+  forward_to = [loki.process.adguard.receiver]
+}
+
+loki.process "adguard" {
+  forward_to = [grafana_cloud.stack.receivers.logs]
+
+  // Use AdGuard's own query timestamp (T, RFC3339Nano) as the Loki timestamp so a
+  // catch-up after Alloy downtime stamps entries with the real query time, not
+  // the read time. Only extracts T; the full JSON line is kept as the body.
+  stage.json {
+    expressions = { ts = "T" }
+  }
+  stage.timestamp {
+    source = "ts"
+    format = "RFC3339Nano"
+  }
+}

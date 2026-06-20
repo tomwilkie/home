@@ -215,7 +215,13 @@ host `192.168.0.12`:
 - **Upstream:** Quad9 DoH (`https://dns10.quad9.net/dns-query`), DNSSEC on.
 - **Blocking:** AdGuard default blocklist (~158k rules).
 - **Query log:** 90-day retention, per-client — this is the per-domain IOT
-  visibility (filterable by IOT IP in the AdGuard UI).
+  visibility (filterable by IOT IP in the AdGuard UI). The query log is also
+  **tailed into Grafana Cloud / Loki for permanent storage** (Alloy reads
+  `querylog.json`; query `{job="integrations/adguard"} | json`) — see
+  [@observability.md](observability.md). The AdGuard UI is capped to AdGuard's own
+  retention; Loki keeps it indefinitely. `size_memory: 0` is set in
+  `AdGuardHome.yaml` so AdGuard flushes each query to disk immediately (→
+  near-real-time shipping) instead of buffering 1000 entries (~hourly batches).
 
 IOT reaches it via the existing `IOT to Home Assistant (ALLOW)` policy
 (IOT→`192.168.0.12`, all ports). Scope is **IOT-only** — the main LAN still uses
