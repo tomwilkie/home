@@ -227,3 +227,48 @@ The stored format has `dashboard` + `meta` keys; the upload endpoint (`/api/dash
 3. Diff to review your outgoing change
 4. Upload to Grafana
 5. Commit to git
+
+## Grafana Alerting
+
+Alert and recording rules are **Grafana-managed** (provisioned via
+`/api/v1/provisioning/alert-rules`). They are **not** yet file-managed in this
+repo; this section records their intent. Datasources are referenced by their
+generic UIDs `grafanacloud-logs` (Loki) and `grafanacloud-prom` (Prometheus) —
+**never** the stack-slug-prefixed datasource names, which embed PII (see
+[CLAUDE.md](CLAUDE.md)).
+
+Manage with `gcx`:
+
+```bash
+gcx alert rules list                 # list (read-only)
+gcx api /api/v1/provisioning/alert-rules            # full JSON (GET)
+gcx api /api/v1/provisioning/alert-rules -X POST -H "X-Disable-Provenance: true" -d @rule.json
+# (X-Disable-Provenance keeps the rule UI-editable instead of locked/provisioned)
+```
+
+The stack already uses the **recording-rule → metric → alert** pattern (e.g.
+`zigbee2mqtt_errors:rate15m`): a Grafana-managed recording rule runs a LogQL
+metric query and writes the result to Prometheus, then an alert thresholds the
+metric.
+
+### IOT DNAT redirect drift tripwire
+
+Detects if the UDM's IOT NTP/DNS DNAT redirects are removed (reboot before the
+boot service runs, or a controller provision flush — see
+[@network-security.md](network-security.md)). When the redirect is gone, IOT
+:53/:123 escapes to the internet and hits the logged BLOCK rules; those are ~0
+while the redirect works, so any sustained hits = drift.
+
+| Rule (folder `Unifi`) | Type | Definition |
+|---|---|---|
+| `iot_dnat_tripwire` | recording → `iot_dnat_block_hits:count5m` | Loki: `sum(count_over_time({log_type="firewall", rule=~"Block IOT (DNS\|NTP) to Internet"} \|~ "DPT=(53\|123) " [5m])) or vector(0)` |
+| `IOT DNAT redirect removed` | alert | thresholds `iot_dnat_block_hits:count5m > 0`, `for: 5m` → email contact point |
+
+- The `DPT=(53|123)` line filter is essential: the `Block IOT DNS to Internet`
+  rule also matches DoT (`:853`), which has a legitimate ongoing baseline (devices
+  attempting DoH/DoT that can't be transparently redirected). Filtering to
+  `53`/`123` keeps the tripwire at 0 in steady state — no false alerts.
+- `or vector(0)` keeps the series present at 0 so the alert always has data.
+- **Remediation** (in the alert annotation): `ssh root@192.168.0.1
+  '/persistent/iot-redirect/apply.sh'` (or `systemctl restart iot-redirect` — not
+  `start`, which is a no-op on the `RemainAfterExit` oneshot).
