@@ -156,8 +156,8 @@ The working path is **UDM firewall log → remote syslog → Alloy → Loki** (s
    — destinations are **IPs**, not domains (reverse-resolve as needed).
 
 > **Ordering gotcha.** The catch-all `Log IOT to Internet (ALLOW)` matches *all*
-> IOT→External, so it must sit **below** the DNS BLOCK rules or it shadows them
-> (first match wins; lowest `index` evaluated first). The integration-API reorder
+> IOT→External, so it must sit **below** the DNS/NTP and No-Internet BLOCK rules
+> or it shadows them (first match wins; lowest `index` evaluated first). The integration-API reorder
 > endpoint currently **500s** (`unifi_reorder_firewall_policies`), and direct
 > `index` edits via `unifi_update_firewall_policy` are silently ignored
 > ("accepted but did not apply"). Workaround: **delete and recreate** the rule
@@ -306,7 +306,7 @@ which a recording rule turns into a metric and an alert watches. See
 rule + `IOT DNAT redirect removed` alert). Remediation in the alert: re-run
 `apply.sh`.
 
-## Per-device internet control (client groups + OON)
+## Per-device internet control (custom MAC-matched ZBF block)
 
 The DNS/NTP forcing above governs *how* IOT devices resolve and sync time, but
 every IOT device is still allowed out to the internet generally (the blanket
@@ -314,31 +314,38 @@ IOT→External ALLOW). Some IOT devices are **local-only integrations** that nev
 legitimately need the internet, so their WAN access can be cut entirely for
 containment — a compromised local-only device then can't exfiltrate or phone home.
 
-UniFi offers two grouping primitives, feeding two different engines:
+WAN access for these devices is cut by a **custom Zone-Based Firewall BLOCK rule
+matched on client MAC**: `Block IOT No-Internet Devices` (IOT→External, source =
+the device MACs via `matching_target: CLIENT`/`SPECIFIC`, logged). It sits
+**above** the catch-all `Log IOT to Internet (ALLOW)` in the IOT→External
+zone-pair, so the blocked MACs are dropped before the ALLOW can permit them. It
+blocks **WAN only** — LAN→HA (`192.168.0.12`) is untouched, and the DNS (AdGuard)
+/ NTP (chrony) DNAT redirects to `.12` are LAN-local, so blocked devices keep
+working time + resolution.
 
-| Primitive | Keyed by | Engine | Expresses |
-|---|---|---|---|
-| Firewall **address-group** | IP/CIDR | Zone-Based Firewall policies | full L3/L4 allow/block, per-port, logged (the containment model above) |
-| **Client group** | **MAC** | **OON policy** | internet on/off + schedule, app block, QoS, VPN route |
+> **Why a custom MAC-matched rule and not OON (the original, broken design).**
+> This was first built as a MAC-based **client group + OON policy**
+> (`secure.internet.mode: TURN_OFF_INTERNET`). It was configured correctly —
+> enabled, all MACs, clients tagged into the group — but **never enforced**:
+> UniFi ZBF evaluates the entire **custom** rule band (index 10000–29999) before
+> the **predefined** band (30000+), first-match-wins. OON-generated rules are
+> `predefined`, so the OON block landed at index **30001** — *below* the custom
+> catch-all `Log IOT to Internet (ALLOW)` at index **10005**, which matched every
+> IOT→External packet first and allowed it. The OON block was dead code that
+> could never outrank a custom rule, and a `predefined` rule can't be moved into
+> the custom band (the schedule was *not* the cause — its rules were
+> `schedule: null` = Always). A **custom** rule lives in the custom band, so it
+> can be ordered above the ALLOW. MAC matching keeps OON's two advantages —
+> **MAC is stable** (no IP address-group to maintain, **no DHCP reservation
+> needed**; none of these devices are reserved, so an IP-based group would
+> drift).
 
-For a simple per-device internet kill-switch the **MAC-based client group + OON
-policy** path is used (not an IP address-group + ZBF rule), because:
+### `Block IOT No-Internet Devices` rule
 
-- **MAC is stable** — no IP address-group to maintain, and **no DHCP reservation
-  needed** (none of the IOT devices are reserved; an IP-based group would drift).
-- OON's `secure.internet_access_enabled: false` (stored as
-  `secure.internet.mode: "TURN_OFF_INTERNET"`) is UniFi's native internet block.
-- It blocks **WAN only** — LAN→HA (`192.168.0.12`) is untouched, and the DNS
-  (AdGuard) / NTP (chrony) DNAT redirects to `.12` are LAN-local, so blocked
-  devices keep working time + resolution. Coexists with the ZBF rules (a per-MAC
-  WAN block layered on top of the IOT→External ALLOW).
-
-### `IOT - No Internet` group
-
-A client group **`IOT - No Internet`** (id `6a36c6732753ee32cc248cc4`) holds the
-MACs of IOT devices verified to have a **local** HA path (so HA control survives
-the block); an OON policy **`IOT - No Internet`** (id `6a36c6932753ee32cc248d20`,
-`target_type: GROUPS` → that group) turns their internet off.
+The custom BLOCK policy **`Block IOT No-Internet Devices`** (id
+`6a37a57e2753ee32cc2733cc`, index 10006, `logging: true`) blocks the MACs of IOT
+devices verified to have a **local** HA path, so HA control survives the block.
+The MACs are listed inline in the rule's `source.client_macs`:
 
 | Device | IP | MAC | Local path |
 |---|---|---|---|
@@ -373,11 +380,30 @@ the block); an OON policy **`IOT - No Internet`** (id `6a36c6932753ee32cc248d20`
 >   devices (Nest Protect, Hive, Deebot, Netatmo, Kitchen Display kiosk, Prusa
 >   cameras, alarm module) are out of scope by design.
 
-**Editing membership:** update the client group's `members` only
-(`unifi_update_client_group`); the OON policy needs no change. **OON create
-gotcha:** `qos.mode` must be a valid enum (`LIMIT`/`PRIORITIZE`/…) even when
-`qos.enabled: false` — `"OFF"` and a null mode are both rejected by the backend
-(the MCP `confirm:false` preview does *not* catch this; only the real create does).
+**Editing membership:** edit the rule's `source.client_macs` list — in the UniFi
+UI (Firewall → Policies → *Block IOT No-Internet Devices*) or via the raw v2 API
+(below). There is no longer a client group to maintain (the old
+`IOT - No Internet` client group and OON policy were deleted). After changing
+membership, flush the UDM conntrack for the affected device IPs
+(`ssh root@192.168.0.1 conntrack -D -s <ip>`) so live flows re-evaluate against
+the rule.
+
+> **MCP create is bugged — use the raw v2 API.** `unifi_create_firewall_policy`
+> currently fails with `redact_sensitive_fields() got an unexpected keyword
+> argument 'include_sensitive'`, and its documented schema doesn't expose the
+> MAC-`CLIENT` source shape anyway. Create/update/delete these firewall policies
+> directly against the integration v2 API, which the `UNIFI_API_KEY` already
+> authenticates:
+> ```sh
+> # GET/POST collection, PUT/DELETE a single policy by _id
+> curl -sk -H "X-API-KEY: $UNIFI_API_KEY" \
+>   https://192.168.0.1/proxy/network/v2/api/site/default/firewall-policies[/{_id}]
+> ```
+> A newly POSTed custom rule appends **last** (highest index) within its
+> zone-pair; the integration-API reorder endpoint 500s and `index` edits are
+> ignored, so to place a rule **above** the ALLOW: create it, then
+> **delete + recreate the ALLOW** so the ALLOW re-appends below it (the same
+> ordering trick used for the DNS/NTP blocks).
 
 ## Auditing the isolation
 
@@ -445,14 +471,16 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
 - [x] **Drift alert**: Grafana `IOT DNAT redirect removed` (on the
       `iot_dnat_block_hits:count5m` recording rule). Tested by removing the DNAT —
       alert fired, then resolved on restore. See [@observability.md](observability.md).
-- [x] **`IOT - No Internet` group**: MAC-based client group
-      (`6a36c6732753ee32cc248cc4`, 12 local-only devices) + OON internet-block
-      policy (`6a36c6932753ee32cc248d20`). Verified LAN→HA intact post-block
-      (aircons, Norman shutters still responsive). See
-      [Per-device internet control](#per-device-internet-control-client-groups--oon).
-- [ ] Confirm WAN actually dropped for the 12 devices once flows/Loki catch up
-      (`{log_type="firewall", rule="Log IOT to Internet (ALLOW)"}` should no longer
-      show their SRC IPs; or `unifi_get_traffic_flows` shows them blocked).
+- [x] **Per-device internet block** (`Block IOT No-Internet Devices`, custom
+      CLIENT-MAC ZBF rule `6a37a57e2753ee32cc2733cc`, idx 10006, 12 local-only
+      devices). **Replaced** the original MAC client-group + OON policy, which was
+      shadowed by the custom ALLOW and never enforced (predefined band 30001 below
+      custom 10005) — both the OON policy and the client group were deleted. See
+      [Per-device internet control](#per-device-internet-control-custom-mac-matched-zbf-block).
+- [x] **WAN drop verified** for all 12 devices: zero hits in
+      `{log_type="firewall", rule="Log IOT to Internet (ALLOW)"}` and active drops
+      in `{log_type="firewall", rule="Block IOT No-Internet Devices"}`. LAN→HA
+      intact post-block (aircons, Norman shutters still responsive).
 - [ ] Watch for IOT devices broken by the DNS block (Hive Hub, Kitchen Display).
 - [ ] Persistence is boot-only — a controller *provision* can flush the DNAT until
       the next reboot/manual re-apply. Revisit a self-healing timer if it recurs.
@@ -472,13 +500,15 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
 | Block IOT DNS to Internet (BLOCK, logged) | `6a3502392753ee32cc1f26e8` |
 | Block IOT to Public DNS Providers (BLOCK, logged) | `6a35023a2753ee32cc1f26eb` |
 | Block IOT NTP to Internet (BLOCK, logged) | `6a36760b2753ee32cc2397f4` |
-| Log IOT to Internet (ALLOW, logged) | `6a3676352753ee32cc2398b6` |
+| Block IOT No-Internet Devices (BLOCK, logged, CLIENT-MAC) | `6a37a57e2753ee32cc2733cc` |
+| Log IOT to Internet (ALLOW, logged) | `6a37a5b62753ee32cc273453` |
 
 > Within the IOT→External zone-pair these must stay ordered **blocks first, ALLOW
 > last** (see the ordering gotcha above). Current `index`: DNS block `10001`,
-> public-DNS block `10002`, NTP block `10004`, ALLOW `10005`. The ALLOW was
-> deleted+recreated to re-append it last when the NTP block was added, so its
-> policy ID changed (was `6a3502dc2753ee32cc1f2955`).
+> public-DNS block `10002`, NTP block `10004`, No-Internet block `10006`, ALLOW
+> `10007`. The ALLOW has been deleted+recreated twice to re-append it last (when
+> the NTP block, then the No-Internet block, were added), so its policy ID has
+> changed each time (was `6a3502dc2753ee32cc1f2955`, then `6a3676352753ee32cc2398b6`).
 
 ### Firewall groups (created via MCP)
 
