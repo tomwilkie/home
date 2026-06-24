@@ -16,8 +16,7 @@ Added with the server name `home-assistant` (so the tools resolve as `mcp__home-
 claude mcp add home-assistant -- uvx ha-mcp
 ```
 
-- Credentials are read from the **shell environment**, never from files: export `HA_URL` and `HA_TOKEN` (a long-lived access token, created in HA → profile → Security) in your `~/.zshrc` or a sourced secrets file. Do **not** pass them via `--env` on `claude mcp add` — the server inherits them from the environment of the shell that launches `claude`.
-- The same `HA_URL`/`HA_TOKEN` (token) is reused by `hass-cli` below (it reads `HASS_SERVER`/`HASS_TOKEN`).
+- Credentials are read from the **shell environment**, never from files: `ha-mcp` reads `HASS_SERVER` and `HASS_TOKEN` — the same variables used by `hass-cli` (see below). Export them in your `~/.zshrc` or a sourced secrets file. Do **not** pass them via `--env` on `claude mcp add` — the server inherits them from the environment of the shell that launches `claude`.
 
 ## Home Assistant CLI
 
