@@ -106,7 +106,7 @@ The home network and cameras run on a UniFi **Dream Machine Pro Max** (UniFi Net
 ### Useful operations
 
 - DHCP reservation: `unifi_set_client_ip_settings(mac_address, use_fixedip=true, fixed_ip=...)`. Clients are matched by **lowercase** MAC; if a MAC lookup returns "not found", find the record with `unifi_lookup_by_ip`.
-- Read Protect alarm rules: `protect_alarm_list_rules` / `protect_alarm_get_rule`.
+- Read/write Protect alarm rules: `protect_alarm_list_rules` / `protect_alarm_get_rule` / `protect_alarm_update_rule`. Legacy rules have `_new`-suffixed ids (e.g. `66d12910038b6803e40003eb_new`) — these are accepted by the write tools as of v0.5.2+.
 - Find a wired device's switch + port (e.g. to apply port isolation): `unifi_get_client_details(mac_address, summary=false)` → `sw_mac`, `sw_port`, `last_uplink_name`. Read/confirm port isolation via `unifi_get_switch_ports(device_mac)` → `port_overrides[].isolation`.
 
 ### Firewall (Zone-Based Firewall)
@@ -121,8 +121,7 @@ The full VLAN/firewall design and audit procedure live in [@network-security.md]
 
 ### Limitations
 
-- The Protect server is **beta**. Its Alarm Manager **write** tools cannot modify this console's **legacy Protect alarm automations**: `protect_alarm_update_rule` rejects their `_new`-suffixed rule ids ("must be a v2 UUID or 24-char ObjectID"), and `protect_alarm_create_rule` fails because the normalized read shape is lossy and omits `trigger_id`. **Reads work fine** — edit alarm rules in the UniFi Protect UI instead (see the Front Door webhook note in [@notifications.md](notifications.md)).
-- The unified UniFi-OS Alarm Manager API (`/api/v2/alarms`) is **not active** on this console; only the legacy Protect automations are present.
+- The unified UniFi-OS Alarm Manager API (`/api/v2/alarms`) is **not active** on this console; only the legacy Protect automations are present (ids carry a `_new` suffix). The write tools (`protect_alarm_update_rule`, `protect_alarm_create_rule`) handle these correctly as of v0.5.2+.
 
 ## Grafana
 

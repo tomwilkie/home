@@ -147,7 +147,7 @@ The `webhook` trigger is fed by a **UniFi Protect Alarm Manager rule** named **"
 
 Originally the rule pointed at the **external** (Nabu Casa) HA URL, which forced the UDM to round-trip every ring out to the internet and back. That path silently stopped delivering — no webhook reached HA for 7+ days, consistent with the 2026 UniFi Alarm Manager / Protect 7.x transition — which is why the native `doorbell` trigger was added as the primary path. The rule was then repointed to HA's **local LAN IP**, which the UDM delivers directly without leaving the network. HA's IP is held stable by a **DHCP reservation** on the UDM (keyed to HA's NIC MAC); HAOS itself stays on DHCP.
 
-Edit this rule in the **UniFi Protect UI** — the UniFi MCP server can read alarm rules but cannot write the console's legacy Protect automations (see the UniFi MCP **Limitations** in [@access-home-assistant.md](access-home-assistant.md)).
+Edit this rule via `protect_alarm_update_rule` (the MCP server handles `_new`-suffixed legacy rule ids as of v0.5.2+) or in the UniFi Protect UI.
 
 ---
 
