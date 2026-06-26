@@ -1,0 +1,1282 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 3282641703952384,
+    "links": [
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "zigbee2mqtt-integration"
+        ],
+        "targetBlank": false,
+        "title": "All zigbee2mqtt dashboards",
+        "tooltip": "",
+        "type": "dashboards"
+      }
+    ],
+    "liveNow": false,
+    "panels": [
+      {
+        "gridPos": {
+          "h": 2,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "### 📡 zigbee2mqtt - Overview\n\nFleet summary and per-device traffic. Click a device's name in the table to drill into its detail dashboard.",
+          "mode": "markdown"
+        },
+        "targets": [],
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "fixed"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Devices"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Routers"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "End Devices"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "MQTT Published"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "cps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "semi-dark-green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "MQTT Received"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "cps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "semi-dark-green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Device Msgs"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "cps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Errors"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "cps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Retries"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "cps"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "orange",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 18,
+          "x": 0,
+          "y": 2
+        },
+        "id": 2,
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "vertical",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "count(zigbee2mqtt_device_info{job=~\"$job\", type!=\"Coordinator\"})",
+            "instant": true,
+            "legendFormat": "Devices",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "count(zigbee2mqtt_device_info{job=~\"$job\", type=\"Router\"})",
+            "instant": true,
+            "legendFormat": "Routers",
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "count(zigbee2mqtt_device_info{job=~\"$job\", type=\"EndDevice\"})",
+            "instant": true,
+            "legendFormat": "End Devices",
+            "refId": "C"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_mqtt_messages_published_total{job=~\"$job\"}[$__rate_interval]))",
+            "instant": true,
+            "legendFormat": "MQTT Published",
+            "refId": "D"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_mqtt_messages_received_total{job=~\"$job\"}[$__rate_interval]))",
+            "instant": true,
+            "legendFormat": "MQTT Received",
+            "refId": "E"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_device_messages_received_total{job=~\"$job\"}[$__rate_interval]))",
+            "instant": true,
+            "legendFormat": "Device Msgs",
+            "refId": "F"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_device_messages_failed_total{job=~\"$job\"}[$__rate_interval]))",
+            "instant": true,
+            "legendFormat": "Errors",
+            "refId": "G"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_adapter_retries_total{job=~\"$job\"}[$__rate_interval]))",
+            "instant": true,
+            "legendFormat": "Retries",
+            "refId": "H"
+          }
+        ],
+        "title": "Fleet Summary",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "zigbee2mqtt build the exporter is reporting.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "blue",
+              "mode": "fixed"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": 0
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 6,
+          "x": 18,
+          "y": 2
+        },
+        "id": 3,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "textMode": "name",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "zigbee2mqtt_build_info{job=~\"$job\"}",
+            "instant": true,
+            "legendFormat": "{{version}}",
+            "refId": "A"
+          }
+        ],
+        "title": "z2m Version",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "One row per device. Received and Errors are per-device message rates (sparklines). Click a device name to open its detail dashboard.",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "left",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "filterable": true,
+              "inspect": false
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "friendly_name"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Device"
+                },
+                {
+                  "id": "custom.width",
+                  "value": 260
+                },
+                {
+                  "id": "links",
+                  "value": [
+                    {
+                      "targetBlank": false,
+                      "title": "zigbee2mqtt - Device",
+                      "url": "/d/zigbee2mqtt-device/zigbee2mqtt-device?var-prometheus_datasource=${prometheus_datasource}&var-job=${job}&var-device=${__data.fields.ieee_address}"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "type"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Type"
+                },
+                {
+                  "id": "custom.width",
+                  "value": 130
+                },
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "type": "color-text"
+                  }
+                },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "options": {
+                        "EndDevice": {
+                          "color": "green",
+                          "index": 1,
+                          "text": "EndDevice"
+                        },
+                        "Router": {
+                          "color": "blue",
+                          "index": 0,
+                          "text": "Router"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "vendor"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Vendor"
+                },
+                {
+                  "id": "custom.width",
+                  "value": 130
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "model_id"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Model"
+                },
+                {
+                  "id": "custom.width",
+                  "value": 160
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "power_source"
+              },
+              "properties": [
+                {
+                  "id": "displayName",
+                  "value": "Power"
+                },
+                {
+                  "id": "custom.width",
+                  "value": 170
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "LQI"
+              },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "mode": "gradient",
+                    "type": "gauge",
+                    "valueDisplayMode": "text"
+                  }
+                },
+                {
+                  "id": "custom.width",
+                  "value": 160
+                },
+                {
+                  "id": "max",
+                  "value": 255
+                },
+                {
+                  "id": "min",
+                  "value": 0
+                },
+                {
+                  "id": "unit",
+                  "value": "short"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "thresholds"
+                  }
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "red",
+                        "value": 0
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 30
+                      },
+                      {
+                        "color": "green",
+                        "value": 60
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Received"
+              },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "hideValue": true,
+                    "type": "sparkline"
+                  }
+                },
+                {
+                  "id": "unit",
+                  "value": "cps"
+                },
+                {
+                  "id": "custom.width",
+                  "value": 240
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Errors"
+              },
+              "properties": [
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "hideValue": true,
+                    "type": "sparkline"
+                  }
+                },
+                {
+                  "id": "unit",
+                  "value": "cps"
+                },
+                {
+                  "id": "custom.width",
+                  "value": 240
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "ieee_address"
+              },
+              "properties": [
+                {
+                  "id": "custom.hidden",
+                  "value": true
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": "Trend #A.*"
+              },
+              "properties": [
+                {
+                  "id": "custom.hidden",
+                  "value": true
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 16,
+          "w": 24,
+          "x": 0,
+          "y": 6
+        },
+        "id": 4,
+        "options": {
+          "cellHeight": "md",
+          "showHeader": true,
+          "sortBy": [
+            {
+              "desc": false,
+              "displayName": "Device"
+            }
+          ]
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum by (ieee_address, friendly_name, type, vendor, model_id, power_source) (zigbee2mqtt_device_info{job=~\"$job\", type!=\"Coordinator\"})",
+            "format": "time_series",
+            "instant": false,
+            "legendFormat": "__auto",
+            "range": true,
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "max by (ieee_address) (zigbee2mqtt_device_link_quality{job=~\"$job\"})",
+            "format": "table",
+            "instant": true,
+            "legendFormat": "{{ieee_address}}",
+            "range": false,
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum by (ieee_address) (rate(zigbee2mqtt_device_messages_received_total{job=~\"$job\"}[$__rate_interval])) or (count by (ieee_address) (zigbee2mqtt_device_info{job=~\"$job\", type!=\"Coordinator\"}) * 0)",
+            "format": "time_series",
+            "instant": false,
+            "legendFormat": "{{ieee_address}}",
+            "range": true,
+            "refId": "C"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum by (ieee_address) (rate(zigbee2mqtt_device_messages_failed_total{job=~\"$job\"}[$__rate_interval])) or (count by (ieee_address) (zigbee2mqtt_device_info{job=~\"$job\", type!=\"Coordinator\"}) * 0)",
+            "format": "time_series",
+            "instant": false,
+            "legendFormat": "{{ieee_address}}",
+            "range": true,
+            "refId": "D"
+          }
+        ],
+        "title": "Devices",
+        "transformations": [
+          {
+            "id": "timeSeriesTable",
+            "options": {
+              "A": {
+                "stat": "last",
+                "timeField": "Time"
+              },
+              "C": {
+                "stat": "mean",
+                "timeField": "Time"
+              },
+              "D": {
+                "stat": "mean",
+                "timeField": "Time"
+              }
+            }
+          },
+          {
+            "id": "joinByField",
+            "options": {
+              "byField": "ieee_address",
+              "mode": "outer"
+            }
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "Trend #A": true
+              },
+              "includeByName": {},
+              "indexByName": {
+                "Trend #C": 6,
+                "Trend #D": 7,
+                "Value": 5,
+                "friendly_name": 0,
+                "model_id": 3,
+                "power_source": 4,
+                "type": 1,
+                "vendor": 2
+              },
+              "renameByName": {
+                "Trend #C": "Received",
+                "Trend #D": "Errors",
+                "Value": "LQI"
+              }
+            }
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "collapsed": true,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 22
+        },
+        "id": 50,
+        "panels": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "MQTT messages published to / received from the broker.",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "drawStyle": "line",
+                  "fillOpacity": 10,
+                  "lineWidth": 1,
+                  "showPoints": "never"
+                },
+                "unit": "cps"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 0,
+              "y": 23
+            },
+            "id": 51,
+            "options": {
+              "legend": {
+                "calcs": [
+                  "mean",
+                  "lastNotNull"
+                ],
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "multi",
+                "sort": "desc"
+              }
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "sum(rate(zigbee2mqtt_mqtt_messages_published_total{job=~\"$job\"}[$__rate_interval]))",
+                "legendFormat": "published",
+                "refId": "A"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "sum(rate(zigbee2mqtt_mqtt_messages_received_total{job=~\"$job\"}[$__rate_interval]))",
+                "legendFormat": "received",
+                "refId": "B"
+              }
+            ],
+            "title": "MQTT throughput",
+            "type": "timeseries"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "Adapter send-operation latency (p50 / p95 / p99).",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "drawStyle": "line",
+                  "fillOpacity": 10,
+                  "lineWidth": 1,
+                  "showPoints": "never"
+                },
+                "unit": "s"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 12,
+              "x": 12,
+              "y": 23
+            },
+            "id": 52,
+            "options": {
+              "legend": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "multi",
+                "sort": "desc"
+              }
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "histogram_quantile(0.50, sum by (le) (rate(zigbee2mqtt_adapter_send_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+                "legendFormat": "p50",
+                "refId": "A"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(zigbee2mqtt_adapter_send_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+                "legendFormat": "p95",
+                "refId": "B"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "histogram_quantile(0.99, sum by (le) (rate(zigbee2mqtt_adapter_send_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+                "legendFormat": "p99",
+                "refId": "C"
+              }
+            ],
+            "title": "Adapter send duration",
+            "type": "timeseries"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "Current request-queue length (sum across devices) and adapter retries.",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "drawStyle": "line",
+                  "fillOpacity": 10,
+                  "lineWidth": 1,
+                  "showPoints": "never"
+                }
+              },
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "retries"
+                  },
+                  "properties": [
+                    {
+                      "id": "unit",
+                      "value": "cps"
+                    }
+                  ]
+                }
+              ]
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 8,
+              "x": 0,
+              "y": 31
+            },
+            "id": 53,
+            "options": {
+              "legend": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "multi",
+                "sort": "desc"
+              }
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "sum(zigbee2mqtt_request_queue_length{job=~\"$job\"})",
+                "legendFormat": "queue length",
+                "refId": "A"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "sum(rate(zigbee2mqtt_adapter_retries_total{job=~\"$job\"}[$__rate_interval]))",
+                "legendFormat": "retries",
+                "refId": "B"
+              }
+            ],
+            "title": "Queue & retries",
+            "type": "timeseries"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "Time requests spend in the per-device queue (p50 / p95 / p99).",
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "drawStyle": "line",
+                  "fillOpacity": 10,
+                  "lineWidth": 1,
+                  "showPoints": "never"
+                },
+                "unit": "s"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 8,
+              "x": 8,
+              "y": 31
+            },
+            "id": 54,
+            "options": {
+              "legend": {
+                "calcs": [
+                  "lastNotNull"
+                ],
+                "displayMode": "list",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "multi",
+                "sort": "desc"
+              }
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "histogram_quantile(0.50, sum by (le) (rate(zigbee2mqtt_request_queue_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+                "legendFormat": "p50",
+                "refId": "A"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "histogram_quantile(0.95, sum by (le) (rate(zigbee2mqtt_request_queue_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+                "legendFormat": "p95",
+                "refId": "B"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "histogram_quantile(0.99, sum by (le) (rate(zigbee2mqtt_request_queue_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+                "legendFormat": "p99",
+                "refId": "C"
+              }
+            ],
+            "title": "Queue duration",
+            "type": "timeseries"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "description": "Top Zigbee clusters by received ZCL payloads. cluster_id is the raw numeric Zigbee cluster ID (protocol-level / debug detail).",
+            "fieldConfig": {
+              "defaults": {
+                "custom": {
+                  "align": "left",
+                  "cellOptions": {
+                    "type": "auto"
+                  },
+                  "filterable": true
+                },
+                "unit": "cps"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 8,
+              "w": 8,
+              "x": 16,
+              "y": 31
+            },
+            "id": 55,
+            "options": {
+              "cellHeight": "sm",
+              "showHeader": true,
+              "sortBy": [
+                {
+                  "desc": true,
+                  "displayName": "Rate"
+                }
+              ]
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "expr": "topk(10, sum by (cluster_id) (rate(zigbee2mqtt_adapter_receive_zcl_payload_total{job=~\"$job\"}[$__rate_interval])))",
+                "format": "table",
+                "instant": true,
+                "refId": "A"
+              }
+            ],
+            "title": "Top ZCL clusters",
+            "transformations": [
+              {
+                "id": "organize",
+                "options": {
+                  "excludeByName": {
+                    "Time": true
+                  },
+                  "renameByName": {
+                    "Value": "Rate",
+                    "cluster_id": "Cluster ID"
+                  }
+                }
+              }
+            ],
+            "type": "table"
+          }
+        ],
+        "title": "Adapter / Protocol diagnostics",
+        "type": "row"
+      }
+    ],
+    "preload": false,
+    "refresh": "30s",
+    "schemaVersion": 42,
+    "tags": [
+      "zigbee2mqtt-integration"
+    ],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "text": "grafanacloud-prom",
+            "value": "grafanacloud-prom"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "label": "Datasource",
+          "multi": false,
+          "name": "prometheus_datasource",
+          "options": [],
+          "query": "prometheus",
+          "refresh": 1,
+          "regex": "(?!grafanacloud-usage|grafanacloud-ml-metrics).+",
+          "skipUrlSync": false,
+          "type": "datasource"
+        },
+        {
+          "allowCustomValue": false,
+          "current": {
+            "text": "integrations/zigbee2mqtt",
+            "value": "integrations/zigbee2mqtt"
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prometheus_datasource}"
+          },
+          "definition": "label_values(zigbee2mqtt_build_info,job)",
+          "hide": 0,
+          "includeAll": false,
+          "label": "Job",
+          "multi": false,
+          "name": "job",
+          "options": [],
+          "query": {
+            "qryType": 1,
+            "query": "label_values(zigbee2mqtt_build_info,job)",
+            "refId": "PrometheusVariableQueryEditor-VariableQuery"
+          },
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 1,
+          "type": "query"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "zigbee2mqtt - Overview",
+    "uid": "zigbee2mqtt-overview",
+    "version": 5
+  },
+  "meta": {
+    "annotationsPermissions": {
+      "dashboard": {
+        "canAdd": true,
+        "canDelete": true,
+        "canEdit": true
+      }
+    },
+    "apiVersion": "v0alpha1",
+    "canAdmin": true,
+    "canDelete": true,
+    "canEdit": true,
+    "canSave": true,
+    "canStar": true,
+    "created": "2026-06-26T09:11:54Z",
+    "createdBy": "tomwilkiepersonal",
+    "expires": "0001-01-01T00:00:00Z",
+    "folderId": 0,
+    "folderTitle": "General",
+    "folderUid": "",
+    "folderUrl": "",
+    "hasAcl": false,
+    "isFolder": false,
+    "provisioned": false,
+    "provisionedExternalId": "",
+    "slug": "zigbee2mqtt-overview",
+    "type": "db",
+    "updated": "2026-06-26T11:36:33Z",
+    "updatedBy": "tomwilkiepersonal",
+    "url": "/d/zigbee2mqtt-overview/zigbee2mqtt-overview",
+    "version": 5
+  }
+}

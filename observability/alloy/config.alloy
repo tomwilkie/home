@@ -233,6 +233,23 @@ prometheus.scrape "homeassistant" {
   scheme = "http"
 }
 
+// ── Gather zigbee2mqtt metrics ────────────────────────────────────────────────
+// Dev/edge zigbee2mqtt exposes a Prometheus endpoint on the host at :9142.
+// Alloy uses host networking, so localhost reaches it (same as the HA scrape).
+prometheus.scrape "zigbee2mqtt" {
+  forward_to = [grafana_cloud.stack.receivers.metrics]
+  targets = [
+    {
+      "__address__" = "localhost:9142",
+      "instance"    = constants.hostname,
+      "job"         = "integrations/zigbee2mqtt",
+    },
+  ]
+  scrape_interval = "60s"
+  metrics_path    = "/metrics"
+  scheme          = "http"
+}
+
 // ── Gather Unpoller metrics ───────────────────────────────────────────────────
 // Uses Docker SD to resolve the container's IP on the hassio network.
 // The static hostname (addon_<hash>_unpoller) only resolves inside Docker

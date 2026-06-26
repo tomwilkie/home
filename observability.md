@@ -20,6 +20,7 @@ HAOS host
 │   ├── scrapes Docker socket        → container metrics (cAdvisor) + container logs
 │   ├── reads /var/log/journal       → systemd journal logs
 │   ├── scrapes localhost:8123       → Home Assistant metrics
+│   ├── scrapes localhost:9142       → zigbee2mqtt metrics
 │   ├── discovers unpoller addon     → UniFi network metrics
 │   ├── receives UDM syslog on :514  → UniFi events (raw/UDP, split by log_type)
 │   └── tails AdGuard querylog.json  → IOT DNS query log (per-domain, permanent)
@@ -38,6 +39,7 @@ Alloy runs with `network_mode: host` so it can reach Home Assistant on `localhos
 | Node / system | `integrations/node_exporter` | CPU, memory, disk, network via `/proc` and `/sys` |
 | Docker containers | `integrations/docker` | Per-container resource usage via cAdvisor |
 | Home Assistant | `integrations/homeassistant` | All HA entity states via `/api/prometheus` |
+| zigbee2mqtt | `integrations/zigbee2mqtt` | Zigbee metrics (link quality, message/join counters, adapter queue/retry) from the dev/edge z2m exporter on `localhost:9142`; Alloy reaches it via host networking |
 | Unpoller | `integrations/unpoller` | UniFi device metrics; discovered via Docker SD because addon DNS is unreachable from host network |
 
 ### Logs
@@ -261,6 +263,15 @@ Dashboard JSON files live in `observability/dashboards/`. This repo is the **sou
 | `observability/dashboards/docker-cluster-overview.json` | `docker-cluster-overview` | Cross-host summary — one row per Docker host |
 | `observability/dashboards/docker-container-overview.json` | `docker-container-overview` | Per-container drill-down |
 | `observability/dashboards/docker-host-overview.json` | `docker-host-overview` | Aggregate resource usage for a single host |
+| `observability/dashboards/zigbee2mqtt-overview.json` | `zigbee2mqtt-overview` | zigbee2mqtt fleet: aggregate/version stats + a per-device table with LQI, Received & Errors sparklines (links to the device dashboard), plus a collapsed adapter/protocol diagnostics row |
+| `observability/dashboards/zigbee2mqtt-device.json` | `zigbee2mqtt-device` | Per-device drill-down (`device` = ieee_address): metadata, LQI now/over-time, messages received/errors, lifecycle events, request queue |
+
+> The two zigbee2mqtt dashboards are linked: the overview's device table links to
+> `/d/zigbee2mqtt-device?var-device=<ieee_address>` (the stable IEEE address, not the
+> friendly name, so it survives device renames). Both are tagged `zigbee2mqtt-integration`
+> and carry an "All zigbee2mqtt dashboards" links dropdown for cross-navigation. They model
+> the Docker dashboards' table-sparkline pattern (`timeSeriesTable` → Trend columns →
+> `joinByField`/`organize`). Source metrics come from `job="integrations/zigbee2mqtt"`.
 
 ### Fetch (re-download to repo)
 
