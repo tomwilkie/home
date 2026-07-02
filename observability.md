@@ -263,14 +263,15 @@ Dashboard JSON files live in `observability/dashboards/`. This repo is the **sou
 | `observability/dashboards/docker-cluster-overview.json` | `docker-cluster-overview` | Cross-host summary — one row per Docker host |
 | `observability/dashboards/docker-container-overview.json` | `docker-container-overview` | Per-container drill-down |
 | `observability/dashboards/docker-host-overview.json` | `docker-host-overview` | Aggregate resource usage for a single host |
-| `observability/dashboards/zigbee2mqtt-overview.json` | `zigbee2mqtt-overview` | zigbee2mqtt fleet: aggregate/version stats (incl. an Unavailable count), a Network status (MQTT/permit-join) + Coordinator/network (channel/PAN/firmware) panel, and a per-device table with Status (availability), LQI gauge, Last-seen age, and Received/Sent/Errors `irate` sparklines (links to the device dashboard), plus a collapsed adapter/protocol diagnostics row |
-| `observability/dashboards/zigbee2mqtt-device.json` | `zigbee2mqtt-device` | Per-device drill-down (`device` = ieee_address): metadata, availability + last-seen, LQI now/over-time, messages received/sent/errors, lifecycle events, request queue |
+| `observability/dashboards/zigbee2mqtt-overview.json` | `zigbee2mqtt-overview` | zigbee2mqtt device fleet: a Fleet Summary stat row (device/router/end-device counts, an Unavailable count, MQTT & device message rates, errors, retries) and a per-device table with a colour-coded Last seen cell (availability merged into last-seen age), an LQI gauge, and Received/Sent/Errors `irate` sparklines (links to the device dashboard) |
+| `observability/dashboards/zigbee2mqtt-coordinator.json` | `zigbee2mqtt-coordinator` | Instance-wide coordinator/adapter health: z2m version, Network status (MQTT connected + permit-join), Coordinator/network metadata (channel/PAN/firmware), and the adapter/protocol diagnostics (MQTT throughput, send-duration & queue-duration quantiles, queue length & retries, top ZCL clusters) |
+| `observability/dashboards/zigbee2mqtt-device.json` | `zigbee2mqtt-device` | Per-device drill-down (`device` = ieee_address): metadata (type/vendor/model/power), availability + last-seen, LQI now/over-time, messages received/sent/errors, lifecycle events, request queue |
 
-> The two zigbee2mqtt dashboards are linked: the overview's device table links to
+> The three zigbee2mqtt dashboards are linked: the overview's device table links to
 > `/d/zigbee2mqtt-device?var-device=<ieee_address>` (the stable IEEE address, not the
-> friendly name, so it survives device renames). Both are tagged `zigbee2mqtt-integration`
-> and carry an "All zigbee2mqtt dashboards" links dropdown for cross-navigation. They model
-> the Docker dashboards' table-sparkline pattern (`timeSeriesTable` → Trend columns →
+> friendly name, so it survives device renames). All three are tagged `zigbee2mqtt-integration`
+> and carry an "All zigbee2mqtt dashboards" links dropdown for cross-navigation. The overview
+> models the Docker dashboards' table-sparkline pattern (`timeSeriesTable` → Trend columns →
 > `joinByField`/`organize`). Source metrics come from `job="integrations/zigbee2mqtt"`.
 
 ### Fetch (re-download to repo)

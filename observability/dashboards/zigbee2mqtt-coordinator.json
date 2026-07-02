@@ -1,0 +1,841 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 1013004764119040,
+    "links": [
+      {
+        "asDropdown": true,
+        "icon": "external link",
+        "includeVars": true,
+        "keepTime": true,
+        "tags": [
+          "zigbee2mqtt-integration"
+        ],
+        "targetBlank": false,
+        "title": "All zigbee2mqtt dashboards",
+        "tooltip": "",
+        "type": "dashboards"
+      }
+    ],
+    "liveNow": false,
+    "panels": [
+      {
+        "gridPos": {
+          "h": 2,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "### 🛰️ zigbee2mqtt - Coordinator\n\nCoordinator, network and adapter/protocol health for the whole zigbee2mqtt instance.",
+          "mode": "markdown"
+        },
+        "targets": [],
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "zigbee2mqtt build the exporter is reporting.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "fixedColor": "blue",
+              "mode": "fixed"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "blue",
+                  "value": 0
+                }
+              ]
+            }
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 6,
+          "x": 0,
+          "y": 2
+        },
+        "id": 2,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "textMode": "name",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "zigbee2mqtt_build_info{job=~\"$job\"}",
+            "instant": true,
+            "legendFormat": "{{version}}",
+            "refId": "A"
+          }
+        ],
+        "title": "z2m Version",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "MQTT broker connection and whether the network is currently accepting new device joins.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "fixed"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "MQTT"
+              },
+              "properties": [
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "options": {
+                        "0": {
+                          "color": "red",
+                          "index": 1,
+                          "text": "Disconnected"
+                        },
+                        "1": {
+                          "color": "green",
+                          "index": 0,
+                          "text": "Connected"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Permit Join"
+              },
+              "properties": [
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "options": {
+                        "0": {
+                          "color": "green",
+                          "index": 0,
+                          "text": "Closed"
+                        },
+                        "1": {
+                          "color": "orange",
+                          "index": 1,
+                          "text": "Open"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 6,
+          "x": 6,
+          "y": 2
+        },
+        "id": 3,
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "vertical",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "zigbee2mqtt_mqtt_connected{job=~\"$job\"}",
+            "instant": true,
+            "legendFormat": "MQTT",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "zigbee2mqtt_permit_join{job=~\"$job\"}",
+            "instant": true,
+            "legendFormat": "Permit Join",
+            "refId": "B"
+          }
+        ],
+        "title": "Network status",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "Coordinator and Zigbee network metadata (from zigbee2mqtt_coordinator_info).",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "left",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "filterable": false
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byIndex",
+                "options": 0
+              },
+              "properties": [
+                {
+                  "id": "custom.width",
+                  "value": 130
+                },
+                {
+                  "id": "custom.cellOptions",
+                  "value": {
+                    "type": "color-text"
+                  }
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "text",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 12,
+          "x": 12,
+          "y": 2
+        },
+        "id": 4,
+        "options": {
+          "cellHeight": "sm",
+          "showHeader": false
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "zigbee2mqtt_coordinator_info{job=~\"$job\"}",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "title": "Coordinator / network",
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true,
+                "instance": true,
+                "job": true
+              },
+              "indexByName": {
+                "Value": 0,
+                "channel": 1,
+                "coordinator_type": 4,
+                "extended_pan_id": 3,
+                "pan_id": 2,
+                "revision": 5
+              },
+              "renameByName": {
+                "channel": "Channel",
+                "coordinator_type": "Type",
+                "extended_pan_id": "Ext PAN ID",
+                "pan_id": "PAN ID",
+                "revision": "Firmware"
+              }
+            }
+          },
+          {
+            "id": "transpose",
+            "options": {
+              "firstFieldName": "Field",
+              "restFieldsName": "Value"
+            }
+          },
+          {
+            "id": "filterByValue",
+            "options": {
+              "filters": [
+                {
+                  "config": {
+                    "id": "equal",
+                    "options": {
+                      "value": "Value"
+                    }
+                  },
+                  "fieldName": "Field"
+                }
+              ],
+              "match": "all",
+              "type": "exclude"
+            }
+          }
+        ],
+        "type": "table"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "MQTT messages published to / received from the broker.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never"
+            },
+            "unit": "cps"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 9
+        },
+        "id": 51,
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean",
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_mqtt_messages_published_total{job=~\"$job\"}[$__rate_interval]))",
+            "legendFormat": "published",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_mqtt_messages_received_total{job=~\"$job\"}[$__rate_interval]))",
+            "legendFormat": "received",
+            "refId": "B"
+          }
+        ],
+        "title": "MQTT throughput",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "Adapter send-operation latency (p50 / p95 / p99).",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never"
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 9
+        },
+        "id": 52,
+        "options": {
+          "legend": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "displayMode": "table",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "histogram_quantile(0.50, sum by (le) (rate(zigbee2mqtt_adapter_send_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(zigbee2mqtt_adapter_send_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "histogram_quantile(0.99, sum by (le) (rate(zigbee2mqtt_adapter_send_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "title": "Adapter send duration",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "Current request-queue length (sum across devices) and adapter retries.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "retries"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "cps"
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 0,
+          "y": 17
+        },
+        "id": 53,
+        "options": {
+          "legend": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(zigbee2mqtt_request_queue_length{job=~\"$job\"})",
+            "legendFormat": "queue length",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_adapter_retries_total{job=~\"$job\"}[$__rate_interval]))",
+            "legendFormat": "retries",
+            "refId": "B"
+          }
+        ],
+        "title": "Queue & retries",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "Time requests spend in the per-device queue (p50 / p95 / p99).",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "fillOpacity": 10,
+              "lineWidth": 1,
+              "showPoints": "never"
+            },
+            "unit": "s"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 8,
+          "y": 17
+        },
+        "id": 54,
+        "options": {
+          "legend": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": true
+          },
+          "tooltip": {
+            "mode": "multi",
+            "sort": "desc"
+          }
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "histogram_quantile(0.50, sum by (le) (rate(zigbee2mqtt_request_queue_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+            "legendFormat": "p50",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "histogram_quantile(0.95, sum by (le) (rate(zigbee2mqtt_request_queue_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+            "legendFormat": "p95",
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "histogram_quantile(0.99, sum by (le) (rate(zigbee2mqtt_request_queue_duration_seconds_bucket{job=~\"$job\"}[$__rate_interval])))",
+            "legendFormat": "p99",
+            "refId": "C"
+          }
+        ],
+        "title": "Queue duration",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "Top Zigbee clusters by received ZCL payloads. cluster_id is the raw numeric Zigbee cluster ID (protocol-level / debug detail).",
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "left",
+              "cellOptions": {
+                "type": "auto"
+              },
+              "filterable": true
+            },
+            "unit": "cps"
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Cluster ID"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "short"
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 8,
+          "x": 16,
+          "y": 17
+        },
+        "id": 55,
+        "options": {
+          "cellHeight": "sm",
+          "showHeader": true,
+          "sortBy": [
+            {
+              "desc": true,
+              "displayName": "Rate"
+            }
+          ]
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "topk(10, sum by (cluster_id) (rate(zigbee2mqtt_adapter_receive_zcl_payload_total{job=~\"$job\"}[$__rate_interval])))",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "title": "Top ZCL clusters",
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true
+              },
+              "renameByName": {
+                "Value": "Rate",
+                "cluster_id": "Cluster ID"
+              }
+            }
+          }
+        ],
+        "type": "table"
+      }
+    ],
+    "preload": false,
+    "refresh": "30s",
+    "schemaVersion": 42,
+    "tags": [
+      "zigbee2mqtt-integration"
+    ],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "text": "grafanacloud-prom",
+            "value": "grafanacloud-prom"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "label": "Datasource",
+          "multi": false,
+          "name": "prometheus_datasource",
+          "options": [],
+          "query": "prometheus",
+          "refresh": 1,
+          "regex": "(?!grafanacloud-usage|grafanacloud-ml-metrics).+",
+          "skipUrlSync": false,
+          "type": "datasource"
+        },
+        {
+          "allowCustomValue": false,
+          "current": {
+            "text": "integrations/zigbee2mqtt",
+            "value": "integrations/zigbee2mqtt"
+          },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${prometheus_datasource}"
+          },
+          "definition": "label_values(zigbee2mqtt_build_info,job)",
+          "hide": 0,
+          "includeAll": false,
+          "label": "Job",
+          "multi": false,
+          "name": "job",
+          "options": [],
+          "query": {
+            "qryType": 1,
+            "query": "label_values(zigbee2mqtt_build_info,job)",
+            "refId": "PrometheusVariableQueryEditor-VariableQuery"
+          },
+          "refresh": 1,
+          "regex": "",
+          "skipUrlSync": false,
+          "sort": 1,
+          "type": "query"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "zigbee2mqtt - Coordinator",
+    "uid": "zigbee2mqtt-coordinator",
+    "version": 2
+  },
+  "meta": {
+    "annotationsPermissions": {
+      "dashboard": {
+        "canAdd": true,
+        "canDelete": true,
+        "canEdit": true
+      }
+    },
+    "apiVersion": "v0alpha1",
+    "canAdmin": true,
+    "canDelete": true,
+    "canEdit": true,
+    "canSave": true,
+    "canStar": true,
+    "created": "2026-07-02T13:08:52Z",
+    "createdBy": "tomwilkiepersonal",
+    "expires": "0001-01-01T00:00:00Z",
+    "folderId": 0,
+    "folderTitle": "General",
+    "folderUid": "",
+    "folderUrl": "",
+    "hasAcl": false,
+    "isFolder": false,
+    "provisioned": false,
+    "provisionedExternalId": "",
+    "slug": "zigbee2mqtt-coordinator",
+    "type": "db",
+    "updated": "2026-07-02T13:10:03Z",
+    "updatedBy": "tomwilkiepersonal",
+    "url": "/d/zigbee2mqtt-coordinator/zigbee2mqtt-coordinator",
+    "version": 2
+  }
+}
