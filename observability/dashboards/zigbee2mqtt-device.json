@@ -220,7 +220,7 @@
         },
         "gridPos": {
           "h": 7,
-          "w": 14,
+          "w": 9,
           "x": 10,
           "y": 3
         },
@@ -254,6 +254,144 @@
         ],
         "title": "Link quality (LQI)",
         "type": "gauge"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${prometheus_datasource}"
+        },
+        "description": "Whether this device is currently considered available, and how long ago it was last seen.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "fixed"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": 0
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Availability"
+              },
+              "properties": [
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "options": {
+                        "0": {
+                          "color": "red",
+                          "index": 1,
+                          "text": "Offline"
+                        },
+                        "1": {
+                          "color": "green",
+                          "index": 0,
+                          "text": "Online"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "Last seen"
+              },
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "dtdurations"
+                },
+                {
+                  "id": "color",
+                  "value": {
+                    "mode": "thresholds"
+                  }
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 3600
+                      },
+                      {
+                        "color": "red",
+                        "value": 86400
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 7,
+          "w": 5,
+          "x": 19,
+          "y": 3
+        },
+        "id": 8,
+        "options": {
+          "colorMode": "background",
+          "graphMode": "none",
+          "justifyMode": "auto",
+          "orientation": "vertical",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "auto",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "max(zigbee2mqtt_device_availability{job=~\"$job\", ieee_address=\"$device\"})",
+            "instant": true,
+            "legendFormat": "Availability",
+            "refId": "A"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "time() - max(zigbee2mqtt_device_last_seen_timestamp_seconds{job=~\"$job\", ieee_address=\"$device\"})",
+            "instant": true,
+            "legendFormat": "Last seen",
+            "refId": "B"
+          }
+        ],
+        "title": "Availability",
+        "type": "stat"
       },
       {
         "datasource": {
@@ -368,6 +506,21 @@
                   }
                 }
               ]
+            },
+            {
+              "matcher": {
+                "id": "byName",
+                "options": "sent"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
             }
           ]
         },
@@ -411,9 +564,18 @@
             "expr": "sum(rate(zigbee2mqtt_device_messages_failed_total{job=~\"$job\", ieee_address=\"$device\"}[$__rate_interval])) or vector(0)",
             "legendFormat": "errors",
             "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "expr": "sum(rate(zigbee2mqtt_device_messages_sent_total{job=~\"$job\", ieee_address=\"$device\"}[$__rate_interval])) or vector(0)",
+            "legendFormat": "sent",
+            "refId": "C"
           }
         ],
-        "title": "Messages received / errors",
+        "title": "Messages (received / sent / errors)",
         "type": "timeseries"
       },
       {
@@ -687,7 +849,7 @@
     "timezone": "browser",
     "title": "zigbee2mqtt - Device",
     "uid": "zigbee2mqtt-device",
-    "version": 7
+    "version": 8
   },
   "meta": {
     "annotationsPermissions": {
@@ -716,9 +878,9 @@
     "provisionedExternalId": "",
     "slug": "zigbee2mqtt-device",
     "type": "db",
-    "updated": "2026-06-26T11:36:34Z",
+    "updated": "2026-07-02T12:59:57Z",
     "updatedBy": "tomwilkiepersonal",
     "url": "/d/zigbee2mqtt-device/zigbee2mqtt-device",
-    "version": 7
+    "version": 8
   }
 }
