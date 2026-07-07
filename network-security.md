@@ -81,10 +81,10 @@ add the HA exceptions, restore trusted inbound, block camera internet, and add
 | Action | From | To | Logged | Purpose |
 |---|---|---|---|---|
 | ALLOW | IOT | HA `192.168.0.12` | — | device-initiated: MQTT, Voice/Wyoming, webhooks |
-| BLOCK | IOT | Internal (rest of main LAN) | ✓ | containment |
+| BLOCK | IOT | Internal (rest of main LAN) | ✓ | containment — **`NEW`+`INVALID` states only** (see stateful-block note) |
 | ALLOW | Internal (any) | IOT | — | HA/LAN initiates to IOT (ESPHome, Cast, push); stateful, IOT can't initiate back |
 | ALLOW | Cameras | HA `192.168.0.12` | — | camera-initiated to HA (if any) |
-| BLOCK | Cameras | Internal (rest of main LAN) | ✓ | containment |
+| BLOCK | Cameras | Internal (rest of main LAN) | ✓ | containment — **`NEW`+`INVALID` states only** (see stateful-block note) |
 | BLOCK | Cameras | External (internet) | ✓ | Protect updates cameras via the NVR |
 | ALLOW | HA `192.168.0.12` only | Cameras | — | HA may pull camera streams directly (RTSP) |
 
@@ -94,6 +94,24 @@ add the HA exceptions, restore trusted inbound, block camera internet, and add
 > **Logging is enabled on the BLOCK policies.** UniFi Traffic Flows only records
 > traffic that *matches a policy* — ordinary allowed inter-VLAN traffic is not
 > logged. Logging the block rules is what makes the audit below meaningful.
+
+> **The `…→Internal` containment blocks must match `NEW`+`INVALID` states only —
+> NOT `ALL`.** A containment block's job is to stop an IOT/camera device from
+> *initiating* into the LAN. UniFi creates these blocks with
+> `connection_state_type: ALL`, which *also* drops the **`ESTABLISHED`/`RELATED`
+> return traffic** of connections a LAN device legitimately started — silently
+> breaking `Internal→IOT` for every main-LAN host **except HA** (HA survives only
+> because its dedicated `IOT to Home Assistant` allow sits above the block at index
+> 10000). Symptom: a LAN client's SYN reaches the IOT device and the device
+> answers, but the reply is dropped, so the flow hangs in `SYN_RECV` — e.g. AirPrint
+> to an IOT printer, Casting, or an ESPHome web UI all fail from any non-HA device
+> while working fine from HA. The fix is to set the block to
+> `connection_state_type: CUSTOM`, `connection_states: ["NEW","INVALID"]` so it
+> blocks device-initiated connections while letting LAN-initiated returns back
+> through — containment is fully preserved. Diagnose forward-vs-return drops with
+> the UDM's own tracker: `ssh root@192.168.0.1 "conntrack -L -d <iot-ip>"` — a
+> stuck `SYN_RECV` with a high reply-packet count is the return being blocked.
+> Applies to both `Block IOT to LAN` and `Block Cameras to LAN`.
 
 ## Same-VLAN (device-to-device) isolation
 
@@ -436,7 +454,12 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
       networks assigned.
 - [x] IOT firewall policies created (HA exception + logged block + trusted inbound).
 - [x] Cameras firewall policies created (HA exception + logged blocks incl. internet).
-- [x] `l2_isolation` enabled on `iot` + `cameras` WLANs.
+- [x] **`Block IOT to LAN` / `Block Cameras to LAN` set to `NEW`+`INVALID` states
+      (was `ALL`).** `ALL` dropped the `ESTABLISHED`/`RELATED` returns of
+      LAN-initiated flows, silently breaking `Internal→IOT` for every non-HA
+      main-LAN host (e.g. AirPrint to the IOT-VLAN HP printer failed while HA
+      worked). Containment intact (device-initiated `NEW` still blocked). See the
+      stateful-block note under [Firewall policies](#firewall-policies-zone-based-firewall).
 - [x] **Switch-port isolation for wired devices** (`isolation: true` confirmed):
       - Norman Hub (IOT) — `USW Pro Max 16 PoE` port 5.
       - Hive Hub (IOT) — `Basement Switch` port 8.
