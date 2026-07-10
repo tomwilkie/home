@@ -322,13 +322,45 @@ jq '{dashboard: .dashboard, overwrite: true}' observability/dashboards/{slug}.js
 
 The stored format has `dashboard` + `meta` keys; the upload endpoint (`/api/dashboards/db`) only wants `dashboard` + `overwrite`.
 
+### Snapshot & verify visually
+
+**Don't trust the JSON — render it and look.** After uploading, take a PNG
+snapshot and actually inspect it (with the `Read` tool); a valid, well-formed
+JSON can still render wrong (e.g. per-series `fillOpacity` stacking into a grey
+blob that buries a min–max band). `gcx dashboards snapshot` renders via the
+Grafana Image Renderer:
+
+```bash
+# whole dashboard (collapsed rows render collapsed — good for "do all rows exist")
+gcx dashboards snapshot {uid} --since 24h --output-dir .
+
+# a single panel is the real visual check — pass template-var overrides so it
+# has data (repeating-row/collapsed panels render empty at the dashboard level)
+gcx dashboards snapshot {uid} --panel {panelId} --var area=toms_office \
+  --since 24h --width 1100 --height 500 --output-dir .
+```
+
+- Panel snapshots default to `home-temperature-by-area-panel-{id}.png`; **it is
+  overwritten each call**, so `mv` it to a distinct name between renders (e.g. when
+  comparing two areas) or you'll read the same image twice.
+- Use `--panel {id}` + `--var {name}={value}` to force data into a **repeating /
+  collapsed** panel — a dashboard-level snapshot of collapsed rows shows only the
+  row headers, not the graphs.
+- ⚠️ **PII:** a full-dashboard snapshot renders the datasource picker showing the
+  real stack slug (which contains the street name). That's only in the throwaway
+  PNG, never the committed JSON — **do not** commit or `SendUserFile` the
+  full-dashboard PNG. A single-panel PNG doesn't show the picker and is safe to
+  share.
+
 ### Workflow
 
 1. **Check for remote changes** before editing — diff local vs live (see above)
 2. Edit `observability/dashboards/{slug}.json` in this repo
 3. Diff to review your outgoing change
 4. Upload to Grafana
-5. Commit to git
+5. **Snapshot the changed panel(s) and verify visually** (see above) — not just
+   that the JSON is valid
+6. Commit to git
 
 ## Grafana Alerting
 
