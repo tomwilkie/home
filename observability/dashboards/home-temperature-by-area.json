@@ -87,7 +87,74 @@
                 },
                 "unit": "celsius"
               },
-              "overrides": []
+              "overrides": [
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Max"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.fillBelowTo",
+                      "value": "Min"
+                    },
+                    {
+                      "id": "custom.fillOpacity",
+                      "value": 14
+                    },
+                    {
+                      "id": "custom.lineWidth",
+                      "value": 0
+                    },
+                    {
+                      "id": "custom.hideFrom",
+                      "value": {
+                        "legend": true,
+                        "tooltip": false,
+                        "viz": false
+                      }
+                    },
+                    {
+                      "id": "color",
+                      "value": {
+                        "fixedColor": "#6e7079",
+                        "mode": "fixed"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "matcher": {
+                    "id": "byName",
+                    "options": "Min"
+                  },
+                  "properties": [
+                    {
+                      "id": "custom.fillOpacity",
+                      "value": 0
+                    },
+                    {
+                      "id": "custom.lineWidth",
+                      "value": 0
+                    },
+                    {
+                      "id": "custom.hideFrom",
+                      "value": {
+                        "legend": true,
+                        "tooltip": false,
+                        "viz": false
+                      }
+                    },
+                    {
+                      "id": "color",
+                      "value": {
+                        "fixedColor": "#6e7079",
+                        "mode": "fixed"
+                      }
+                    }
+                  ]
+                }
+              ]
             },
             "gridPos": {
               "h": 9,
@@ -113,6 +180,28 @@
               }
             },
             "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "editorMode": "code",
+                "expr": "max(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\.${area}_.*\", entity!~\".*(radiator|aircon_outside|device_temperature|internal_temperature|battery|door_temperature|boiler_monitor|leak_sensor|towel_heater|thermostat_target).*\"} or homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\.${area}_.*\"})",
+                "legendFormat": "Max",
+                "range": true,
+                "refId": "C"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "editorMode": "code",
+                "expr": "min(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\.${area}_.*\", entity!~\".*(radiator|aircon_outside|device_temperature|internal_temperature|battery|door_temperature|boiler_monitor|leak_sensor|towel_heater|thermostat_target).*\"} or homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\.${area}_.*\"})",
+                "legendFormat": "Min",
+                "range": true,
+                "refId": "D"
+              },
               {
                 "datasource": {
                   "type": "prometheus",

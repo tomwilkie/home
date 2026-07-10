@@ -278,7 +278,14 @@ Dashboard JSON files live in `observability/dashboards/`. This repo is the **sou
 > plus `homeassistant_climate_current_temperature_celsius{entity=~"climate\.${area}_.*"}`.
 > Notes: the `area` **value is a regex fragment** — Hallway is `(hallway|front_door)`
 > to fold the front-door sensor device-temps into the Hallway row; full slugs avoid
-> the `master_bedroom`/`master_bathroom` prefix collision. **Rooms only** — Server
+> the `master_bedroom`/`master_bathroom` prefix collision.
+> A soft grey **min–max band** is shaded behind the lines via two extra aggregation
+> queries (`min(...)`/`max(...)`, legend `Min`/`Max`) and a `Max` field override
+> `custom.fillBelowTo: "Min"` (band series hidden from the legend). The band is
+> **ambient-only** — its selectors exclude non-room temps with
+> `entity!~".*(radiator|aircon_outside|device_temperature|internal_temperature|battery|door_temperature|boiler_monitor|leak_sensor|towel_heater|thermostat_target).*"`
+> — so it reflects room warmth, while the individual lines still show every entity.
+> **Rooms only** — Server
 > Rack and the whole-house sensor are excluded, which also keeps the PII entity
 > `sensor.server_rack_…_cpu_temperature` (contains the street address) out of the
 > committed JSON, since entities are matched by prefix at render time, never
