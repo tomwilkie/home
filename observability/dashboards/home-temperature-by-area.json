@@ -51,7 +51,7 @@
                   "axisPlacement": "auto",
                   "barAlignment": 0,
                   "drawStyle": "line",
-                  "fillOpacity": 5,
+                  "fillOpacity": 0,
                   "gradientMode": "none",
                   "hideFrom": {
                     "legend": false,
