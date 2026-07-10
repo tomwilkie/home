@@ -104,7 +104,7 @@
                   "max"
                 ],
                 "displayMode": "table",
-                "placement": "bottom",
+                "placement": "right",
                 "showLegend": true
               },
               "tooltip": {
@@ -120,7 +120,7 @@
                 },
                 "editorMode": "code",
                 "expr": "homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\.${area}_.*\"}",
-                "legendFormat": "{{entity}}",
+                "legendFormat": "{{friendly_name}}",
                 "range": true,
                 "refId": "A"
               },
@@ -131,7 +131,7 @@
                 },
                 "editorMode": "code",
                 "expr": "homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\.${area}_.*\"}",
-                "legendFormat": "{{entity}}",
+                "legendFormat": "{{friendly_name}}",
                 "range": true,
                 "refId": "B"
               }
