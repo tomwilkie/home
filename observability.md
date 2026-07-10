@@ -274,17 +274,30 @@ Dashboard JSON files live in `observability/dashboards/`. This repo is the **sou
 > **area-first `entity` ID prefix** (per [naming-conventions.md](naming-conventions.md)).
 > A custom template variable `area` lists `Display : <slug-regex>` pairs and a
 > single **repeating, collapsed** `row` (`repeat: "area"`) clones one graph per
-> area, querying `homeassistant_sensor_temperature_celsius{entity=~"sensor\.${area}_.*"}`
-> plus `homeassistant_climate_current_temperature_celsius{entity=~"climate\.${area}_.*"}`.
+> area, querying `homeassistant_sensor_temperature_celsius{entity=~"sensor\.${area:raw}_.*"}`
+> plus `homeassistant_climate_current_temperature_celsius{entity=~"climate\.${area:raw}_.*"}`.
 > Notes: the `area` **value is a regex fragment** — Hallway is `(hallway|front_door)`
 > to fold the front-door sensor device-temps into the Hallway row; full slugs avoid
-> the `master_bedroom`/`master_bathroom` prefix collision.
+> the `master_bedroom`/`master_bathroom` prefix collision. Interpolate with
+> **`${area:raw}`**, not `${area}` — Grafana regex-*escapes* a multi-value variable
+> value inside `=~`, which mangles the Hallway `(...)` alternation into a no-data
+> match; `:raw` passes it through (plain-slug areas are unaffected either way).
+> The rows are **expanded by default**: the repeating row is `collapsed: false`
+> with an empty `panels: []` and the timeseries promoted to a top-level sibling
+> panel beneath it (the structure Grafana needs to repeat an *expanded* row).
 > A soft grey **min–max band** is shaded behind the lines via two extra aggregation
 > queries (`min(...)`/`max(...)`, legend `Min`/`Max`) and a `Max` field override
-> `custom.fillBelowTo: "Min"` (band series hidden from the legend). The band is
-> **ambient-only** — its selectors exclude non-room temps with
-> `entity!~".*(radiator|aircon_outside|device_temperature|internal_temperature|battery|door_temperature|boiler_monitor|leak_sensor|towel_heater|thermostat_target).*"`
-> — so it reflects room warmth, while the individual lines still show every entity.
+> `custom.fillBelowTo: "Min"` (band series hidden from the legend; per-line
+> `fillOpacity` is 0 so only the band is filled — otherwise the stacked line fills
+> swamp it). Two exclusion tiers:
+> - **Graph-wide** (dropped from lines *and* band):
+>   `entity!~".*(target_temperature|boiler_monitor_temperature_[0-9]).*"` — the
+>   thermostat *setpoint* (a flat line, not a reading) and the boiler *pipe* probes.
+> - **Band-only** (kept as lines, excluded from the min–max): additionally
+>   `battery|internal_temperature|outside` — device battery/chip self-heat and the
+>   aircon *outdoor* probe, which would otherwise distort the room-range band.
+>   Radiators, towel heaters and device temps **are** in the band (so radiator-only
+>   rooms like the guest bathrooms still get a band).
 > **Rooms only** — Server
 > Rack and the whole-house sensor are excluded, which also keeps the PII entity
 > `sensor.server_rack_…_cpu_temperature` (contains the street address) out of the
