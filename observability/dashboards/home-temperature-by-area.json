@@ -1,0 +1,274 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": null,
+    "links": [],
+    "liveNow": false,
+    "panels": [
+      {
+        "collapsed": true,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1,
+        "panels": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${prometheus_datasource}"
+            },
+            "fieldConfig": {
+              "defaults": {
+                "color": {
+                  "mode": "palette-classic"
+                },
+                "custom": {
+                  "axisBorderShow": false,
+                  "axisCenteredZero": false,
+                  "axisColorMode": "text",
+                  "axisLabel": "",
+                  "axisPlacement": "auto",
+                  "barAlignment": 0,
+                  "drawStyle": "line",
+                  "fillOpacity": 5,
+                  "gradientMode": "none",
+                  "hideFrom": {
+                    "legend": false,
+                    "tooltip": false,
+                    "viz": false
+                  },
+                  "insertNulls": false,
+                  "lineInterpolation": "linear",
+                  "lineWidth": 1,
+                  "pointSize": 5,
+                  "scaleDistribution": {
+                    "type": "linear"
+                  },
+                  "showPoints": "never",
+                  "spanNulls": true,
+                  "stacking": {
+                    "group": "A",
+                    "mode": "none"
+                  },
+                  "thresholdsStyle": {
+                    "mode": "off"
+                  }
+                },
+                "mappings": [],
+                "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    }
+                  ]
+                },
+                "unit": "celsius"
+              },
+              "overrides": []
+            },
+            "gridPos": {
+              "h": 9,
+              "w": 24,
+              "x": 0,
+              "y": 1
+            },
+            "id": 2,
+            "options": {
+              "legend": {
+                "calcs": [
+                  "mean",
+                  "lastNotNull",
+                  "max"
+                ],
+                "displayMode": "table",
+                "placement": "bottom",
+                "showLegend": true
+              },
+              "tooltip": {
+                "mode": "multi",
+                "sort": "desc"
+              }
+            },
+            "targets": [
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "editorMode": "code",
+                "expr": "homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\.${area}_.*\"}",
+                "legendFormat": "{{entity}}",
+                "range": true,
+                "refId": "A"
+              },
+              {
+                "datasource": {
+                  "type": "prometheus",
+                  "uid": "${prometheus_datasource}"
+                },
+                "editorMode": "code",
+                "expr": "homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\.${area}_.*\"}",
+                "legendFormat": "{{entity}}",
+                "range": true,
+                "refId": "B"
+              }
+            ],
+            "title": "$area temperatures",
+            "type": "timeseries"
+          }
+        ],
+        "repeat": "area",
+        "repeatDirection": "v",
+        "title": "$area",
+        "type": "row"
+      }
+    ],
+    "preload": false,
+    "refresh": "",
+    "schemaVersion": 42,
+    "tags": [
+      "homeassistant"
+    ],
+    "templating": {
+      "list": [
+        {
+          "current": {
+            "text": "grafanacloud-prom",
+            "value": "grafanacloud-prom"
+          },
+          "hide": 0,
+          "includeAll": false,
+          "label": "Datasource",
+          "multi": false,
+          "name": "prometheus_datasource",
+          "options": [],
+          "query": "prometheus",
+          "refresh": 1,
+          "regex": "(?!grafanacloud-usage|grafanacloud-ml-metrics).+",
+          "skipUrlSync": false,
+          "type": "datasource"
+        },
+        {
+          "allValue": ".*",
+          "current": {
+            "text": [
+              "All"
+            ],
+            "value": [
+              "$__all"
+            ]
+          },
+          "includeAll": true,
+          "label": "Area",
+          "multi": true,
+          "name": "area",
+          "options": [
+            {
+              "selected": true,
+              "text": "All",
+              "value": "$__all"
+            },
+            {
+              "selected": false,
+              "text": "Basement",
+              "value": "basement"
+            },
+            {
+              "selected": false,
+              "text": "Front Guest Room",
+              "value": "front_guest_room"
+            },
+            {
+              "selected": false,
+              "text": "Garage",
+              "value": "garage"
+            },
+            {
+              "selected": false,
+              "text": "Guest Bathroom",
+              "value": "guest_bathroom"
+            },
+            {
+              "selected": false,
+              "text": "Hallway",
+              "value": "(hallway|front_door)"
+            },
+            {
+              "selected": false,
+              "text": "Kitchen",
+              "value": "kitchen"
+            },
+            {
+              "selected": false,
+              "text": "Living Room",
+              "value": "living_room"
+            },
+            {
+              "selected": false,
+              "text": "Master Bathroom",
+              "value": "master_bathroom"
+            },
+            {
+              "selected": false,
+              "text": "Master Bedroom",
+              "value": "master_bedroom"
+            },
+            {
+              "selected": false,
+              "text": "Nursery",
+              "value": "nursery"
+            },
+            {
+              "selected": false,
+              "text": "Rear Guest Room",
+              "value": "rear_guest_room"
+            },
+            {
+              "selected": false,
+              "text": "Tom's Office",
+              "value": "toms_office"
+            }
+          ],
+          "query": "Basement : basement, Front Guest Room : front_guest_room, Garage : garage, Guest Bathroom : guest_bathroom, Hallway : (hallway|front_door), Kitchen : kitchen, Living Room : living_room, Master Bathroom : master_bathroom, Master Bedroom : master_bedroom, Nursery : nursery, Rear Guest Room : rear_guest_room, Tom's Office : toms_office",
+          "skipUrlSync": false,
+          "type": "custom"
+        }
+      ]
+    },
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "Home Temperature by Area",
+    "uid": "home-temperature-by-area",
+    "version": 1
+  },
+  "meta": {
+    "type": "db"
+  }
+}

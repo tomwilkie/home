@@ -266,6 +266,23 @@ Dashboard JSON files live in `observability/dashboards/`. This repo is the **sou
 | `observability/dashboards/zigbee2mqtt-overview.json` | `zigbee2mqtt-overview` | zigbee2mqtt device fleet: a Fleet Summary stat row (device/router/end-device counts, an Unavailable count, MQTT & device message rates, errors, retries) and a per-device table with a colour-coded Last seen cell (availability merged into last-seen age), an LQI gauge, and Received/Sent/Errors `irate` sparklines (links to the device dashboard) |
 | `observability/dashboards/zigbee2mqtt-coordinator.json` | `zigbee2mqtt-coordinator` | Instance-wide coordinator/adapter health: z2m version, Network status (MQTT connected + permit-join), Coordinator/network metadata (channel/PAN/firmware), and the adapter/protocol diagnostics (MQTT throughput, send-duration & queue-duration quantiles, queue length & retries, top ZCL clusters) |
 | `observability/dashboards/zigbee2mqtt-device.json` | `zigbee2mqtt-device` | Per-device drill-down (`device` = ieee_address): metadata (type/vendor/model/power), availability + last-seen, LQI now/over-time, messages received/sent/errors, lifecycle events, request queue |
+| `observability/dashboards/home-temperature-by-area.json` | `home-temperature-by-area` | Temperature trends with one **collapsible row per area** (repeating row driven by a custom `area` variable), each holding a time-series of that area's temperature entities |
+
+> **`home-temperature-by-area` — deriving area without an `area` label.** The HA
+> Prometheus exporter emits **no `area` label** (series carry only `entity`,
+> `friendly_name`, `domain`), so the per-area grouping is built from the
+> **area-first `entity` ID prefix** (per [naming-conventions.md](naming-conventions.md)).
+> A custom template variable `area` lists `Display : <slug-regex>` pairs and a
+> single **repeating, collapsed** `row` (`repeat: "area"`) clones one graph per
+> area, querying `homeassistant_sensor_temperature_celsius{entity=~"sensor\.${area}_.*"}`
+> plus `homeassistant_climate_current_temperature_celsius{entity=~"climate\.${area}_.*"}`.
+> Notes: the `area` **value is a regex fragment** — Hallway is `(hallway|front_door)`
+> to fold the front-door sensor device-temps into the Hallway row; full slugs avoid
+> the `master_bedroom`/`master_bathroom` prefix collision. **Rooms only** — Server
+> Rack and the whole-house sensor are excluded, which also keeps the PII entity
+> `sensor.server_rack_…_cpu_temperature` (contains the street address) out of the
+> committed JSON, since entities are matched by prefix at render time, never
+> hardcoded. Adding a new room = one entry in the `area` variable.
 
 > The three zigbee2mqtt dashboards are linked: the overview's device table links to
 > `/d/zigbee2mqtt-device?var-device=<ieee_address>` (the stable IEEE address, not the
