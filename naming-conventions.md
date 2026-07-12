@@ -193,14 +193,36 @@ call above is what to loop over for a bulk sweep.
 #### Legacy entities (`has_entity_name: false`)
 
 Older integrations opt out of composition: `friendly_name` is the entity name
-verbatim, and some build the device name into it themselves. Hive does this — with
-the device named `Hallway - Thermostat` it emits `Hallway - Thermostat Thermostat
-Current Temperature`. There is no clean fix from the entity side: an override strips
-the area (leaving a useless `Current Temperature`), and clearing it leaves the
-stutter. Renaming the *device* to remove the duplicated word (e.g.
-`Hallway - Thermostat` → `Hallway - Hive`) is the only real remedy. Entities with no
-device at all (e.g. `min_max` helpers like `sensor.house_temperature`) get no
-composition either and are out of scope for this convention.
+verbatim if an override is set, and otherwise whatever the integration builds —
+which for some (Hive) means the integration prepends the device name *itself*.
+
+That means neither entity-side lever works when the integration's own name already
+repeats a word in the device name: an override strips the area (leaving a useless
+`Current Temperature`), and clearing it leaves a stutter. **The fix is to rename the
+device so it doesn't duplicate the word the integration already supplies.** The Hive
+device was renamed `Hallway - Thermostat` → **`Hallway - Hive`** for exactly this
+reason:
+
+| entity | before | after |
+|---|---|---|
+| `climate.hallway_thermostat` | `Hallway - Thermostat Thermostat` | `Hallway - Hive Thermostat` |
+| `sensor.hallway_thermostat_current_temperature` | `Hallway - Thermostat Thermostat Current Temperature` | `Hallway - Hive Thermostat Current Temperature` |
+
+> **Accepted drift:** the entity IDs still carry the old `thermostat` device slug
+> (`climate.hallway_thermostat`, not `climate.hallway_hive_thermostat`). Renaming
+> them would break every dashboard and automation that references them, for no
+> functional gain — the device slug in an entity ID is allowed to lag a device
+> rename done purely to fix name composition.
+
+> **Known wart:** this one Hive device also hosts the hot-water entities
+> (`*.basement_hotwater_*`), and Hive gives both `climate.hallway_thermostat` and
+> `water_heater.hallway_thermostat` an `original_name` of `Thermostat` — so they
+> share the display name `Hallway - Hive Thermostat`. Pre-existing; unfixable
+> without an override that would strip the prefix again.
+
+Entities with no device at all (e.g. `min_max` helpers like
+`sensor.house_temperature`) get no composition either and are out of scope for this
+convention.
 
 #### After renaming a device
 
