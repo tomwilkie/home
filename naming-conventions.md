@@ -126,19 +126,86 @@ Examples:
 
 ### Display names (friendly names)
 
-Entity display names should be concise and reflect only what the entity measures or controls — they must **not** include the area or device name as a prefix.
+Two different things are easily confused here, and conflating them silently breaks
+dashboards:
+
+| | What it is | Where it lives |
+|---|---|---|
+| **Entity name** | What the entity measures or controls, on its own | entity registry `name` (user override) / `original_name` (integration default) |
+| **`friendly_name`** | What HA actually displays and exports | **computed at runtime**, never stored |
+
+For a modern entity (`has_entity_name: true`) attached to a device, HA composes:
+
+```
+friendly_name = "{device name} {entity name}"
+```
+
+Since devices are named `{Area} - {Device}`, that composition is what produces the
+useful `Kitchen - Netatmo Temperature` seen in dashboards and in the Grafana
+`friendly_name` label (see [@observability.md](observability.md)).
+
+**The entity name must therefore be bare** — the area and device are supplied by the
+composition, not by the entity:
 
 - **Correct:** `Temperature`, `Battery Level`, `Smoke Status`, `Motion detection`
 - **Incorrect:** `Nursery Motion Sensor Temperature`, `Nest Protect (Baby's Room) Smoke Status`
 
-**Why this matters:** Integrations and HA itself sometimes auto-generate display names by prepending the device name (e.g. `{Device Name} {measurement}`). After a device rename, these baked-in names become stale and misleading.
+#### ⚠️ A custom `name` override replaces the *whole* composed name
 
-**How to fix stale display names after renaming:**
+Setting the registry `name` (renaming an entity in the UI, or `ha_set_entity(name=…)`)
+makes HA use that string **verbatim** and **drop the `{Area} - {Device}` prefix
+entirely**. HA offers no way to override only the entity portion.
 
-1. If the entity has a user-set custom name (`name` field in entity registry is not null) that references the old device/area name — **clear it** with `ha_set_entity(entity_id, name="")` so it reverts to the integration default.
-2. If the integration's own `original_name` embeds the old device name (e.g. `"Nest Protect (Baby's Room) Smoke Status"`) — **set a custom override** with `ha_set_entity(entity_id, name="Smoke Status")` to strip the prefix.
+| entity | registry `name` | resulting `friendly_name` |
+|---|---|---|
+| `sensor.kitchen_netatmo_humidity` | *(null)* | `Kitchen - Netatmo Humidity` ✅ |
+| `sensor.garage_netatmo_humidity` | `Humidity` | `Humidity` ❌ |
 
-> **Note:** After renaming a device or entity ID, always check entity display names for each device and fix any that still reference the old name.
+So: **never set a `name` override on a `has_entity_name: true` entity unless the
+integration's `original_name` is genuinely wrong.** Such an entity is almost always
+*already* compliant — the integration supplies a bare `original_name` — and an
+override that merely restates it is a no-op that only serves to strip the prefix. A
+sweep in July 2026 found 54 such redundant overrides (`name == original_name`);
+all were cleared, restoring the composed names.
+
+**Audit for them:**
+
+```bash
+ssh root@homeassistant.local -C 'jq -r ".data.entities[]
+  | select(.has_entity_name == true and .name != null and .device_id != null)
+  | [.entity_id, .name, (.original_name // \"-\")] | @tsv" /config/.storage/core.entity_registry'
+```
+
+Any row where `name == original_name` is redundant. Rows where they differ are a
+judgement call: the override buys a tidier entity name at the cost of the area/device
+prefix — only worth it when `original_name` is genuinely bad (e.g. `Electric Consumption [W]` → `Power`).
+
+**Clear an override** (reverts to the integration default and restores the prefix):
+
+```bash
+hass-cli raw ws config/entity_registry/update \
+  --json='{"entity_id":"sensor.foo","name":null}'
+```
+
+`ha_set_entity(entity_id, name="")` does the same thing for one-offs; the WebSocket
+call above is what to loop over for a bulk sweep.
+
+#### Legacy entities (`has_entity_name: false`)
+
+Older integrations opt out of composition: `friendly_name` is the entity name
+verbatim, and some build the device name into it themselves. Hive does this — with
+the device named `Hallway - Thermostat` it emits `Hallway - Thermostat Thermostat
+Current Temperature`. There is no clean fix from the entity side: an override strips
+the area (leaving a useless `Current Temperature`), and clearing it leaves the
+stutter. Renaming the *device* to remove the duplicated word (e.g.
+`Hallway - Thermostat` → `Hallway - Hive`) is the only real remedy. Entities with no
+device at all (e.g. `min_max` helpers like `sensor.house_temperature`) get no
+composition either and are out of scope for this convention.
+
+#### After renaming a device
+
+1. If the entity has a user-set custom name (`name` is not null) that references the old device/area name — **clear it** (above) so it reverts to the integration default and re-composes correctly.
+2. Only if the integration's own `original_name` embeds the old device name (e.g. `"Nest Protect (Baby's Room) Smoke Status"`) — **set a custom override** with `ha_set_entity(entity_id, name="Smoke Status")`. Accept that this loses the `{Area} - {Device}` prefix; use an explicit `name:` in dashboard cards to compensate.
 
 ---
 
