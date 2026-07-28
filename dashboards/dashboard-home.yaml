@@ -147,6 +147,19 @@ views:
                            -  start_pause
                            -  return_home
                   features_position: inline
+                  card_mod:
+                      style:
+                          ha-tile-icon$: "{% if state_attr(config.entity, 'bin_full')
+                              %}\n:host {\n  position: relative;\n  overflow: visible;\n\
+                              }\n:host::after {\n  content: \"!\";\n  position: absolute;\n\
+                              \  top: 0px;\n  right: 0px;\n  width: 16px;\n  height:
+                              16px;\n  border-radius: 50%;\n  background: var(--red-color);\n\
+                              \  color: var(--text-primary-color);\n  font-size: 11px;\n\
+                              \  font-weight: 700;\n  line-height: 16px;\n  text-align:
+                              center;\n  z-index: 1;\n}\n{% endif %}\n"
+                          .: "{% if state_attr(config.entity, 'bin_full') %}\nha-card
+                              {\n  --tile-color: var(--red-color) !important;\n}\n\
+                              {% endif %}\n"
                -  type: custom:mushroom-template-card
                   primary: Washing Machine
                   secondary: '{{ states("input_select.washing_machine_state") | title
@@ -374,6 +387,19 @@ views:
                            -  start_pause
                            -  return_home
                   features_position: inline
+                  card_mod:
+                      style:
+                          ha-tile-icon$: "{% if state_attr(config.entity, 'bin_full')
+                              %}\n:host {\n  position: relative;\n  overflow: visible;\n\
+                              }\n:host::after {\n  content: \"!\";\n  position: absolute;\n\
+                              \  top: 0px;\n  right: 0px;\n  width: 16px;\n  height:
+                              16px;\n  border-radius: 50%;\n  background: var(--red-color);\n\
+                              \  color: var(--text-primary-color);\n  font-size: 11px;\n\
+                              \  font-weight: 700;\n  line-height: 16px;\n  text-align:
+                              center;\n  z-index: 1;\n}\n{% endif %}\n"
+                          .: "{% if state_attr(config.entity, 'bin_full') %}\nha-card
+                              {\n  --tile-color: var(--red-color) !important;\n}\n\
+                              {% endif %}\n"
             visibility:
                -  condition: or
                   conditions:
@@ -721,6 +747,19 @@ views:
                            -  start_pause
                            -  return_home
                   features_position: inline
+                  card_mod:
+                      style:
+                          ha-tile-icon$: "{% if state_attr(config.entity, 'bin_full')
+                              %}\n:host {\n  position: relative;\n  overflow: visible;\n\
+                              }\n:host::after {\n  content: \"!\";\n  position: absolute;\n\
+                              \  top: 0px;\n  right: 0px;\n  width: 16px;\n  height:
+                              16px;\n  border-radius: 50%;\n  background: var(--red-color);\n\
+                              \  color: var(--text-primary-color);\n  font-size: 11px;\n\
+                              \  font-weight: 700;\n  line-height: 16px;\n  text-align:
+                              center;\n  z-index: 1;\n}\n{% endif %}\n"
+                          .: "{% if state_attr(config.entity, 'bin_full') %}\nha-card
+                              {\n  --tile-color: var(--red-color) !important;\n}\n\
+                              {% endif %}\n"
                -  type: tile
                   entity: climate.toms_office_aircon
                   name: Aircon

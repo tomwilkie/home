@@ -131,6 +131,16 @@ Cards that sit alongside each other in a section must look like a set. When addi
 - A **nested** shadow pierce reaches the icon/text — `hui-toggle-entity-row: { $: { hui-generic-entity-row: { $: ".info { … }" } } }` — to set the icon-to-text gap, `font-weight: 500` and `letter-spacing: 0.1px`. A single-level `hui-toggle-entity-row$ …` pierce does **not** reach them (they live one shadow root deeper, in `hui-generic-entity-row`).
 - A small **negative** `margin-left` on `.info` compensates for the narrow `mdi:lightbulb-auto` glyph so its visual gap matches the plain `mdi:lightbulb` beside it.
 
+**Vacuum bin-full styling** (Basement, Living Room, Tom's Office Roomba tiles) is the second card-mod worked example. When `state_attr(config.entity, 'bin_full')` is true the tile icon turns red and gains a small red `!` badge, so a Roomba that can't clean is obvious at a glance (see [@notifications.md](notifications.md) for why a full bin silently aborts a run). Key points learnt:
+
+- These stay **built-in `tile` cards**, not `mushroom-template-card`s, so the `vacuum-commands` feature buttons (start/pause, return home) survive. Mushroom's templated `icon_color`/`badge_icon` would have cost those buttons.
+- The tile's icon tint is the **`--tile-color`** CSS variable, set on `ha-card`. It needs `!important` — the tile card writes its own computed colour to an inline `style` attribute, which otherwise wins.
+- The badge attaches to **`:host` of `ha-tile-icon`**, *not* to an inner element. Inside that shadow root the icon lives in `div.container`, which is only 36×36 and has **`overflow: hidden`**, so a corner badge placed there is clipped. The host is 48×48 with `overflow: visible`, giving room for the badge at `top: 0; right: 0`.
+- ⚠️ **There is no `.shape` element.** Many community card-mod snippets target `ha-tile-icon$ .shape`; in this HA version the class is `.container`. A wrong selector fails **completely silently** — card-mod still injects its `<style>` into the shadow root, so nothing errors and the tile just renders unchanged. This is exactly why the icon-colour half of the change appeared to work while the badge was missing.
+- Verify by piercing the shadow root rather than eyeballing: `deepQueryAll(...)` to the `hui-tile-card` whose `_config.entity` matches, then read `ha-tile-icon.shadowRoot` — list its elements to confirm the real class names before writing a selector against them.
+
+> **Testing a conditional style whose condition is currently false:** push a copy with the condition forced (`sed "s/state_attr(config.entity, 'bin_full')/true/g"`) to HA only, verify visually, then re-push the real file from the repo. This exercises the true card-mod path (JS-injected CSS does not) while never committing the forced condition.
+
 ---
 
 #### Climate view layout

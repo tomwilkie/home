@@ -223,3 +223,41 @@ Two triggers, branched by `trigger.id`:
 | `create` | `washing_machine_state` transitions `running` → `finished` | Announce via `script.annouce` (title: "Washing Machine") |
 | `dismiss` | `washing_machine_state` leaves `finished` (door opened → `idle`) | Dismiss notification via `script.cancel_announce` |
 
+---
+
+## Vacuum Bin Full Automation
+
+---
+
+### Automation: Vacuum Bin Full (`automation.vacuum_bin_full`)
+
+Announces when a Roomba's dust bin needs emptying. Unlike the appliance
+automations above, this needs **no `input_select` state helper** — `bin_full` is
+already a clean two-state boolean attribute on the vacuum entity, so the
+automation triggers directly on the attribute transition.
+
+Two triggers, branched by `trigger.id`, both watching `attribute: bin_full` on
+`vacuum.basement_roomba`, `vacuum.living_room_roomba`, and
+`vacuum.toms_office_roomba`:
+
+| Trigger ID | Condition | Action |
+|---|---|---|
+| `create` | `bin_full` → `true` | Announce via `script.annouce` |
+| `dismiss` | `bin_full` → `false` (bin emptied) | Dismiss via `script.cancel_announce` |
+
+The title is templated as `{{ trigger.to_state.attributes.friendly_name }} Bin
+Full` (e.g. "Tom's Office - Roomba Bin Full"). Because `script.annouce` derives
+its `notification_id` from `title | slugify`, this gives each vacuum its own
+independent persistent notification from a single shared automation, rather than
+needing one automation per vacuum.
+
+> **Why this matters:** a Roomba with a full bin still *accepts* a start command
+> — it drives off the dock, then aborts back within ~30 seconds with
+> `cleaning_time: 0` and `cleaned_area: 0`. So the failure is silent: the morning
+> routine appears to run, but nothing is cleaned. This automation surfaces the
+> real cause. The [home dashboard](dashboards.md) also flags it visually.
+
+> **Scope is Roombas only.** `vacuum.kitchen_vacuum` is a Deebot and exposes no
+> `bin_full` attribute (`state_attr` returns `None`), so it is deliberately
+> excluded from both the automation and the dashboard styling.
+
