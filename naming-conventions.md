@@ -260,6 +260,43 @@ Examples:
 
 ---
 
+## Labels
+
+### Naming format
+
+| | Format | Example |
+|---|---|---|
+| Display name | kebab-case | `room-light`, `restart-daily` |
+| `label_id` | snake_case (HA slugifies the display name) | `room_light`, `restart_daily` |
+
+Give every label a `description` explaining what applying it *does* — a label is
+an interface to an automation, and the description is the only place that contract
+is visible in the UI.
+
+### Label the device or the entity?
+
+Decide by what the consuming automation needs, and state the choice in the label's
+description so it is not applied to the wrong thing:
+
+- **Label the entity** when the automation acts on that entity directly, and any
+  sibling entity would be wrong or harmful to touch. Example: `room-light` marks
+  individual light entities.
+- **Label the device** when the automation needs to *find* related entities on the
+  same device — for instance a restart button plus the media player that says
+  whether the device is busy. Example: `restart-daily` (see
+  [@maintenance.md](maintenance.md)).
+
+> ⚠️ **A device label passed to `target: {label_id: …}` expands to every matching
+> entity on that device.** For `button.press` on an Everything Presence Lite that
+> includes `factory_reset_mmwave_sensor`. When labelling devices, the automation
+> must iterate them in a template and *select* the intended entity — typically by
+> `device_class` — never target the label directly.
+>
+> Note the converse asymmetry: `label_entities()` returns only entities labelled
+> **directly**; labels on a device do **not** roll down to its entities.
+
+---
+
 ## Zigbee2MQTT sync
 
 After renaming HA devices, sync the friendly names in zigbee2mqtt to match. See [@zigbee2mqtt-sync.md](zigbee2mqtt-sync.md) for the step-by-step procedure.
