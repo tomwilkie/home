@@ -12,6 +12,22 @@ The live Home Assistant configuration (automations, scripts, helpers, dashboards
 - Refer to @observability.md for how metrics and logs are shipped to Grafana Cloud via Grafana Alloy.
 - Refer to @network-security.md for how the IOT and Camera VLANs are isolated on the UniFi gateway and how to audit the isolation.
 
+# Git Workflow
+
+**Commit directly to `master`. Do not create branches or pull requests.**
+
+This is a single-maintainer repo of documentation and config, with no CI and no
+review step, so a branch adds a merge round-trip and buys nothing. When asked to
+commit, commit on `master` and push — no `git checkout -b`, no PR, no asking
+which branch.
+
+Commit messages follow `<area>: <lowercase summary>` (e.g. `lighting:`,
+`naming:`, `notifications:`, `maintenance:`), with a body explaining *why* when
+the change is not self-evident.
+
+Still required before every commit: the [PII and Secrets Policy](#pii-and-secrets-policy)
+check below — this repo is public.
+
 # Entity IDs, not Device IDs
 
 Always reference entities by `entity_id` — never by `device_id` — in automations, dashboards, scripts, and scenes. Device IDs are regenerated whenever an integration re-creates a device (e.g. a Music Assistant update once re-created the WiiM speaker, silently breaking every automation that targeted its device ID), while entity IDs survive. When editing any automation or dashboard that still contains a hardcoded `device_id`, convert it to the corresponding `entity_id` while you're there. Prefer native conditions/actions (`condition: state`, `climate.set_hvac_mode`, etc.) over `condition: device` / device actions, which embed device IDs.
