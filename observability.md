@@ -291,13 +291,24 @@ Dashboard JSON files live in `observability/dashboards/`. This repo is the **sou
 > `fillOpacity` is 0 so only the band is filled — otherwise the stacked line fills
 > swamp it). Two exclusion tiers:
 > - **Graph-wide** (dropped from lines *and* band):
->   `entity!~".*(target_temperature|boiler_monitor_temperature_[0-9]).*"` — the
->   thermostat *setpoint* (a flat line, not a reading) and the boiler *pipe* probes.
+>   `entity!~".*(target_temperature|boiler_monitor_temperature_[0-9]|device_temperature|internal_temperature|battery_temperature|door_temperature).*"`
+>   — the thermostat *setpoint* (a flat line, not a reading), the boiler *pipe*
+>   probes, and **device self-heat**: the temperature a Zigbee button, contact,
+>   vibration, leak or shutter sensor reports about *itself*
+>   (`*_device_temperature`), an ESPHome/tablet board or battery
+>   (`*_internal_temperature`, `kitchen_display_battery_temperature`), and
+>   `basement_washing_machine_door_temperature` — the one self-heat sensor whose
+>   entity ID lacks the `device_` prefix, hence the `door_temperature` term. These
+>   read 26–57 °C against a 22–28 °C room, so they compressed the y-axis (Master
+>   Bedroom stretched to 42.8 °C for the clock's board temp).
 > - **Band-only** (kept as lines, excluded from the min–max): additionally
->   `battery|internal_temperature|outside` — device battery/chip self-heat and the
->   aircon *outdoor* probe, which would otherwise distort the room-range band.
->   Radiators, towel heaters and device temps **are** in the band (so radiator-only
->   rooms like the guest bathrooms still get a band).
+>   `outside` — the aircon *outdoor* probe, a real reading but one that would
+>   distort the room-range band.
+> - **Deliberately kept**: the Norman shutter-motor temps
+>   (`master_bedroom_{left,right}_window_*`, `hallway_top_of_stairs_*`) — nominally
+>   device temps, but they track room temperature closely and give per-window
+>   coverage. Radiators and towel heaters are also in the band, so radiator-only
+>   rooms like the guest bathrooms still get one.
 > **Rooms only** — Server
 > Rack and the whole-house sensor are excluded, which also keeps the PII entity
 > `sensor.server_rack_…_cpu_temperature` (contains the street address) out of the
