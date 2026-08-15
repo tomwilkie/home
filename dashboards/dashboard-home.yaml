@@ -1463,6 +1463,49 @@ views:
             column_span: 1
             cards:
                -  type: heading
+                  heading: Front Guest Room
+                  icon: mdi:bed-outline
+               -  type: entities
+                  entities:
+                     -  entity: 
+                            sensor.front_guest_room_environmental_sensor_temperature
+                        type: custom:multiple-entity-row
+                        name: Temperature
+                        show_state: false
+                        entities:
+                           -  entity: 
+                                  sensor.front_guest_room_environmental_sensor_temperature
+                              name: Environmental
+                           -  entity: 
+                                  sensor.front_guest_room_radiator_temperature
+                              name: Radiator
+                     -  entity: 
+                            sensor.front_guest_room_environmental_sensor_humidity
+                        type: custom:multiple-entity-row
+                        name: Humidity
+                        show_state: false
+                        entities:
+                           -  entity: 
+                                  sensor.front_guest_room_environmental_sensor_humidity
+                              name: Environmental
+                           -  entity: sensor.front_guest_room_radiator_humidity
+                              name: Radiator
+                  grid_options:
+                      columns: 12
+                      rows: 2
+               -  type: history-graph
+                  entities:
+                     -  entity: 
+                            sensor.front_guest_room_environmental_sensor_temperature
+                  hours_to_show: 24
+                  show_names: false
+                  grid_options:
+                      columns: 12
+                      rows: 3
+         -  type: grid
+            column_span: 1
+            cards:
+               -  type: heading
                   heading: Hallway
                   icon: mdi:door
                -  type: entities

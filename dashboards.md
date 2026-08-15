@@ -160,7 +160,17 @@ Daily weather forecast for My Home (`weather-forecast` card, `forecast_type: dai
 
 **Sections 4–12 — Rooms** (`column_span: 1`, 3 per row)
 
-Rooms in order: Kitchen, Living Room, Master Bedroom, Master Bathroom, Nursery, Tom's Office, Hallway, Basement, Garage.
+Rooms in order: Kitchen, Living Room, Master Bedroom, Master Bathroom, Nursery, Tom's Office, Front Guest Room, Hallway, Basement, Garage.
+
+> Front Guest Room appears **only here**, not on the Home view. The Home view's
+> room sections are built around lights, occupancy and media, and gate on
+> `input_select.tom_room_selector`; the Front Guest Room has no lights, no
+> occupancy sensor and no lighting automation, and is not one of the selector's
+> options — a section there would be an empty shell. Its Temperature and Humidity
+> rows pair the SONOFF `Front Guest Room - Environmental Sensor` with the Aqara
+> `Front Guest Room - Radiator`; only the environmental sensor is plotted on the
+> history graph, since the radiator sensor spikes far above room temperature when
+> the heating runs (it is already on the Central Heating "Radiators" graph).
 
 Each room section contains:
 - A heading card with a room icon
