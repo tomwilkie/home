@@ -12,11 +12,34 @@ Delivers a message to the house. Accepts `title`, `message`, and optional `impor
 > **`speak: false` makes the call UI-only** (default `true`, so existing callers are
 > unaffected). It suppresses the ChimeTTS step *and* the volume duck/restore either
 > side of it — those exist only to make room for the TTS, so the flag is folded into
-> the `was_playing` variable rather than gating three steps separately. Use it for a
-> notification worth recording but not worth interrupting the house for; the
-> early-flight routine in [wake-routines.md](wake-routines.md) is the first consumer.
+> the `was_playing` variable rather than gating three steps separately.
 >
 > The two flags are independent: `speak: false, persistent: false` is a no-op.
+
+#### Which callers speak
+
+**The rule: speak for something a person in the house should act on now; stay
+silent for something that only needs a record.** Diagnostics are recorded, not
+announced — the persistent notification is the log.
+
+| Silent (`speak: false`) | Why |
+|---|---|
+| `automation.notify_on_automation_failure` | The message interpolates the raw error text, `Source File:` path and `Exception Details:` — a stack trace read aloud. `mode: queued, max: 20`, so one bad deploy could stack twenty of them. |
+| `automation.notify_on_app_stopped` | Infrastructure churn: all 10 `device_class: running` add-ons bounce nightly around 03:00. It only avoided being noisy because TTS is gated to 06:00–23:00 — a *daytime* blip would announce a container name to the whole house. |
+| `automation.vacuum_bin_full` | Low urgency, and up to three Roombas can report at once. |
+| `automation.early_flight_hot_water` | Fires the evening before; see [wake-routines.md](wake-routines.md). |
+
+| Speaks | Why |
+|---|---|
+| `automation.front_door_notification` | Someone is at the door — the whole point. |
+| `automation.notify_on_moisture_detected` | `important: true`; a water leak must interrupt, day or night. |
+| `automation.notify_on_tumble_drier_finished` | Chore prompt aimed at whoever is in. |
+| `automation.notify_when_washing_machine_has_finished` | As above. |
+| `script.broadcast` | Speech *is* the feature (`important: true`, `persistent: false`). |
+
+> Each silenced call carries an inline `note:` explaining why, so it does not get
+> "fixed" back. The `dismiss` branches call `script.cancel_announce`, which takes
+> no `speak` argument.
 
 #### Notification player selection
 
@@ -251,7 +274,7 @@ Two triggers, branched by `trigger.id`, both watching `attribute: bin_full` on
 
 | Trigger ID | Condition | Action |
 |---|---|---|
-| `create` | `bin_full` → `true` | Announce via `script.annouce` |
+| `create` | `bin_full` → `true` | Announce via `script.annouce` (**`speak: false`** — UI only) |
 | `dismiss` | `bin_full` → `false` (bin emptied) | Dismiss via `script.cancel_announce` |
 
 The title is templated as `{{ trigger.to_state.attributes.friendly_name }} Bin
