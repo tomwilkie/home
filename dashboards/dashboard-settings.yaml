@@ -68,6 +68,22 @@ views:
                   show_entity_picture: false
                   vertical: false
                   features_position: bottom
+               -  type: tile
+                  grid_options:
+                      columns: 6
+                      rows: 1
+                  entity: input_number.flight_lead_time
+                  name: Flight Lead Time
+                  vertical: false
+                  features_position: bottom
+               -  type: tile
+                  grid_options:
+                      columns: 6
+                      rows: 1
+                  entity: input_datetime.flight_hot_water_time
+                  name: Next Flight Hot Water
+                  vertical: false
+                  features_position: bottom
                -  type: button
                   grid_options:
                       columns: 12

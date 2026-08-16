@@ -4,10 +4,19 @@
 
 ### `script.annouce`
 
-Delivers a message to the house. Accepts `title`, `message`, and optional `important` and `persistent` fields. Actions:
+Delivers a message to the house. Accepts `title`, `message`, and optional `important`, `persistent` and `speak` fields. Actions:
 1. Temporarily lowers Tom's office speaker volume if it is playing
-2. Speaks the message via ChimeTTS to the selected notification players (time-gated: 06:00–23:00, or always if `important: true`)
+2. Speaks the message via ChimeTTS to the selected notification players (time-gated: 06:00–23:00, or always if `important: true`), unless `speak: false`
 3. Creates a persistent notification in the HA UI, unless `persistent: false` (default `true`) — `notification_id` is derived from `title | slugify` so it can be addressed for later dismissal
+
+> **`speak: false` makes the call UI-only** (default `true`, so existing callers are
+> unaffected). It suppresses the ChimeTTS step *and* the volume duck/restore either
+> side of it — those exist only to make room for the TTS, so the flag is folded into
+> the `was_playing` variable rather than gating three steps separately. Use it for a
+> notification worth recording but not worth interrupting the house for; the
+> early-flight routine in [wake-routines.md](wake-routines.md) is the first consumer.
+>
+> The two flags are independent: `speak: false, persistent: false` is a no-op.
 
 #### Notification player selection
 
