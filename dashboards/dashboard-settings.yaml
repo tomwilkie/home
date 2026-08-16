@@ -68,6 +68,26 @@ views:
                   show_entity_picture: false
                   vertical: false
                   features_position: bottom
+               -  type: button
+                  grid_options:
+                      columns: 12
+                      rows: 2
+                  entity: automation.wake_up_routine
+                  name: Run Wake Up Routine Now
+                  icon: mdi:weather-sunset-up
+                  show_state: false
+                  tap_action:
+                      action: perform-action
+                      perform_action: automation.trigger
+                      target:
+                          entity_id: automation.wake_up_routine
+                      data:
+                          skip_condition: true
+                      confirmation:
+                          text: Run the wake up routine now? Lights will fade up, the
+                              shutters will open and the vacuums may start.
+                  hold_action:
+                      action: more-info
          -  type: grid
             cards:
                -  type: heading
