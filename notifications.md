@@ -43,9 +43,64 @@ announced — the persistent notification is the log.
 
 #### Notification player selection
 
-`media_player.notification_players` (a media player group helper) is the master list of candidate speakers. Each member has a matching toggle named `input_boolean.{player_slug}_notifications` (e.g. `media_player.kitchen_display` → `input_boolean.kitchen_display_notifications`); the script's `notification_targets` variable computes the TTS targets as *group members whose toggle is on*, and the TTS step is skipped entirely if none are selected. The toggles are controlled from the Broadcast view on the Settings dashboard.
+`media_player.notification_players` (a media player group helper) is the master list of candidate speakers. Each member has a matching toggle named `input_boolean.{player_slug}_notifications` (e.g. `media_player.kitchen_display_ma_player` → `input_boolean.kitchen_display_ma_player_notifications`); the script's `notification_targets` variable computes the TTS targets as *group members whose toggle is on*, and the TTS step is skipped entirely if none are selected. The toggles are controlled from the Broadcast view on the Settings dashboard.
 
-**Group members must be the native integration entity** for each speaker (e.g. the `apple_tv`, `esphome`, `linkplay`, `fully_kiosk`, or `unifiprotect` entity) — **not** the Music Assistant proxy, even for a device that also has a Music Assistant entity. This is the opposite of the dashboard convention, which uses the Music Assistant entity for the same device (see the "Media player rule" in [@dashboards.md](dashboards.md)). The `{player_slug}` in the toggle name is therefore derived from the *native* entity ID (e.g. `media_player.master_bedroom_homepod_mini` → `input_boolean.master_bedroom_homepod_mini_notifications`).
+**Prefer the entity that supports `MEDIA_ANNOUNCE`** — which is usually the Music
+Assistant proxy — and fall back to the native integration entity only where no MA
+equivalent exists. This aligns the group with the dashboard convention (see the
+"Media player rule" in [@dashboards.md](dashboards.md)) rather than opposing it.
+
+> This rule used to say the opposite (*always* the native entity). It was changed
+> after a silent failure on 2026-08-19: the bedroom sleep sound
+> (see [wake-routines.md](wake-routines.md)) went inaudible because a tumble-dryer
+> announcement was delivered to `media_player.master_bedroom_homepod_mini`, the
+> **native `apple_tv` entity for the same speaker that Music Assistant was
+> streaming to**. An `apple_tv` HomePod does **not** advertise `MEDIA_ANNOUNCE`, so
+> ChimeTTS *replaced* playback: the announcement seized the HomePod's AirPlay
+> output, and the HomePod never returned to MA's stream. Music Assistant is
+> fire-and-forget on its `cliraop` process, so it never noticed — its process
+> stayed alive with established TCP sessions and its queue kept advancing, leaving
+> a silent room, a dashboard reading `playing`, and a session that `pause`/`play`
+> could not recover because it was never torn down. Announcing through the MA
+> proxy instead keeps the stream and the interruption under one component, so MA
+> pauses its queue, announces, and resumes.
+
+Current members (announce support checked via the `supported_features` bit `1048576`):
+
+| Member | Why |
+|---|---|
+| `hallway_doorbell_speaker`, the three `*_voice_assistant*` | native ESPHome — already support announce |
+| `master_bedroom_homepod_mini_ma_player` | MA proxy; the native `apple_tv` entity cannot announce |
+| `living_room_arylic_lp10_ma_player` | MA proxy; the native `linkplay` entity cannot announce |
+| `kitchen_display_ma_player` | MA proxy; the native `fully_kiosk` entity cannot announce |
+| `garage_ai_pro_speaker` | native `unifiprotect` — no MA equivalent exists, so it stays on the replace path |
+
+> ⚠️ **`media_player.kitchen_display` and `media_player.kitchen_display_ma_player`
+> are the same Pixel Tablet** — the `fully_kiosk` device *Kitchen - Display* and the
+> `music_assistant` device *Kitchen - Display (Music Assistant)*. Only the MA one is
+> in the group.
+
+The `{player_slug}` in the toggle name is derived from whichever entity is actually
+in the group (e.g. `media_player.master_bedroom_homepod_mini_ma_player` →
+`input_boolean.master_bedroom_homepod_mini_ma_player_notifications`).
+
+#### Why the TTS step is split in two
+
+`announce` is a **single flag on a single `chime_tts.say` call**, and HA rejects
+`announce: true` against a player that lacks the feature — so mixed-capability
+targets cannot share one call. `script.annouce` therefore partitions
+`notification_targets` into two variables by testing the `supported_features` bit,
+and calls `chime_tts.say` twice:
+
+| Variable | Players | `announce` | Behaviour |
+|---|---|---|---|
+| `announce_targets` | those with `MEDIA_ANNOUNCE` | `true` | overlays, player resumes afterwards |
+| `replace_targets` | the rest | `false` | replaces playback (the original behaviour) |
+
+The split is **capability-driven, not a hardcoded list**, so swapping a group
+member for an announce-capable entity moves it to the right branch automatically.
+Both branches carry the same time/`important`/`speak` guards. Each step has an
+inline `note:` explaining this, so it does not get merged back into one call.
 
 When adding a player to the group, also create its `input_boolean.{player_slug}_notifications` toggle (display name `Notifications`, assigned to the player's area, turned on) and add it to the Broadcast view's Notification Players card — a group member without a toggle is never announced to, because its toggle lookup resolves to a non-existent entity.
 
@@ -63,6 +118,49 @@ Dismisses a persistent notification previously created by `script.annouce`. Acce
 
 Each appliance uses the same structure: an `input_select` state helper decouples device events from notification. One automation manages all state transitions; a second reacts to state changes and delivers or dismisses alerts. All state automations run in `restart` mode — a new trigger interrupts any in-progress run, so late-arriving events are never queued or dropped.
 
+### The state helpers must **not** set `initial`
+
+`initial` on an `input_select` is not "the value it starts life with" — it
+**disables last-state restore** and forces that value on every Home Assistant
+restart. `InputSelect.async_added_to_hass` short-circuits before the
+`RestoreEntity` lookup whenever an initial value is present:
+
+```python
+async def async_added_to_hass(self) -> None:
+    await super().async_added_to_hass()
+    if self.current_option is not None:   # set from CONF_INITIAL
+        return                            # ← async_get_last_state() never runs
+    state = await self.async_get_last_state()
+```
+
+Both appliance helpers originally carried `initial: idle`, so the nightly
+`automation.restart_home_assistant_at_4am_every_day` reset any cycle in flight
+and its "finished" notification was silently lost — e.g. `washing_machine_state`
+`running` → `idle` at 04:00:31 on 2026-08-17, and `tumble_dryer_state` `active`
+→ `idle` mid-cycle at 04:00:15 on 2026-08-22. **`initial` is now unset on both**,
+so they restore across a restart.
+
+> ⚠️ `ha_config_set_helper` **cannot** clear it — it merges, preserving fields not
+> re-passed, and `initial=None` means "not passed". Use the WebSocket API, whose
+> `InputSelectStorageCollection._update_data` *replaces* the record
+> (`{CONF_ID: item[CONF_ID]} | update_data`), so omitting `initial` drops it.
+> `name` and `options` are required, and `icon` must be re-sent or it is lost too:
+>
+> ```sh
+> hass-cli raw ws input_select/update --json='{
+>   "input_select_id": "washing_machine_state",
+>   "name": "Washing Machine State",
+>   "icon": "mdi:washing-machine",
+>   "options": ["idle", "running", "finished"]
+> }'
+> ```
+
+**`input_select.front_door_state` deliberately keeps `initial: Absent`.** Its
+2-minute auto-reset is a `delay` inside `automation.front_door_state`, which a
+restart destroys — restoring `Someone at the Door` would wedge it there
+permanently. Resetting to `Absent` on restart is the correct behaviour for that
+one helper, and the difference is intentional, not drift.
+
 ---
 
 ## Tumble Dryer Automation
@@ -76,7 +174,7 @@ Each appliance uses the same structure: an `input_select` state helper decouples
 | Entity ID | `input_select.tumble_dryer_state` |
 | Type | `input_select` |
 | Options | `idle`, `active`, `finished` |
-| Initial | `idle` |
+| Initial | *(unset — see [the restore note](#the-state-helpers-must-not-set-initial))* |
 
 Tracks the current phase of a drying cycle.
 
@@ -88,9 +186,9 @@ Manages all transitions of the `tumble_dryer_state` helper. Triggered by three e
 
 | Trigger ID | Source | Event |
 |---|---|---|
-| `start` | `sensor.dryer_bsh_common_status_operationstate` | Operation state → `Run` |
-| `finished` | `event.dryer_laundrycare_dryer_event_dryingprocessfinished` | `event_type` attribute → `Present` |
-| `door_open` | `event.dryer_laundrycare_common_event_dooropen` | `event_type` attribute → `Present` |
+| `start` | `sensor.basement_dryer_bsh_common_status_operationstate` | Operation state → `Run` |
+| `finished` | `event.basement_dryer_laundrycare_dryer_event_dryingprocessfinished` | `event_type` attribute → `Present` |
+| `door_open` | `sensor.basement_dryer_bsh_common_status_doorstate` | Door state `Closed` → `Open` |
 
 #### Transition logic
 
@@ -133,7 +231,7 @@ The `from` guard on the `create` trigger prevents spurious fires on HA restart o
 | Entity ID | `input_select.front_door_state` |
 | Type | `input_select` |
 | Options | `Absent`, `Someone at the Door` |
-| Initial | `Absent` |
+| Initial | `Absent` — **deliberately set**, unlike the appliance helpers ([why](#the-state-helpers-must-not-set-initial)) |
 
 Tracks whether someone is currently at the front door.
 
@@ -214,7 +312,7 @@ The `dismiss` trigger fires when the state helper resets to `Absent` — either 
 | Entity ID | `input_select.washing_machine_state` |
 | Type | `input_select` |
 | Options | `idle`, `running`, `finished` |
-| Initial | `idle` |
+| Initial | *(unset — see [the restore note](#the-state-helpers-must-not-set-initial))* |
 
 Tracks the current phase of a wash cycle.
 
@@ -227,7 +325,8 @@ Manages all transitions of the `washing_machine_state` helper. Triggered by two 
 | Trigger ID | Source | Event |
 |---|---|---|
 | `power_change` | `sensor.basement_washing_machine_smart_switch_power` | Any power reading change |
-| `door_open` | `binary_sensor.0x00158d008c7104b7_contact` | Door opens (state → `on`) |
+| `door_open` | `binary_sensor.basement_washing_machine_door_contact` | Door opens (state → `on`) |
+| `catchup` | `homeassistant` | HA start — re-arms a 10-minute wait a restart destroyed |
 
 #### Transition logic
 
@@ -239,14 +338,31 @@ Each branch guards on the current state before acting, so spurious triggers are 
 **`power_change` trigger, power ≤ 1W** — only if current state is `running`:
 - Waits 10 minutes, then sets state → `finished`
 
-**`door_open` trigger** — only if current state is `finished`:
+**`door_open` trigger** — only if current state is `running` or `finished`:
 - Sets state → `idle`
+
+**`catchup` trigger** — only if current state is `running` AND power is already ≤ 1W:
+- Waits 10 minutes, then sets state → `finished`
 
 Runs in `restart` mode — power fluctuations during the 10-minute wait restart the clock. The machine must sustain low power for a full uninterrupted 10 minutes before the state advances to `finished`.
 
+> **Why the `catchup` branch exists.** The 10-minute wait is a `delay`, which a
+> restart destroys, and the only other trigger is a power **state change** — at a
+> flat 0 W there is never another one. So a wash that ended in the 04:00 restart
+> window would restore as `running` and stick there forever. On HA start, if the
+> helper is `running` while the machine is already drawing ≤ 1 W, this branch
+> re-arms the wait; worst case the notification lands 10 minutes late. Because
+> `mode: restart` is retained, genuine power activity during the catch-up delay
+> supersedes the run via the `power_change` trigger. Same pattern as the
+> `catchup` trigger in `automation.early_flight_hot_water` (see
+> [wake-routines.md](wake-routines.md#the-0400-restart-hole)).
+>
+> The tumble dryer needs no equivalent: its transitions are purely event-driven
+> with no `delay` to lose.
+
 ---
 
-### Automation: Washing Machine Notification (`automation.notify_on_washing_machine_has_finished`)
+### Automation: Washing Machine Notification (`automation.notify_when_washing_machine_has_finished`)
 
 Two triggers, branched by `trigger.id`:
 
