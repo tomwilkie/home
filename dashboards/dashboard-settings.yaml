@@ -354,7 +354,7 @@ views:
                      -  entity: 
                             input_boolean.hallway_doorbell_speaker_notifications
                         name: Hallway (Doorbell)
-                     -  entity: input_boolean.kitchen_display_notifications
+                     -  entity: input_boolean.kitchen_display_ma_player_notifications
                         name: Kitchen (Display)
                      -  entity: 
                             input_boolean.garage_ai_pro_speaker_notifications
@@ -369,10 +369,10 @@ views:
                             input_boolean.toms_office_voice_assistant_notifications
                         name: Tom's Office
                      -  entity: 
-                            input_boolean.living_room_arylic_lp10_notifications
+                            input_boolean.living_room_arylic_lp10_ma_player_notifications
                         name: Living Room (Arylic)
                      -  entity: 
-                            input_boolean.master_bedroom_homepod_mini_notifications
+                            input_boolean.master_bedroom_homepod_mini_ma_player_notifications
                         name: Master Bedroom (HomePod)
       header:
           card:
