@@ -22,6 +22,36 @@ alarm.
 > the shutters and starts the vacuums. That is exactly why the early-flight
 > routine below does **not** touch it.
 
+## The bedroom sleep sound
+
+The evening half of the pair is `automation.turn_bedroom_lights_on_before_sunset`
+(see [lighting-automation.md](lighting-automation.md)), which plays
+`library://track/129` ("Baby Sleep Heartbeat") on
+`media_player.master_bedroom_homepod_mini_ma_player` at volume **0.48** with
+`repeat: one`. The wake routine's **"Fade out the white noise"** branch is what
+stops it: `media_player.media_stop` plus `repeat_set: off`. So the sound runs from
+the night routine to `wake_up_time` and the two automations must stay in step.
+
+> ⚠️ **The volume must be set *after* `music_assistant.play_media`, on the MA
+> proxy entity.** Music Assistant applies its own stored player volume about a
+> second into playback, so a `media_player.volume_set` placed *before* the play
+> call — or aimed at the native `apple_tv` entity — is silently overwritten. The
+> automation did exactly that for months: it asked for 0.36 on
+> `media_player.master_bedroom_homepod_mini`, MA reset it to 0.60 ~0.7 s later,
+> and the heartbeat played at 0.60 every night. Nothing errors; the only symptom
+> is that it is too loud and that turning it down by hand never survives to the
+> next evening. The step now sits after the play call with a 3 s settle delay.
+> 0.48 is the level chosen by ear on 2026-09-04.
+
+> ⚠️ **Never announce to this speaker via its native `apple_tv` entity while the
+> sleep sound is playing.** ChimeTTS with `announce: false` seizes the HomePod's
+> AirPlay output and the HomePod never returns to Music Assistant's stream — MA
+> cannot detect this, so HA keeps reporting `playing` into a silent room, and
+> `pause`/`play` cannot recover it (only re-issuing `music_assistant.play_media`
+> rebuilds the session). The Notification Players group therefore targets the
+> **Music Assistant proxy**, which supports `MEDIA_ANNOUNCE` and resumes the queue
+> afterwards. See [notifications.md](notifications.md).
+
 ## Early flight hot water
 
 `automation.early_flight_hot_water` turns the hot water on an hour before an
