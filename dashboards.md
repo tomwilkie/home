@@ -54,6 +54,19 @@ The always-on display mounted in the kitchen. Shows at-a-glance status and quick
 - **Transport**: London Underground Weaver and Victoria line status; bus departures from Rectory Road
 - **Weather & pollen**: Clock/weather card for My Home; grass, tree, and weed pollen levels
 - **Cameras**: Live WebRTC feeds (3 cameras)
+
+> ⚠️ **The three `custom:webrtc-camera` cards must keep `background: false`.**
+> They were set to `background: true`, which keeps all three RTSP→WebRTC streams
+> decoding permanently — off-screen, and even with the tablet's screen off. That
+> also made the `intersection: 0.75` on each card dead code, since `background`
+> overrides the pause-when-not-visible behaviour it requests. Three permanent
+> H.264 decoders plus three peer connections leaked the Fully Kiosk WebView at
+> roughly 600 MB/day (`sensor.kitchen_display_free_memory` fell 2634 MB → 876 MB
+> over three days, never recovering), and the browser froze after a few hours.
+> With `background: false` the streams genuinely pause when scrolled out of view,
+> which on this dashboard is most of the time — the cameras sit near the bottom
+> of a long view. `automation.restart_kitchen_display_browser` is the backstop
+> (see [maintenance.md](maintenance.md)).
 - **Media**: Fully Kiosk launcher buttons for Apple Music and YouTube
 - **Automations**: "Turn Everything Off" button; "Turn on Bedroom Aircon for 1hr" (conditional on temp > 21°C)
 - **Location**: Where is Tom / Where is Rachana tiles

@@ -72,8 +72,30 @@ Current members (announce support checked via the `supported_features` bit `1048
 | `hallway_doorbell_speaker`, the three `*_voice_assistant*` | native ESPHome — already support announce |
 | `master_bedroom_homepod_mini_ma_player` | MA proxy; the native `apple_tv` entity cannot announce |
 | `living_room_arylic_lp10_ma_player` | MA proxy; the native `linkplay` entity cannot announce |
-| `kitchen_display_ma_player` | MA proxy; the native `fully_kiosk` entity cannot announce |
+| `kitchen_display_ma_player` | MA proxy; the native `fully_kiosk` entity cannot announce (but see the Cast note below) |
 | `garage_ai_pro_speaker` | native `unifiprotect` — no MA equivalent exists, so it stays on the replace path |
+
+> ⚠️ **The Kitchen Display's MA player is a *Google Cast* player, and announcing
+> to it backgrounds Fully Kiosk.** Music Assistant did not proxy the `fully_kiosk`
+> entity — it discovered the Pixel Tablet over Chromecast independently (its
+> device registry entry reads `manufacturer: Google, model: Pixel Tablet`). So an
+> announcement opens a cast session, Android foregrounds the Cast receiver
+> `com.google.android.apps.mediashell`, and when the session ends Android returns
+> to the **launcher**, not to Fully — leaving the tablet on the Android home
+> screen. Fully's Kiosk Mode is deliberately off (the kitchen dashboard launches
+> Apple Music and YouTube), so nothing pulls Fully back on its own.
+>
+> This is the mirror image of the HomePod failure above: there the *native*
+> entity hijacked the MA stream; here the *MA* entity hijacks the native app.
+> The fix keeps the MA proxy — it genuinely supports `MEDIA_ANNOUNCE` and resumes
+> its queue — and adds **`automation.kitchen_display_foreground_watchdog`**, which
+> presses `button.kitchen_display_bring_to_foreground` when
+> `sensor.kitchen_display_foreground_app` sits on `mediashell` or the launcher for
+> 30 s. It matches only those two apps, so an app launched deliberately from the
+> dashboard is left alone, and it is gated on the MA player not `playing` so it
+> can never cut an announcement short. Keeping the healing in an automation rather
+> than in `script.annouce` leaves the announce script device-agnostic and also
+> covers cast drift that no announcement caused.
 
 > ⚠️ **`media_player.kitchen_display` and `media_player.kitchen_display_ma_player`
 > are the same Pixel Tablet** — the `fully_kiosk` device *Kitchen - Display* and the

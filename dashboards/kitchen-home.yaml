@@ -162,7 +162,7 @@ views:
                   ui: false
                   digital_ptz: false
                   muted: true
-                  background: true
+                  background: false
                   intersection: 0.75
                   style: '.mode {display: none} video::-webkit-media-controls {display:
                       none}'
@@ -175,7 +175,7 @@ views:
                   ui: false
                   digital_ptz: false
                   muted: true
-                  background: true
+                  background: false
                   style: '.mode {display: none} video::-webkit-media-controls {display:
                       none}'
          -  type: grid
@@ -187,7 +187,7 @@ views:
                   ui: false
                   digital_ptz: false
                   muted: true
-                  background: true
+                  background: false
                   style: '.mode {display: none} video::-webkit-media-controls {display:
                       none} video { width: 100%; height: 100%; object-fit: cover;
                       }'

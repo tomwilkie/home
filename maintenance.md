@@ -106,6 +106,16 @@ move it without re-checking these:**
   scheme. It did the same job for the two Arylic LP10s at 09:00 with a hardcoded
   entity list and an inline "not playing" guard — exactly what the labels and the
   generic guard now express.
+- **`automation.restart_kitchen_display_browser` is deliberately NOT part of this
+  scheme.** It presses `button.kitchen_display_restart_browser` at **04:45** to
+  clear the Fully Kiosk WebView, which leaks memory while rendering the kitchen
+  dashboard's WebRTC camera streams (see [dashboards.md](dashboards.md)). It
+  cannot be a `restart-daily` label because the Kitchen Display exposes **two**
+  `device_class: restart` buttons — `restart_browser` and `restart_device` — so
+  the target-derivation step above cannot pick between them, and picking wrong
+  would reboot the whole tablet nightly. 04:45 sits in the same gap the rest of
+  the sweep uses: after `scheduled_device_restarts` (04:30, ~5 min worst case)
+  and well before `update_esphome_devices` (05:30).
 - **`automation.power_cycle_dyson_fan` is deliberately NOT part of this scheme.**
   It cuts mains power to a smart plug for 10 s rather than pressing a restart
   button, and its guard reads a *different device* from the one it acts on:
@@ -238,8 +248,9 @@ the property the rule exists to protect.
   (zero-copy ring buffers, fewer per-chunk allocations). `automation.update_esphome_devices`
   keeps the fleet current, so re-evaluate whether this automation is still needed
   after major ESPHome releases.
-- **Not covered:** Kitchen Display (two `device_class: restart` buttons, needs an
-  explicit choice) and Tom's Office - Elgato Key Light (no known fault).
+- **Not covered:** Tom's Office - Elgato Key Light (no known fault). The Kitchen
+  Display is now handled by a bespoke automation rather than a label — see
+  [Related automations](#related-automations).
 - **Nursery - WiiM Sound cannot be restarted from HA — a known upstream bug.**
   It was labelled `restart-daily` initially and the label was removed again: the
   restart button fails every time with
