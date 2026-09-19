@@ -120,7 +120,47 @@ Each section heading card shows environment sensor badges sourced from the area'
 - **Occupancy**: all rooms
 - Master Bathroom shows Temperature and Occupancy only (no humidity sensor)
 
-**Media player rule**: when both a native integration entity and a Music Assistant entity exist for the same device, always use the Music Assistant entity. Exception: `media_player.basement_home_cinema` is Apple TV native (`platform: apple_tv`) with no Music Assistant equivalent — use the native entity. This rule applies to dashboard cards only; the notification players group is the opposite — it uses the **native** entity for each speaker (see [@notifications.md](notifications.md)).
+**Media player rule**: when both a native integration entity and a Music Assistant entity exist for the same device, always use the Music Assistant entity. Exception: `media_player.basement_home_cinema` is Apple TV native (`platform: apple_tv`) with no Music Assistant equivalent — use the native entity. The notification players group follows the **same** preference for its own reason — only the MA proxy advertises `MEDIA_ANNOUNCE` (see [@notifications.md](notifications.md)).
+
+> ⚠️ **Music Assistant re-creates its proxy players from time to time, and a
+> re-created one comes back with a vendor-derived entity ID, no area and no
+> device-name override** — silently breaking every card that points at it. The
+> device is genuinely new (new `device_id`, `name_by_user: null`, `area_id:
+> null`), so the previous rename does not survive; only proxies MA happens to
+> re-create are affected, which is why a subset of the players breaks while the
+> rest keep working.
+>
+> **Fix the entity, not the dashboard.** The offending name comes from the
+> speaker's *own* configured name, which has no relation to the HA area — the
+> Living Room Arylic LP10 is named "Dining Room" in the Arylic app, so its proxy
+> came back as `media_player.dining_room`. Pointing a card at that would bake a
+> wrong, unstable name into the repo; rename the entity back to the convention
+> (see [@naming-conventions.md](naming-conventions.md)) and the dashboard YAML,
+> the `media_player.notification_players` group and the
+> `input_boolean.{player_slug}_notifications` toggles all resolve again with no
+> edit at all.
+>
+> Seen twice: June 2026 (`living_room_arylic_lp10_music_assistant`) and
+> September 2026, when **both** Arylic LP10 proxies were re-created as
+> `media_player.dining_room` and `media_player.toms_office`. Recovery is a device
+> rename (`name_by_user` + `area_id`) plus an entity rename of the `media_player`
+> **and** its companion `button.*_favorite_current_song`:
+>
+> ```sh
+> # match the MA proxy to its physical speaker by UUID, not by name:
+> # the MA identifier ('music_assistant', 'wiim_uuid:FF31F09E-F8D9-…') is the
+> # native integration's identifier ('linkplay', 'FF31F09EF8D9…') with dashes.
+> hass-cli raw ws config/device_registry/update \
+>   --json='{"device_id":"…","name_by_user":"Living Room - Arylic LP10 (Music Assistant)","area_id":"living_room"}'
+> hass-cli raw ws config/entity_registry/update \
+>   --json='{"entity_id":"media_player.dining_room","new_entity_id":"media_player.living_room_arylic_lp10_ma_player"}'
+> ```
+>
+> Verify the announce path too, because a dead group member fails **silently** —
+> the speaker is simply never announced to, with nothing logged:
+> `{{ state_attr('media_player.notification_players','entity_id')
+> | reject('in', states | map(attribute='entity_id') | list) | list }}` must
+> render `[]`.
 
 **What does not appear in any section**: adaptive lighting switches (`switch.adaptive_lighting_*`). These are managed from the Settings dashboard only.
 
