@@ -370,7 +370,6 @@ The MACs are listed inline in the rule's `source.client_macs`:
 | Master Bedroom - Norman Hub | .225 | `80:5e:4f:9d:da:a3` | norman_shutters |
 | Master Bedroom - Clock | .42 | `c0:4e:30:13:33:d8` | esphome |
 | Hallway - Doorbell | .49 | `d8:3b:da:45:62:b8` | esphome |
-| Tom's Office - AirGradient | .177 | `34:b7:da:9f:7e:10` | airgradient (local API) |
 | Master Bedroom - Dyson Fan | .19 | `44:6f:f8:42:ba:f7` | dyson_local |
 | Nursery - VELUX Gateway | .196 | `70:ee:50:6a:51:2d` | homekit_controller |
 | Tom's Office - Aircon | .24 | `10:68:38:47:dc:b5` | daikin (local) |
@@ -397,6 +396,9 @@ The MACs are listed inline in the rule's `source.client_macs`:
 >   the 4 Everything Presence Lites and the 2 Voice Assistants. Cloud-dependent
 >   devices (Nest Protect, Hive, Deebot, Netatmo, Kitchen Display kiosk, Prusa
 >   cameras, alarm module) are out of scope by design.
+> - **Tom's Office - AirGradient** (`.177`, `34:b7:da:9f:7e:10`) was in the
+>   original block list — its HA path is the local API — but was removed on
+>   2026-09-19 to restore its internet access.
 
 **Editing membership:** edit the rule's `source.client_macs` list — in the UniFi
 UI (Firewall → Policies → *Block IOT No-Internet Devices*) or via the raw v2 API
@@ -495,12 +497,13 @@ unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643",
       `iot_dnat_block_hits:count5m` recording rule). Tested by removing the DNAT —
       alert fired, then resolved on restore. See [@observability.md](observability.md).
 - [x] **Per-device internet block** (`Block IOT No-Internet Devices`, custom
-      CLIENT-MAC ZBF rule `6a37a57e2753ee32cc2733cc`, idx 10006, 12 local-only
-      devices). **Replaced** the original MAC client-group + OON policy, which was
+      CLIENT-MAC ZBF rule `6a37a57e2753ee32cc2733cc`, idx 10006, now 11 local-only
+      devices — the AirGradient was removed 2026-09-19). **Replaced** the
+      original MAC client-group + OON policy, which was
       shadowed by the custom ALLOW and never enforced (predefined band 30001 below
       custom 10005) — both the OON policy and the client group were deleted. See
       [Per-device internet control](#per-device-internet-control-custom-mac-matched-zbf-block).
-- [x] **WAN drop verified** for all 12 devices: zero hits in
+- [x] **WAN drop verified** for the original 12 devices: zero hits in
       `{log_type="firewall", rule="Log IOT to Internet (ALLOW)"}` and active drops
       in `{log_type="firewall", rule="Block IOT No-Internet Devices"}`. LAN→HA
       intact post-block (aircons, Norman shutters still responsive).
