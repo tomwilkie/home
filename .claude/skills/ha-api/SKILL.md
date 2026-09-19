@@ -6,14 +6,14 @@ description: >
   TRIGGER THIS SKILL WHEN:
   - An MCP tool does not exist for the needed operation (e.g. creating a new integration config entry such as a new adaptive lighting instance)
   - You need to drive a multi-step HA config entry flow (start flow → submit steps → confirm)
-  - You need to call an HA REST API endpoint not exposed by any mcp__home-assistant__* tool
+  - You need to call an HA REST API endpoint not exposed by any mcp__claude_ai_ha-mcp__* tool
 ---
 
 # ha-api
 
-A thin wrapper around `curl` that reads the HA URL and token from `.mcp.json` automatically.
+A thin wrapper around `curl` that reads the HA URL and token from `HASS_SERVER` / `HASS_TOKEN` — the same environment variables as `hass-cli` (see [access-home-assistant.md](../../../access-home-assistant.md)).
 
-**Always prefer MCP tools (`mcp__home-assistant__*`) when one exists.** Reach for `scripts/ha-api` only when no MCP tool covers the operation.
+**Always prefer MCP tools (`mcp__claude_ai_ha-mcp__*`) when one exists.** Reach for `scripts/ha-api` only when no MCP tool covers the operation.
 
 ## Usage
 
@@ -87,6 +87,5 @@ scripts/ha-api /api/config/config_entries/options/flow/<options_flow_id> \
 
 ## Notes
 
-- The script resolves `.mcp.json` relative to its own location (`scripts/../.mcp.json`), so it works correctly regardless of which directory you invoke it from.
-- `.mcp.json` is gitignored — the script will fail on a fresh clone without credentials. This is intentional.
-- `jq` must be installed for the credential extraction to work.
+- Credentials come from the **shell environment** only, never from files in this repo. `HOMEASSISTANT_URL` / `HOMEASSISTANT_TOKEN` are accepted as a fallback.
+- The MCP connector's OAuth sign-in cannot be reused here — this needs an HA long-lived access token.

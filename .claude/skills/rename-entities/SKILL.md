@@ -35,11 +35,11 @@ Given an area name or id, you must:
 
 Each subagent receives the device name, device_id, area display name, and area_id. Do NOT use the Haiku model — use the default (Sonnet). It must:
 
-0. **First:** call `ToolSearch` with query `select:mcp__home-assistant__ha_get_device,mcp__home-assistant__ha_set_entity` to load the MCP tool schemas. Do NOT use bash, SSH, hass-cli, or write any files — all HA interaction must go through `mcp__home-assistant__*` tools.
+0. **First:** call `ToolSearch` with query `select:mcp__claude_ai_ha-mcp__ha_get_device,mcp__claude_ai_ha-mcp__ha_set_entity` to load the MCP tool schemas. Do NOT use bash, SSH, hass-cli, or write any files — all HA interaction must go through `mcp__claude_ai_ha-mcp__*` tools.
 1. Check the device name follows the right pattern.
-2. Call `mcp__home-assistant__ha_get_device(device_id="...")` to get all entities.
+2. Call `mcp__claude_ai_ha-mcp__ha_get_device(device_id="...")` to get all entities.
 3. For each entity, check:
-   - **Entity ID**: does it start with `{domain}.{area_id}_`? If not, rename it with `mcp__home-assistant__ha_set_entity`. Do NOT search for or fix references at this point — just rename.
+   - **Entity ID**: does it start with `{domain}.{area_id}_`? If not, rename it with `mcp__claude_ai_ha-mcp__ha_set_entity`. Do NOT search for or fix references at this point — just rename.
    - **Display name**: does it embed the area or device name? If so, fix it per `naming-conventions.md`.
 4. Return a structured list of all renames made: `[{old: "sensor.foo", new: "sensor.toms_office_bar"}, ...]`. Report what was already compliant too.
 

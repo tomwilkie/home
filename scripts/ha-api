@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MCP_JSON="$SCRIPT_DIR/../.mcp.json"
+# Same variables as hass-cli; HOMEASSISTANT_* kept as a fallback.
+BASE_URL="${HASS_SERVER:-${HOMEASSISTANT_URL:-}}"
+TOKEN="${HASS_TOKEN:-${HOMEASSISTANT_TOKEN:-}}"
 
-if [[ -n "${HOMEASSISTANT_TOKEN:-}" && -n "${HOMEASSISTANT_URL:-}" ]]; then
-  TOKEN="$HOMEASSISTANT_TOKEN"
-  BASE_URL="$HOMEASSISTANT_URL"
-else
-  TOKEN=$(jq -r '.mcpServers["home-assistant"].env.HOMEASSISTANT_TOKEN' "$MCP_JSON")
-  BASE_URL=$(jq -r '.mcpServers["home-assistant"].env.HOMEASSISTANT_URL' "$MCP_JSON")
+if [[ -z "$BASE_URL" || -z "$TOKEN" ]]; then
+  echo "ha-api: set HASS_SERVER and HASS_TOKEN (see access-home-assistant.md)" >&2
+  exit 1
 fi
 
 PATH_ARG="$1"

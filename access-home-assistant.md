@@ -4,19 +4,19 @@ You can talk to Home Assistant in the following ways
 
 ## Home Assistant MCP server
 
-Use the `mcp__home-assistant__*` tools to read and write live HA configuration. The MCP server connects to `http://homeassistant.local:8123` when on the local network.
+Use the `mcp__claude_ai_ha-mcp__*` tools to read and write live HA configuration.
 
-The server is **[`ha-mcp`](https://github.com/homeassistant-ai/ha-mcp)** (the "unofficial" Home Assistant MCP server, [`ha-mcp` on PyPI](https://pypi.org/project/ha-mcp/)) — its tool set is the `ha_*` family (`ha_get_state`, `ha_set_entity`, `ha_get_integration`, `ha_deep_search`, `ha_config_get_dashboard`, etc.).
+The server is **[`ha-mcp`](https://github.com/homeassistant-ai/ha-mcp)** (the "unofficial" Home Assistant MCP server) — its tool set is the `ha_*` family (`ha_get_state`, `ha_set_entity`, `ha_get_integration`, `ha_search`, `ha_config_get_dashboard`, etc.).
 
 ### Setup
 
-Added with the server name `home-assistant` (so the tools resolve as `mcp__home-assistant__*`), run via `uvx` (needs `uv` — `brew install uv`):
+ha-mcp runs **inside Home Assistant** as its in-process server (the `ha_mcp_tools` custom component, from HACS), and reaches Claude Code as a **claude.ai connector** rather than as a local MCP server. One connector serves both terminal sessions and Claude Code cloud environments, with nothing to configure per machine.
 
-```sh
-claude mcp add home-assistant -- uvx ha-mcp
-```
-
-- Credentials are read from the **shell environment**, never from files: `ha-mcp` reads `HASS_SERVER` and `HASS_TOKEN` — the same variables used by `hass-cli` (see below). Export them in your `~/.zshrc` or a sourced secrets file. Do **not** pass them via `--env` on `claude mcp add` — the server inherits them from the environment of the shell that launches `claude`.
+- **Endpoint:** an HA webhook, `https://<your-ha-external-host>/api/webhook/<your-webhook-id>` — the connect URL on the integration entry's Configure screen, reached through HA's own remote access. Don't put a port in it, not even `:443`: ha-mcp warns that any port breaks remote MCP clients.
+- **Auth:** the entry's **Authentication mode** is `ha_auth`. HA itself is the OAuth server, and clients sign in with an HA **administrator** account (non-admin logins are refused). A request without a token gets `401` plus an OAuth challenge, so the URL on its own is not a credential. Don't switch back to `none`, where the URL *is* the credential — the endpoint is internet-facing.
+- **Connector:** added at [claude.ai/customize/connectors](https://claude.ai/customize/connectors) as a custom connector named `ha-mcp`. That name sets the tool prefix, `mcp__claude_ai_ha-mcp__*`. It's authorized once in the browser; claude.ai holds the token, and in cloud sessions the session proxy authenticates for you. To re-authorize, reconnect it on claude.ai, not with `/mcp`.
+- Terminal sessions fetch connectors **at startup**, so restart Claude Code after adding or re-authorizing the connector. Connectors only load when Claude Code is logged in with a claude.ai subscription — not when `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` or `apiKeyHelper` is in use.
+- **Don't** add HA to a project `.mcp.json` (it's gitignored). It would duplicate every tool under a second prefix, the connect URL (external hostname + webhook ID) must not be committed (see the [PII policy](CLAUDE.md)), and OAuth tokens from `/mcp` sit in the local macOS Keychain, so they would never reach a cloud environment anyway.
 
 ## Home Assistant CLI
 
@@ -30,7 +30,7 @@ The `dashboard` subcommands used below are **not yet in upstream** [`home-assist
 pipx install git+https://github.com/tomwilkie/home-assistant-cli.git@add-dashboard-commands
 ```
 
-`hass-cli` reads the HA connection from the environment (the same token as the MCP server above — see [PII policy](CLAUDE.md), keep it out of files):
+`hass-cli` reads the HA connection from the environment — a long-lived access token, separate from the MCP connector's OAuth sign-in (see [PII policy](CLAUDE.md), keep it out of files):
 
 ```sh
 export HASS_SERVER=http://homeassistant.local:8123
