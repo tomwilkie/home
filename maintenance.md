@@ -3,6 +3,11 @@
 Scheduled restarts of devices that degrade with uptime, driven by **labels on
 devices** rather than a hardcoded entity list.
 
+Two schemes live here. Everything up to [Notes](#notes) is that label-driven
+sweep. [Integration Watchdogs](#integration-watchdogs) at the end is its reactive
+counterpart — bouncing a *config entry* that has wedged rather than a device that
+has degraded.
+
 ## Why
 
 ESPHome voice assistants develop **choppy, delayed audio** after long uptimes —
@@ -99,6 +104,10 @@ move it without re-checking these:**
 | **04:30** | **`automation.scheduled_device_restarts`** | ~5 min worst case, so it ends by ~04:35. |
 | 05:30 | `automation.update_esphome_devices` | OTA flashes with 3-min waits per device — must not be interrupted. |
 | 06:00 | `automation.set_assistant_volumes` | Ordering the sweep *before* this means any volume a restart disturbs is re-applied the same morning. (In the 2026-08-02 test the three Voice PEs came back at `volume_level: 1.0` — already the target — so this is a safety margin, not a demonstrated need.) |
+
+> The 04:00 restart is also what strands the Netatmo integration every night —
+> see [Netatmo](#netatmo--automationnetatmo_watchdog). Moving it changes that
+> exposure too, for better or worse.
 
 ## Related automations
 
@@ -300,3 +309,160 @@ the property the rule exists to protect.
   `button.rear_guest_room_voice_assistant_restart`). They were enabled, which
   required a config-entry reload before the entities appeared in the state
   machine. A newly adopted Voice PE will need the same treatment.
+
+---
+
+# Integration Watchdogs
+
+The software counterpart of the restart sweep above: a watchdog bounces a **config
+entry** that has wedged, rather than a device that has degraded. These are
+**reactive, not scheduled**, and they carry no label — the unit of recovery is an
+integration, not a device, so there is nothing for `label_devices()` to return.
+
+## Netatmo — `automation.netatmo_watchdog`
+
+### The failure
+
+Every Netatmo sensor goes `unavailable` at the 04:00 restart and stays that way
+for **days**. It is not flapping, and it is not the hardware: the long-term
+statistics gaps are identical across all five modules — the weather station base,
+the outdoor module and the three indoor modules — which rules out radio, battery
+and WiFi.
+
+| Outage start (UTC) | Recovered | Duration |
+|---|---|---|
+| 2026-09-05 03:00 | 09-05 20:00 | 16 h |
+| 2026-09-07 03:00 | 09-08 03:00 | 23 h |
+| 2026-09-09 03:00 | 09-11 03:00 | 47 h |
+| 2026-09-12 03:00 | **09-19 05:12** | **169 h** |
+
+Every outage begins at exactly 03:00 UTC = 04:00 BST =
+`automation.restart_home_assistant_at_4am_every_day`. Every recovery coincides
+with a *later* restart or a manual reload — **never** spontaneously. There are no
+gaps at all between 2026-06-21 (the start of the 90-day statistics window
+queried) and 2026-09-05.
+
+> The onset is *consistent with* this instance moving onto 2026.8.x —
+> `UNAVAILABLE_AFTER_ERRORS` and the publisher `available` flag do not exist in
+> the netatmo coordinator before 2026.8.0 — but **the upgrade date was not
+> confirmed**. The core log retains only ~4 hours, so there is no direct evidence
+> either way; treat it as a plausible trigger, not an established one.
+
+### Root cause
+
+Confirmed against the 2026.8.3 source, and **still present in 2026.9.3**:
+
+1. `NetatmoDataHandler.async_setup()` fetches the account topology **exactly
+   once**: `await self.subscribe(ACCOUNT, ACCOUNT, None)`.
+2. `subscribe()` calls `async_fetch_data()`, which **swallows `pyatmo.ApiError`
+   and logs it at `DEBUG`** — so the failure is invisible and does not raise.
+3. `async_dispatch()` then creates every entity by iterating
+   `for home in self.account.homes.values()`; the weather modules are dispatched
+   from `setup_modules()`, *inside* that loop.
+4. If step 1 failed, `account.homes` is empty, the loop body never runs, and
+   **no entities are dispatched at all**. The registry entries restore as
+   `unavailable` stubs with nothing behind them.
+5. `async_dispatch()` is called from exactly one place — inside `async_setup()`.
+   So polling can never repair this. **Only a reload or a restart can.**
+
+Throughout, the config entry reports `state: loaded`, `reason: null`,
+`issues: []`, and `config_entry_setup` finishes in ~4 s. Nothing appears in the
+log, because the one call that matters logs at `DEBUG`.
+
+> **The only visible fingerprint** is a *different* call, made seconds later
+> against the same sick backend, which happens to log at ERROR:
+>
+> ```
+> ERROR homeassistant.components.netatmo.webhook
+> Error during webhook registration - 503 - Service Unavailable -
+> Service temporarily unavailable (27) when accessing 'https://api.netatmo.com/api/addwebhook'
+> ```
+>
+> Per `pyatmo/const.py`, 429 + code 11 is concurrency and 403 + code 26 is
+> throttling; **503 + code 27 is Netatmo's own backend being unhealthy**, raised
+> as a plain `ApiError`. It is not a quota this end can fix. Note the webhook
+> error is caught and logged but *not* re-raised, so it never fails setup — it is
+> a symptom, not the cause.
+>
+> Corroborating: during a stranded window the log carries `not ready yet;
+> Retrying in N seconds` lines for `roomba`, `norman_shutters` and
+> `music_assistant`, and **none for `netatmo`** — it was never in `setup_retry`,
+> it was "loaded" and empty.
+
+### What the automation does
+
+Every 15 minutes, if all five watched sensors have been `unavailable` for
+≥ 15 minutes, it calls `homeassistant.reload_config_entry` and re-checks two
+minutes later. If that reload did not bring them back it writes a persistent
+notification; a separate trigger dismisses it on recovery.
+
+| Decision | Why |
+|---|---|
+| `time_pattern` every 15 min, **not** a `state` trigger with a `for:` | The **retry** matters as much as the detection. A reload only helps if the API answers *that* time, and a one-shot trigger fires once and never again — the entities never change state while stranded. |
+| All five sensors must be down | An unreachable module makes its own entities `unavailable` too (`NetatmoModuleEntity.available` checks `device.reachable`), so watching one would reload the whole integration because one battery went flat. |
+| 15-minute dwell | Keeps it from firing during the 04:00 restart itself. |
+| A **missing** entity counts as *not* stuck | The observed failure leaves entities present-but-unavailable. An entity that has vanished entirely means this list is wrong, and looping on a reload would not fix that. |
+| Targets `sensor.toms_office_netatmo_pressure`, not `entry_id` | Entity IDs, not IDs that churn — see [CLAUDE.md](CLAUDE.md). The registry keeps `config_entry_id` even on an unavailable restored stub, so it still resolves when nothing was dispatched. Pressure is exposed only by the weather station base. |
+| `speak: false` on the notification | A diagnostic — recorded, not announced (see [notifications.md](notifications.md)). `script.annouce` derives its `notification_id` from `Netatmo \| slugify`, so repeated failed reloads overwrite one notification instead of stacking. |
+| Recovery watches only the base station | All five come back together; watching all five would queue five identical dismiss runs. |
+| `mode: queued, max: 10` | The reload branch holds a run open for 2 min while triggers are 15 min apart, so nothing stacks. Queued (rather than `single`) only means a recovery landing mid-reload is not dropped. |
+
+Cost while Netatmo is down: ~4 reloads/hour ≈ 13 API calls/hour, against the
+`CLOUD_LIMIT` of 150/hour the integration applies to HA Cloud account linking
+(this entry is `auth_implementation: "cloud"`; a personal Netatmo developer app
+would get `DEV_LIMIT`, 400/hour, and poll ~3.5× faster).
+
+### Verifying the watchdog
+
+The two templates are the fragile part — render them against the live instance
+rather than reading them. Both take the same `watched` prelude:
+
+```bash
+W="{% set watched = ['sensor.toms_office_netatmo_pressure','sensor.kitchen_netatmo_temperature','sensor.master_bedroom_netatmo_temperature','sensor.nursery_netatmo_temperature','sensor.garage_netatmo_temperature'] %}"
+
+render() {
+  curl -s -X POST -H "Authorization: Bearer $HASS_TOKEN" -H "Content-Type: application/json" \
+    -d "$(python3 -c 'import json,sys; print(json.dumps({"template": sys.argv[1]}))' "$1")" \
+    "$HASS_SERVER/api/template"; echo
+}
+
+# "stuck" — expect False while Netatmo is healthy
+render "$W{% set ns = namespace(stuck = true) %}{% for e in watched %}{% if states[e] is none or states(e) not in ['unavailable','unknown'] or (now() - states[e].last_changed).total_seconds() < 900 %}{% set ns.stuck = false %}{% endif %}{% endfor %}{{ ns.stuck }}"
+
+# "every watched sensor is back" — expect True while Netatmo is healthy
+render "$W{{ (watched | reject('is_state', ['unavailable','unknown']) | list | count) == (watched | count) }}"
+```
+
+To exercise the **positive** path without waiting for an outage, swap `watched`
+for five entities that are already long-`unavailable` (any stale Fully Kiosk or
+camera entity will do) and confirm `stuck` renders `True`. This is the check that
+matters: a template that silently renders `False` forever looks exactly like a
+watchdog that is working.
+
+`automation.trigger` is a safe smoke test — a manual trigger carries no
+`trigger.id`, so both `choose` branches evaluate `false` and nothing is reloaded.
+Confirm with `ha_get_automation_traces("automation.netatmo_watchdog")` that
+`action/0` resolved `choice: null` with no error.
+
+### Known gaps and follow-ups
+
+- **This treats a symptom.** The real fix is upstream: `async_setup()` should
+  raise `ConfigEntryNotReady` when the initial topology fetch fails, so HA retries
+  on its own instead of loading an empty entry. Worth filing.
+- **2026.9.3 does not fix it** — `async_dispatch()` is still setup-only and
+  nothing raises. It *does* promote the first fetch error to `INFO`
+  (`"Error while fetching %s data"`) with a matching recovery line, so the failure
+  stops being invisible. Worth upgrading for that alone; re-read this section
+  afterwards and check whether the watchdog is still earning its place.
+- Safe from [home-assistant/core#181448](https://github.com/home-assistant/core/issues/181448)
+  (2026.9.0 silently drops every entity when a Netatmo `Home` device is disabled):
+  this instance has no `Home` device and all five Netatmo devices are enabled.
+  Re-check before upgrading if that ever changes.
+- **If the nightly restart moves, re-measure.** The whole failure rides on one API
+  call landing at 03:00 UTC, so shifting
+  `automation.restart_home_assistant_at_4am_every_day` is a cheap untested
+  experiment — but see [Timing](#timing--why-0430) for what else is boxed into
+  that window.
+- **Not generalised.** `roomba`, `norman_shutters` and `music_assistant` all churn
+  through `not ready yet` retries nightly, but those retry correctly on their own;
+  they do not need a watchdog and should not get one by reflex.
