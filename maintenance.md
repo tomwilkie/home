@@ -260,12 +260,29 @@ the property the rule exists to protect.
 - **Not covered:** Tom's Office - Elgato Key Light (no known fault). The Kitchen
   Display is now handled by a bespoke automation rather than a label — see
   [Related automations](#related-automations).
-- **Nursery - WiiM Sound cannot be restarted from HA — a known upstream bug.**
-  It was labelled `restart-daily` initially and the label was removed again: the
-  restart button fails every time with
+- **Nursery - WiiM Sound cannot be restarted from HA.** It now has **no restart
+  button at all**: the speaker moved to the dedicated **`wiim`** integration,
+  which exposes only a `media_player` — no `restart`, no `sync_time`. So it
+  cannot join this scheme even in principle, and the reason is no longer a bug
+  to wait out. (It was previously on `linkplay`, whose restart button was
+  present but permanently broken — see below.)
+
+  > The speaker was for a while adopted by **both** `linkplay` *and* `wiim`,
+  > giving one physical device two native `media_player` entities plus the
+  > Music Assistant proxy. The `linkplay` entry was removed, keeping `wiim`:
+  > it adds `NEXT_TRACK`, `PREVIOUS_TRACK` and `SEEK` and loses only
+  > `SELECT_SOUND_MODE`, and the restart button it gave up never worked anyway.
+  > `linkplay` still owns the two Arylic LP10s, which restart correctly — its
+  > config entries are **per device**, so removing one does not touch the
+  > others. zeroconf re-discovers the WiiM within seconds of removal, so the
+  > re-discovery flow is parked as an **ignored** `linkplay` entry
+  > (`source: ignore`, loads nothing) rather than left to nag. Deleting that
+  > ignored entry is what would bring the duplicate back.
+
+  Historically, on `linkplay`, the restart button failed every time with
   `LinkPlayRequestException: Didn't receive expected OK from https://192.168.2.10`
   (`linkplay/bridge.py` `reboot()` → `LinkPlayCommand.REBOOT`), and the device
-  never reboots — its `media_player` does not even blip `unavailable`, unlike the
+  never rebooted — its `media_player` did not even blip `unavailable`, unlike the
   two Arylic LP10s on the same integration, which restart correctly.
 
   **Root cause, confirmed directly against the device:**
@@ -295,10 +312,11 @@ the property the rule exists to protect.
   curl -sk "https://192.168.2.10/httpapi.asp?command=StartRebootTime:1"
   ```
 
-  Adopting that would mean the WiiM no longer fits the `device_class: restart`
-  derivation this scheme relies on, so it would need a bespoke automation rather
-  than a label. Recheck issue #121 after a `python-linkplay` bump before building
-  anything custom.
+  That HTTP call still works and is now the **only** way to reboot this speaker
+  from HA, since `wiim` exposes no restart entity to fix. It does not fit the
+  `device_class: restart` derivation this scheme relies on, so it would need a
+  bespoke `rest_command` automation rather than a label — and a `python-linkplay`
+  fix would no longer reach this device anyway, now that it is off `linkplay`.
 
 ## Notes
 

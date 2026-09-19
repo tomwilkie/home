@@ -126,6 +126,28 @@ inline `note:` explaining this, so it does not get merged back into one call.
 
 When adding a player to the group, also create its `input_boolean.{player_slug}_notifications` toggle (display name `Notifications`, assigned to the player's area, turned on) and add it to the Broadcast view's Notification Players card — a group member without a toggle is never announced to, because its toggle lookup resolves to a non-existent entity.
 
+> **When *swapping* a member, delete the outgoing toggle too.** The lookup is
+> derived from the group member's entity ID, so a toggle whose player is no
+> longer in the group is simply never read — but it still sits in the entity
+> list looking live and flippable, inviting someone to "fix" a silent speaker
+> with the wrong switch. Moving the group from the native entities to the MA
+> proxies left three behind (`kitchen_display`, `living_room_arylic_lp10`,
+> `master_bedroom_homepod_mini`), since the proxies' toggles carry the
+> `_ma_player` suffix; they were deleted. Audit with the two renders below — a
+> live group member missing its toggle is silently mute, and a toggle matching
+> no member is dead:
+>
+> ```jinja
+> {% set m = state_attr('media_player.notification_players','entity_id') %}
+> missing: {{ m | map('replace','media_player.','input_boolean.')
+>                | map('regex_replace','$','_notifications')
+>                | reject('in', states | map(attribute='entity_id') | list) | list }}
+> orphans: {{ states.input_boolean | map(attribute='entity_id')
+>             | select('search','_notifications$')
+>             | reject('in', m | map('replace','media_player.','input_boolean.')
+>                              | map('regex_replace','$','_notifications') | list) | list }}
+> ```
+
 ### `script.broadcast`
 
 Backs the Broadcast view on the Settings dashboard. Guards against an empty `input_text.broadcast_message`, calls `script.annouce` with the box's contents (`title: Broadcast`, `important: true`, `persistent: false`), then clears the box.
