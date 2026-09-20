@@ -18,6 +18,25 @@ ha-mcp runs **inside Home Assistant** as its in-process server (the `ha_mcp_tool
 - Terminal sessions fetch connectors **at startup**, so restart Claude Code after adding or re-authorizing the connector. Connectors only load when Claude Code is logged in with a claude.ai subscription — not when `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` or `apiKeyHelper` is in use.
 - **Don't** add HA to a project `.mcp.json` (it's gitignored). It would duplicate every tool under a second prefix, the connect URL (external hostname + webhook ID) must not be committed (see the [PII policy](CLAUDE.md)), and OAuth tokens from `/mcp` sit in the local macOS Keychain, so they would never reach a cloud environment anyway.
 
+### Operating notes
+
+- **Write tools are gated on a rotating acknowledgment key.** `ha_config_set_automation`
+  / `_script` / `_scene` / `_helper` / `_dashboard` refuse with `BPS_ACKNOWLEDGMENT_REQUIRED`
+  until you read the server's best-practices skill and pass the key it prints as
+  `BestPracticeKey`. **The key rotates hourly**, so one obtained earlier in a long
+  session will be rejected — re-read the skill rather than resending it.
+- **Pass `MandatoryBPS=false` on subsequent writes.** Otherwise each write echoes the
+  full reference files back inline, which is large enough to blow a tool result past
+  its size limit and bury the actual `success`/`entity_id` result.
+- **`python_transform` needs a `config_hash`** from a preceding `ha_config_get_automation`.
+  It is the cheapest way to make a small edit without re-sending a large config.
+- **To sidestep both**, the plain REST config API works and is not gated:
+  `./scripts/ha-api /api/config/automation/config/<id> -X POST -d @file.json`, followed by
+  `POST /api/services/automation/reload`. Same validation, no skill round-trip.
+- **`ha_get_logs` only searches a bounded window** of a buffer holding ~4 hours. For
+  anything older, query Loki — see
+  [observability.md](observability.md#home-assistants-own-logs-service_namehomeassistant).
+
 ## Home Assistant CLI
 
 There is the `hass-cli` command which can be used to e.g. download & upload dashboards.

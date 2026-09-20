@@ -609,12 +609,18 @@ confirm the AND actually matched.
 
 ### Known gaps and follow-ups
 
-- **`automation.morning_hot_water` has no catch-up.** If Hive recovers *after*
-  the boost time the boost is simply missed. The `catchup` trigger on
-  `automation.washing_machine_state` is the pattern to copy.
-- **`automation.notify_on_automation_failure` did not fire** for this outage,
-  which is why nothing surfaced it. Unrelated to Hive and worth fixing on its
-  own.
+- **`homeassistant.components.hive: debug` is still set** in `configuration.yaml`'s
+  `logger:` block, from diagnosing this. It is noisy and no longer needed now that the
+  cause is understood — drop it once the upstream issues settle.
+- ~~`automation.morning_hot_water` has no catch-up.~~ **Fixed 2026-09-20** — it now
+  retries on `hive_recovered` (the water heater leaving `unavailable`, which is what
+  this watchdog's reload produces) and on HA start, both gated on the boost window.
+  See [wake-routines.md](wake-routines.md#why-morning_hot_water-needs-catch-up-triggers).
+- ~~`automation.notify_on_automation_failure` did not fire for this outage.~~
+  **Fixed 2026-09-20** — it was dead code: `system_log` does not fire
+  `system_log_event` unless `fire_event: true` is set, and it was not. Unrelated to
+  Hive; see [notifications.md](notifications.md#automationnotify_on_automation_failure-needs-system_log-fire_event-true).
+  The config change takes effect at the next restart.
 - **Not generalised.** Hive and Netatmo both fail in ways HA never retries;
   integrations that retry correctly on their own should not get a watchdog by
   reflex.

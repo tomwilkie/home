@@ -41,10 +41,10 @@ announced — the persistent notification is the log.
 > "fixed" back. The `dismiss` branches call `script.cancel_announce`, which takes
 > no `speak` argument.
 
-### ⚠️ `automation.notify_on_automation_failure` needs `system_log: fire_event: true`
+### `automation.notify_on_automation_failure` needs `system_log: fire_event: true`
 
-It triggers on the `system_log_event` event — which **`system_log` does not fire by
-default**:
+⚠️ It triggers on the `system_log_event` event — which **`system_log` does not fire
+by default**:
 
 ```python
 # homeassistant/components/system_log/__init__.py

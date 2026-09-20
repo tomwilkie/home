@@ -78,6 +78,37 @@ values on the UniFi stream. The explicit values are:
 | └ `log_type=cef` — CEF activity events (Protect cameras, Network, Access) | + `product`, `name`, `severity` |
 | └ `log_type=system` — everything else (UniFi-OS daemons: `mcad`, `earlyoom`, `wevent`, …) | — |
 
+#### Home Assistant's own logs (`service_name="homeassistant"`)
+
+HA Core's container log is collected by the Docker pipeline, so it is the **only
+durable copy**: `ha core logs` and the `error_log` API read a rolling in-memory
+buffer that holds roughly **4 hours**, and the MCP `ha_get_logs` tool searches
+within a bounded window of it. Anything older than that — a 04:00 failure being
+investigated at lunchtime — exists *only* in Loki.
+
+```sh
+gcx logs query '{job="integrations/docker", service_name="homeassistant"}' \
+  --from "2026-09-20T02:55:00Z" --to "2026-09-20T03:45:00Z" \
+  --limit 5000 --jq '[.data.result[].values[].line] | .[]'
+```
+
+Three things that will waste your time otherwise:
+
+- **`--from`/`--to` are UTC; the timestamps *inside* each line are local.** In BST
+  that is a one-hour offset, so a window aimed at the 04:00 restart by its log
+  timestamps silently returns 05:00 instead. Convert first, then sanity-check the
+  first line you get back.
+- **The result shape is `.data.result[].values[].line`** — an object per entry, not
+  the `[ts, line]` tuple the raw Loki HTTP API returns.
+- **Queries are capped at ~30 days** (`the query time range exceeds the limit`), so
+  a "has this ever happened before?" sweep has to stop at 29d, which is also the
+  practical retention horizon for this sort of question.
+
+Multi-line tracebacks arrive as **separate log lines**, so a line filter matching
+the exception (`|= "hive"`) will not match the `Traceback (most recent call last):`
+line or the frames. Pull the whole window and read around the match instead of
+filtering narrowly.
+
 #### UniFi syslog (CEF)
 
 The UDM Pro Max's remote logging (UniFi's "Activity Logging" / SIEM exporter)
