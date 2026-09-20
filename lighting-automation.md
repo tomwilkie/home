@@ -86,7 +86,7 @@ The table below lists every non-default value that all instances must share. Set
 | `max_brightness` | `100` | |
 | `min_color_temp` | `2000` | Kelvin |
 | `max_color_temp` | `5500` | Kelvin |
-| `min_brightness` | `10` | |
+| `min_brightness` | `25` | Raised from `10` on 2026-09-20 — 10 % was too dim once the post-sunset ramp bottomed out |
 | `brightness_mode` | `tanh` | Smooth S-curve; avoids harsh jumps at sunrise/sunset |
 | `brightness_mode_time_dark` | `900` | Seconds over which brightness ramps at night |
 | `brightness_mode_time_light` | `1800` | Seconds over which brightness ramps at day |
@@ -101,6 +101,50 @@ The table below lists every non-default value that all instances must share. Set
 ### Per-Instance Settings
 
 The only setting that varies by area is `lights` — the `room-light` entities for that area.
+
+> ⚠️ **An entity rename does not reach the `lights` list.** Adaptive lighting
+> stores its lights in **config-entry options**, which the entity registry does
+> not rewrite on a rename — the Config-Entry blind spot in
+> [@naming-conventions.md](naming-conventions.md). The instance keeps pointing at
+> the old entity IDs, and because the switch still reports `on` and logs nothing,
+> **a wholly dead instance is indistinguishable from a working one** in the UI.
+>
+> **Tom's Office is in exactly this state** (found 2026-09-20): its `lights` are
+> `light.elgato_key_light`, `light.nano_dimmer`,
+> `light.tom_s_office_light_3d_printers`, `light.tom_s_office_desk_lamp` — **all
+> four missing**, all four renamed to the area-first convention
+> (`light.toms_office_*`) at some point. It has been adapting nothing.
+>
+> It is also why Tom's Office is the one instance still on `min_brightness: 10`:
+> the options flow re-validates `lights` on every save and rejects it with
+> `entity_missing`, so *no* setting can be changed until the list is repaired.
+> `ha_set_integration` cannot repair it — it does not pass a `lights` value into
+> the flow, so the stored stale list is what gets validated no matter what is
+> sent (verified by submitting a single known-good light, which failed
+> identically). **Fix it in the UI**: Settings → Devices & Services → Adaptive
+> Lighting → Tom's Office → Configure, re-pick the lights, and set
+> `min_brightness` to 25 in the same submit. The correct four (`room-light`
+> entities that support brightness or colour temperature) are:
+>
+> ```
+> light.toms_office_nano_dimmer
+> light.toms_office_desk_lamp
+> light.toms_office_light_3d_printers
+> light.toms_office_elgato_key_light
+> ```
+>
+> `light.toms_office_grafana_light` and `light.toms_office_spotlight` are
+> `onoff`-only, so they are correctly excluded.
+>
+> **Audit every instance after any light rename** — a stale ID here is silent.
+> Read each entry's `lights` and confirm all of them still resolve:
+>
+> ```
+> ha_get_integration(domain="adaptive_lighting", include_options=True)
+> ```
+>
+> then check each ID against the state machine; anything that renders `MISSING`
+> has been dead since the rename.
 
 ---
 
