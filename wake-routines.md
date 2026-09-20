@@ -18,12 +18,38 @@ alarm.
 | `automation.wake_up_routine` | reads | Fires **at** `wake_up_time`: air purifier for 1 h, a 30-minute light sunrise in the master bedroom, opens the shutters, stops the white noise, and (Mon–Thu) starts every Roomba in an unoccupied area. |
 
 > ⚠️ **`morning_hot_water` is the one consumer with an external dependency it cannot
-> see.** It calls a Hive *service*, and if the Hive config entry fails to set up, that service is never
-> registered — the automation fires on time and dies instantly on its first action
-> (`Action hive.boost_hot_water not found`), with no announcement. That is exactly what
-> happened on 2026-09-20. `automation.hive_watchdog` now reloads a failed Hive entry
-> within ~30 minutes of the 04:00 restart, well before the boost is due — see
+> see.** It calls a Hive *service*, and if the Hive config entry fails to set up that service is
+> never registered — so on 2026-09-20 the automation fired on time and died instantly on its
+> first action (`Action hive.boost_hot_water not found`), with no announcement.
+> `automation.hive_watchdog` now reloads a failed Hive entry within ~30 minutes of the 04:00
+> restart, well before the boost is due — see
 > [maintenance.md](maintenance.md#integration-watchdogs).
+
+#### Why `morning_hot_water` needs catch-up triggers
+
+The boost is a **one-shot service call at a single instant**, not a state that can be
+re-read, so anything that swallows that instant loses the boost entirely. Three
+triggers beyond the scheduled one close that hole, each gated on the same window
+condition (`wake − 1 h ≤ now < wake`) so a late recovery can never boost for a shower
+that already happened:
+
+| Trigger | id | Covers |
+|---|---|---|
+| `time` at `wake_up_time − 1 h` | `scheduled` | The normal path. |
+| `state` on `wake_up_time` | `wake_changed` | A late override into a window that has already started. |
+| `state` on `water_heater.hallway_thermostat` `from: unavailable` | `hive_recovered` | Hive was down at the scheduled instant. When the watchdog reloads the entry the entity leaves `unavailable` and the boost re-runs — hot late rather than never. |
+| `homeassistant` `start` | `ha_start` | A restart *inside* the window. Same pattern as the `catchup` trigger on `automation.washing_machine_state`. |
+
+Two guards make the retries safe:
+
+- **`binary_sensor.basement_hotwater_boost` must be `off`** — stops a catch-up
+  double-boosting when the scheduled run already succeeded and Hive merely blipped.
+  This is the reliable indicator: on 2026-09-19 it went `on` at 07:00:12 and `off` at
+  08:00:57, exactly bracketing the 1 h boost, while `water_heater.hallway_thermostat`
+  stayed `off` throughout and `sensor.basement_hotwater_mode` never moved.
+- **The water heater must not be `unavailable`/`unknown`** — skip rather than raise.
+  Calling the service while the entry is in `setup_error` fails the run; skipping
+  leaves `hive_recovered` to retry once the watchdog has done its job.
 
 > **`wake_up_time` is not just an alarm — it is the whole morning.** Because of
 > the sync and the wake routine, moving it also moves the bedside alarm, opens

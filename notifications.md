@@ -41,6 +41,59 @@ announced — the persistent notification is the log.
 > "fixed" back. The `dismiss` branches call `script.cancel_announce`, which takes
 > no `speak` argument.
 
+### ⚠️ `automation.notify_on_automation_failure` needs `system_log: fire_event: true`
+
+It triggers on the `system_log_event` event — which **`system_log` does not fire by
+default**:
+
+```python
+# homeassistant/components/system_log/__init__.py
+DEFAULT_FIRE_EVENT = False
+...
+if self.fire_event:
+    self.hass.bus.fire(EVENT_SYSTEM_LOG, entry.to_dict())
+```
+
+With no `system_log:` block in `configuration.yaml` the component loads with
+defaults, the event is never fired, and this automation is **dead code that looks
+healthy** — `state: on`, no errors, nothing in any log to suggest otherwise. The
+only visible symptom is a `last_triggered` that never advances.
+
+That was the case here until 2026-09-20, which is why the Hive hot-water failure
+that morning produced no notification at all and the first sign of it was a cold
+shower (see [maintenance.md](maintenance.md#integration-watchdogs)). The fix is
+three lines in `configuration.yaml`, and it needs a **restart** — `system_log`
+reads its config only at setup:
+
+```yaml
+system_log:
+  fire_event: true
+```
+
+> **Verify it rather than trusting it**, since the failure mode is silence. Fire a
+> synthetic event onto the bus and watch `last_triggered` move — this exercises the
+> trigger, both conditions and the announce path without waiting for a real error:
+>
+> ```sh
+> ./scripts/ha-api /api/events/system_log_event -X POST -d '{
+>   "level":"ERROR","name":"homeassistant.components.automation.some_automation",
+>   "message":["synthetic"],"source":["x.py",1],"exception":"","timestamp":0,"count":1}'
+> ```
+>
+> Note this test works *even while `fire_event` is false* — firing the event by
+> hand bypasses `system_log` entirely. So a passing test proves the automation is
+> wired correctly, **not** that real errors will reach it; only the config above
+> does that.
+
+**The exclusion list is a loop-breaker, not a filter.** The automation matches any
+logger containing `automation.` or `script.`, which includes *itself* and the script
+it announces through. Without the exclusions, an error while announcing re-triggers
+the announcement. `script.annouce` and `automation.notify_on_automation_failure` were
+added on 2026-09-20; the pre-existing `.automation_script_fail_detector` and
+`script.email_notification` entries are inherited from the blueprint this came from
+and no longer exist in this instance. Both new exclusions were verified by firing
+synthetic events from those loggers and confirming `last_triggered` did not move.
+
 #### Notification player selection
 
 `media_player.notification_players` (a media player group helper) is the master list of candidate speakers. Each member has a matching toggle named `input_boolean.{player_slug}_notifications` (e.g. `media_player.kitchen_display_ma_player` → `input_boolean.kitchen_display_ma_player_notifications`); the script's `notification_targets` variable computes the TTS targets as *group members whose toggle is on*, and the TTS step is skipped entirely if none are selected. The toggles are controlled from the Broadcast view on the Settings dashboard.
