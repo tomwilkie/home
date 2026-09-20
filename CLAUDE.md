@@ -8,7 +8,7 @@ The live Home Assistant configuration (automations, scripts, helpers, dashboards
 - Refer to @naming-conventions.md for information on how to name automations, devices, entities etc. Always consult @naming-conventions.md before creating or renaming entities, helpers, automations, or devices.
 - Refer to @notifications.md for information on how e.g. the front door, washing machine and tumble dryer notifications are configured.
 - Refer to @wake-routines.md for the wake-time helper and its consumers (bedside alarm, morning hot water, wake up routine), and the calendar-driven early-flight hot water routine.
-- Refer to @maintenance.md for the label-driven scheduled restarts of devices that degrade with uptime (ESPHome voice assistants, audio streamers), and for the integration watchdogs that reload a config entry that has wedged (Netatmo).
+- Refer to @maintenance.md for the label-driven scheduled restarts of devices that degrade with uptime (ESPHome voice assistants, audio streamers), and for the integration watchdogs that reload a config entry that has wedged (Hive, Netatmo).
 - Refer to @dashboards.md for the GitOps workflow for managing dashboards and the purpose of each dashboard.
 - Refer to @observability.md for how metrics and logs are shipped to Grafana Cloud via Grafana Alloy.
 - Refer to @network-security.md for how the IOT and Camera VLANs are isolated on the UniFi gateway and how to audit the isolation.

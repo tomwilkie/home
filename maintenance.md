@@ -484,3 +484,137 @@ Confirm with `ha_get_automation_traces("automation.netatmo_watchdog")` that
 - **Not generalised.** `roomba`, `norman_shutters` and `music_assistant` all churn
   through `not ready yet` retries nightly, but those retry correctly on their own;
   they do not need a watchdog and should not get one by reflex.
+
+## Hive — `automation.hive_watchdog`
+
+### The failure
+
+On **2026-09-20** the house had no hot water or heating for six hours. The
+04:00 restart hit a 5-second read timeout to `sso.hivehome.com` during Hive's
+setup, and the entry landed in `SETUP_ERROR` — which Home Assistant **never
+retries**, unlike `SETUP_RETRY`. Nothing recovered it until a manual reload at
+09:59.
+
+Because the entry never loaded, Hive's *services* were never registered, so
+`automation.morning_hot_water` fired on time at 07:00 and died on its first
+action:
+
+```
+07:00:01 ERROR [automation.morning_hot_water] Morning Hot Water: Error executing
+script. Service not found for call_service at pos 1: Action hive.boost_hot_water not found
+```
+
+The trace shows a single 2 ms run — `state: stopped`, `execution: error`. The
+failure was otherwise **silent**: `automation.notify_on_automation_failure` did
+not fire (`last_triggered` was still 2026-08-16), so the first signal was a cold
+shower.
+
+### Root cause
+
+Three defects stacked, none of them local:
+
+1. **`getLoginInfo` returns `None` on timeout.** `requests.ReadTimeout` subclasses
+   `OSError`, which the library catches, logs, and then falls off the end of the
+   function — so `async_init` does `None.get("UPID")` → `AttributeError`.
+   Fixed in [Pyhive PR #145](https://github.com/Pyhass/Pyhive/pull/145) but
+   **unreleased**; core pins `pyhive-integration==1.0.9`.
+2. **Core catches an exception that can never be raised.** `async_setup_entry`
+   handles only `HiveReauthRequired` and `aiohttp.web_exceptions.HTTPException`
+   — a *server-side* class, and the failing call is synchronous `requests` in an
+   executor anyway. So there is no transient-failure path at all, and anything
+   else becomes a non-retried `SETUP_ERROR`. Filed as
+   [core#182752](https://github.com/home-assistant/core/issues/182752).
+3. **Every startup forces a fresh SSO round-trip.**
+   [Pyhive #123](https://github.com/Pyhass/Pyhive/issues/123) — `tokenCreated`
+   defaults to `datetime.min`, so stored tokens always read as expired. That is
+   why a restart touches that endpoint at all, against a 5-second timeout, while
+   a dozen other integrations compete for the network.
+
+Once #145 ships the crash merely becomes a tidier `HiveUnknownConfiguration` —
+still uncaught, still `SETUP_ERROR`, still never retried. The watchdog is not
+made redundant by the library fix.
+
+### What the automation does
+
+Every 15 minutes, if all three watched entities have been `unavailable` for
+≥ 15 minutes **and are restored stubs**, it calls
+`homeassistant.reload_config_entry` and re-checks two minutes later. A third
+branch handles "unavailable but *not* stubs" by announcing and deliberately not
+reloading.
+
+| Decision | Why |
+|---|---|
+| `time_pattern` every 15 min, **not** a `state` trigger with a `for:` | Same reasoning as Netatmo: the retry matters as much as the detection, and the entities never change state while stranded. Recovery lands ~04:30, well before the 07:00 boost. |
+| Watches `water_heater` + `climate` + `binary_sensor.basement_hive_hub_status` | All three must be down. Unlike Netatmo's five independent modules these fail together, so the AND is about distinguishing an entry-level failure from one device dropping out. |
+| **`restored: true` required on all three** | Load-bearing — see the warning below. |
+| Targets `water_heater.hallway_thermostat`, not `entry_id` | Entity IDs, not IDs that churn — see [CLAUDE.md](CLAUDE.md). The registry keeps `config_entry_id` even on an unavailable restored stub, so it resolves when no platform was ever set up. |
+| `speak: false` on both notifications | A diagnostic — recorded, not announced (see [notifications.md](notifications.md)). Both branches use the title `Hive`, so repeated failures overwrite one notification instead of stacking. |
+| Recovery watches only the water heater | All Hive entities come back together from the single config entry. |
+| `mode: queued, max: 10` | Matches the Netatmo watchdog; the reload branch holds a run open for 2 min while triggers are 15 min apart. |
+
+> ⚠️ **The `restored: true` guard is load-bearing — do not remove it to
+> "simplify".** There are two ways every Hive entity can be `unavailable`, and
+> they need *opposite* handling:
+>
+> - **Entry in `SETUP_ERROR`** — the entities are entity-registry placeholders,
+>   which HA marks `restored: true`. Reloading is safe *and* is the fix, because
+>   HA skips the unload step for an entry that was never loaded.
+> - **Entry `loaded`, hub merely offline** (Hive cloud outage, hub unplugged —
+>   `HiveEntity` sets `_attr_available` from `deviceData["online"]`). No
+>   `restored` attribute. Here a reload calls `async_unload_entry`, which unloads
+>   the **full `PLATFORMS` list** even though `async_setup_entry` only ever
+>   forwards the platforms that have devices. This house has **no Hive lights**,
+>   so unloading `light` raises `ValueError: Config entry was never loaded!`, the
+>   unload fails, and the entry lands in **`FAILED_UNLOAD`** — which HA flatly
+>   refuses to reload (`Entry cannot be reloaded`), leaving no heating or hot
+>   water **until a full HA restart**.
+>
+> That second path was hit for real while testing this automation, and is filed
+> as [core#182753](https://github.com/home-assistant/core/issues/182753).
+> [#176594](https://github.com/home-assistant/core/pull/176594) makes it
+> non-fatal from 2026.10 (it is in no 2026.9.x), after which this guard demotes
+> from load-bearing to defensive — still correct, since reloading a
+> loaded-but-offline entry would not help anyway.
+
+All three entities must be stubs, not just one: `fan.master_bedroom_dyson_fan`
+was observed carrying `restored: true` while its own `dyson_local` entry was
+`loaded`, proving a single entity can be a stub without its entry having failed.
+A partial Hive device list therefore cannot be mistaken for a failed setup.
+
+### Verifying the watchdog
+
+The conditions are native, so a wrong entity ID fails **silently** — the
+automation simply never acts. Test the guard in isolation rather than reading
+the YAML: create a throwaway automation with the same condition and a
+`system_log.write` action, force the state, and read the log.
+
+```bash
+# healthy entity -> no match; forced stub -> match
+./scripts/ha-api /api/states/water_heater.hallway_thermostat -X POST \
+  -d '{"state":"unavailable","attributes":{"restored":true}}'
+```
+
+Then read the real automation's trace (`ha_get_automation_traces`) — it lists
+each entity of a multi-entity `state` condition separately, which is how you
+confirm the AND actually matched.
+
+> **`restored` is live-only.** The recorder strips it (along with
+> `supported_features`) from stored attributes, so the guard reads correctly at
+> runtime but the attribute never appears in `/api/history`. Don't look there and
+> conclude it was absent.
+
+> ⚠️ **Never test the reload branch against a healthy, `loaded` Hive entry** —
+> that is exactly the path that wedges it into `FAILED_UNLOAD` and costs a
+> restart.
+
+### Known gaps and follow-ups
+
+- **`automation.morning_hot_water` has no catch-up.** If Hive recovers *after*
+  the boost time the boost is simply missed. The `catchup` trigger on
+  `automation.washing_machine_state` is the pattern to copy.
+- **`automation.notify_on_automation_failure` did not fire** for this outage,
+  which is why nothing surfaced it. Unrelated to Hive and worth fixing on its
+  own.
+- **Not generalised.** Hive and Netatmo both fail in ways HA never retries;
+  integrations that retry correctly on their own should not get a watchdog by
+  reflex.

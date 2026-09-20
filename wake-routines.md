@@ -17,6 +17,14 @@ alarm.
 | `automation.morning_hot_water` | reads | `hive.boost_hot_water` for 1 h, at **`wake_up_time` − 1 h**. A second `state` trigger re-fires it if `wake_up_time` is *changed* to a value whose boost window has already started, so a late override still gets hot water. |
 | `automation.wake_up_routine` | reads | Fires **at** `wake_up_time`: air purifier for 1 h, a 30-minute light sunrise in the master bedroom, opens the shutters, stops the white noise, and (Mon–Thu) starts every Roomba in an unoccupied area. |
 
+> ⚠️ **`morning_hot_water` is the one consumer with an external dependency it cannot
+> see.** It calls a Hive *service*, and if the Hive config entry fails to set up, that service is never
+> registered — the automation fires on time and dies instantly on its first action
+> (`Action hive.boost_hot_water not found`), with no announcement. That is exactly what
+> happened on 2026-09-20. `automation.hive_watchdog` now reloads a failed Hive entry
+> within ~30 minutes of the 04:00 restart, well before the boost is due — see
+> [maintenance.md](maintenance.md#integration-watchdogs).
+
 > **`wake_up_time` is not just an alarm — it is the whole morning.** Because of
 > the sync and the wake routine, moving it also moves the bedside alarm, opens
 > the shutters and starts the vacuums. That is exactly why the early-flight
