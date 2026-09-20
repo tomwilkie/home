@@ -114,12 +114,33 @@ variables:
     {% endif %}
 
 triggers:
+  # Someone arrives in a room that is already dark.
   - trigger: state
     entity_id: !input motion_entity
     from: "off"
     to: "on"
+    id: occupied
+
+  # The room gets dark around someone already in it.  The occupancy group
+  # produces no further off->on edge once it is on, so without this the lights
+  # never come on for anyone who sat down before the sun window opened.
+  # Disabled when use_sun is false: there is no window to open.
+  - trigger: sun
+    event: sunset
+    offset: !input sunset_offset
+    id: darkness_fell
+    enabled: !input use_sun
 
 condition:
+  # Both triggers mean "an occupied room should be lit".  On the `occupied`
+  # path that is true by construction; on `darkness_fell` it is the whole
+  # point.  It also closes a race on the `occupied` path: if the group flickers
+  # back to off before the run starts, we no longer turn the lights on and then
+  # wait forever for an off edge that has already passed.
+  - condition: state
+    entity_id: !input motion_entity
+    state: "on"
+
   - condition: or
     enabled: !input use_brightness
     conditions:

@@ -155,6 +155,37 @@ The blueprint lives at `blueprints/automation/twilkie/motion_lights.yaml` in thi
 5. Reload blueprints in HA (Settings → Automations → Blueprints → Reload, or restart HA)
 6. Commit to git
 
+### When there is no SSH (cloud sessions)
+
+Claude Code cloud environments have no `ssh`/`scp` and no route to the home LAN,
+so steps 1, 3 and 4 above cannot run. The MCP server covers all of them, and
+step 5 comes for free:
+
+| Step | MCP equivalent |
+|---|---|
+| Read the live file | `ha_manage_blueprints(action="get", path="twilkie/motion_lights.yaml")` — returns the on-disk YAML, comments intact; check `yaml_source` is `file` |
+| Push + reload | `ha_manage_blueprints(action="save", path=…, yaml=…, overwrite=True)` — writes `/config/…` **and** reloads every automation using it |
+
+**Pre-flight a blueprint edit before it touches live automations.** `save` to a
+throwaway path nothing consumes (e.g. `twilkie/motion_lights_preflight.yaml`),
+then render it against each room's real inputs with
+`ha_manage_blueprints(action="substitute", path=…, input={…})` and read the
+result; `delete` it (`confirm=True`) once happy, then `save` over the real path.
+HA validates the blueprint schema on `save` and resolves every `!input` on
+`substitute`, so this catches a malformed edit *before* five live automations
+reload onto it. Rendering one `use_sun: true` room and one `use_sun: false` room
+is the check that matters — see [The two triggers](#the-two-triggers).
+
+> ⚠️ **`save` normalises the file — every comment is lost.** Unlike `scp`, it
+> parses the YAML and re-dumps it, so the on-disk copy comes back with comments
+> stripped, selectors expanded (`filter: [{domain: [binary_sensor]}]`), numbers
+> floated (`min: 0.0`) and quoting changed. The *semantics* are untouched, but
+> **step 1's `diff -u` will never come back clean again** after an MCP save —
+> compare the rendered `config` object, or `substitute` output, rather than the
+> text. To restore the commented canonical copy, `scp` this repo's file over it
+> from a machine that has LAN access; that is the only way back to a clean
+> textual diff.
+
 ---
 
 ## Blueprint Reference
@@ -167,7 +198,7 @@ The blueprint lives at `blueprints/automation/twilkie/motion_lights.yaml` in thi
 | `area_id` | Area whose lights to control | required | required |
 | `label_filter` | Only control lights with this label | none | `room_light` |
 | `no_motion_wait` | Seconds to leave lights on after last motion | 120 | **1800** |
-| `use_sun` | Only control lights at night | false | per-room |
+| `use_sun` | Only control lights at night — **and** trigger at the window opening ([why](#the-two-triggers)) | false | per-room |
 | `sunrise_offset` | Offset from sunrise (positive = after) | 00:00:00 | **01:00:00** (if use_sun) |
 | `sunset_offset` | Offset from sunset (positive = after) | 00:00:00 | **-01:00:00** (if use_sun) |
 | `use_brightness` | Only turn on lights when room is dark | false | false |
@@ -175,3 +206,57 @@ The blueprint lives at `blueprints/automation/twilkie/motion_lights.yaml` in thi
 | `brightness_trigger` | Maximum lux level to trigger lights | 20 | 20 |
 
 `use_sun` is decided per room. When enabled, always set `sunrise_offset: 01:00:00` and `sunset_offset: -01:00:00` so lights activate one hour before sunset and deactivate one hour after sunrise.
+
+### The two triggers
+
+The blueprint fires on **two** things, not one:
+
+| Trigger id | Fires when | Gated by |
+|---|---|---|
+| `occupied` | the Occupancy group goes `off` → `on` | — |
+| `darkness_fell` | `sunset + sunset_offset` | `enabled: !input use_sun` |
+
+A single blanket condition — the Occupancy group must be `on` — sits above the
+existing brightness and sun conditions and covers both paths.
+
+> **Why `darkness_fell` exists.** `use_sun` used to be a *condition only*, so the
+> sole way in was an `off` → `on` occupancy edge. Sit down before the window
+> opens and the group is already `on`, produces no further edge, and the lights
+> never come on — the automation is working exactly as written and does nothing
+> all evening. Living Room is the worst case because
+> `binary_sensor.living_room_tv_playing` is a member and deliberately pins
+> occupancy `on` for hours ([Occupancy Group Membership](#occupancy-group-membership)),
+> so a TV evening starting before sunset−1 h got no lights at all. Observed
+> 2026-09-20: occupancy `on` since 15:24, window open from 18:03, and
+> `last_triggered` still reading 07:36 with every stored trace
+> `failed_conditions`.
+>
+> The fix is a blueprint edit, so all three `use_sun: true` rooms (Living Room,
+> Nursery, Rear Guest Room) got it at once. Basement and Tom's Office render the
+> trigger `enabled: false` and are unchanged. It also makes the paragraph above
+> literally true — lights now really do *activate* an hour before sunset, not
+> merely become *allowed* to.
+
+> **Two triggers with conditions, not one template trigger** — the same choice
+> made for `turn_bedroom_lights_on_before_sunset`
+> ([Intentional Exceptions](#intentional-exceptions)). Both triggers and all
+> conditions stay native.
+
+> **`mode: restart` is safe here.** Conditions are evaluated *before* the
+> previous run is stopped, so a `darkness_fell` firing into an empty room is a
+> no-op and cannot cancel a pending turn-off. The occupancy condition also closes
+> a pre-existing race on the `occupied` path: if the group flickered back to
+> `off` before the run started, the old code turned the lights on and then waited
+> forever for an `off` edge that had already passed.
+
+#### Known gaps left open
+
+- **`unavailable` → `on` is still not a trigger.** The Occupancy groups go
+  `unavailable` at every 04:00 restart and on sensor dropouts. Relaxing the
+  trigger to a bare `to: "on"` would catch those — and switch the lights on at
+  04:00 in an occupied dark room. The narrow `from: "off"` is protective; it
+  stays.
+- **`use_brightness` has the identical gap** (a room darkening around someone
+  already in it). No room sets it, so no lux-threshold trigger was added.
+- **The window *closing* at `sunrise + sunrise_offset` still turns nothing off.**
+  Lights go off on the `no_motion_wait` tail as before.
