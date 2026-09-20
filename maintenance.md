@@ -546,7 +546,8 @@ reloading.
 |---|---|
 | `time_pattern` every 15 min, **not** a `state` trigger with a `for:` | Same reasoning as Netatmo: the retry matters as much as the detection, and the entities never change state while stranded. Recovery lands ~04:30, well before the 07:00 boost. |
 | Watches `water_heater` + `climate` + `binary_sensor.basement_hive_hub_status` | All three must be down. Unlike Netatmo's five independent modules these fail together, so the AND is about distinguishing an entry-level failure from one device dropping out. |
-| **`restored: true` required on all three** | Load-bearing — see the warning below. |
+| **`restored: true` required on all three** | Stops the watchdog *causing* a wedge — see the warning below. It does **not** prove the entry was never loaded. |
+| **`continue_on_error: true` on the reload** | `reload_config_entry` *raises* on an entry already in `FAILED_UNLOAD`. Without this the run dies at that step, so the delay and the announcement never execute and the watchdog retries silently forever. |
 | Targets `water_heater.hallway_thermostat`, not `entry_id` | Entity IDs, not IDs that churn — see [CLAUDE.md](CLAUDE.md). The registry keeps `config_entry_id` even on an unavailable restored stub, so it resolves when no platform was ever set up. |
 | `speak: false` on both notifications | A diagnostic — recorded, not announced (see [notifications.md](notifications.md)). Both branches use the title `Hive`, so repeated failures overwrite one notification instead of stacking. |
 | Recovery watches only the water heater | All Hive entities come back together from the single config entry. |
@@ -570,7 +571,18 @@ reloading.
 >   water **until a full HA restart**.
 >
 > That second path was hit for real while testing this automation, and is filed
-> as [core#182753](https://github.com/home-assistant/core/issues/182753).
+> as [core#182753](https://github.com/home-assistant/core/issues/182753). It is not
+> exotic: a **plain reload of the integration from the HA UI triggers it**, which is
+> exactly how the entry was wedged again on the evening of 2026-09-20.
+>
+> ⚠️ **`restored: true` does not mean "never loaded" — a correction.** An entry in
+> `FAILED_UNLOAD` leaves restored stubs too, because its platforms were *partially*
+> unloaded. So the guard prevents the watchdog from causing a wedge, but does **not**
+> recognise one that already exists. Once wedged, every reload raises
+> `cannot be unloaded because it is in the non recoverable state`, and only a restart
+> clears it. That is what `continue_on_error: true` on the reload step is for — it
+> lets the run reach the announcement instead of dying at the reload. Without it the
+> watchdog failed silently every 15 minutes for six hours.
 > [#176594](https://github.com/home-assistant/core/pull/176594) makes it
 > non-fatal from 2026.10 (it is in no 2026.9.x), after which this guard demotes
 > from load-bearing to defensive — still correct, since reloading a
