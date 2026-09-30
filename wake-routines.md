@@ -14,7 +14,7 @@ alarm.
 |---|---|---|
 | `automation.reset_wake_up_time` | writes | At **17:00 daily**, sets `wake_up_time` from `input_datetime.weekday_wakeup_time` (07:00) on Sun–Thu evenings, or `input_datetime.weekend_wakeup_time` (08:00) on Fri/Sat evenings. So any manual override is self-cleaning — it survives one morning, then reverts. |
 | `automation.synchronise_alarm_time` | **two-way** | Mirrors `wake_up_time` ↔ `time.master_bedroom_clock_alarm_time` (the ESPHome bedside clock). Setting either sets the other. The context guards on both branches stop the two sides ping-ponging. |
-| `automation.morning_hot_water` | reads | `hive.boost_hot_water` for 1 h, at **`wake_up_time` − 1 h**. A second `state` trigger re-fires it if `wake_up_time` is *changed* to a value whose boost window has already started, so a late override still gets hot water. |
+| `automation.morning_hot_water` | reads | `hive.boost_hot_water` for 1 h (**1 h 30 on Saturdays** — [why](#the-saturday-boost-is-longer)), at **`wake_up_time` − 1 h**. A second `state` trigger re-fires it if `wake_up_time` is *changed* to a value whose boost window has already started, so a late override still gets hot water. |
 | `automation.wake_up_routine` | reads | Fires **at** `wake_up_time`: air purifier for 1 h, a 30-minute light sunrise in the master bedroom, opens the shutters, stops the white noise, and (Mon–Thu) starts every Roomba in an unoccupied area. |
 
 > ⚠️ **`morning_hot_water` is the one consumer with an external dependency it cannot
@@ -50,6 +50,26 @@ Two guards make the retries safe:
 - **The water heater must not be `unavailable`/`unknown`** — skip rather than raise.
   Calling the service while the entry is in `setup_error` fails the run; skipping
   leaves `hive_recovered` to retry once the watchdog has done its job.
+
+> ⚠️ **Testing: `automation.trigger` with `skip_condition: false` is only a dry run
+> *outside* the boost window.** Inside it (`wake − 1 h ≤ now < wake`, with the boost
+> sensor `off`) the conditions pass and a real boost starts. Check `wake_up_time`
+> first — a manual override moves the window. This happened on 2026-09-30, when the
+> wake time had been moved to 07:45.
+
+#### The Saturday boost is longer
+
+The cleaner comes on Friday and uses all the hot water, and a single hour on
+Saturday morning was not enough to leave any for Kiran's bath on Saturday evening.
+So on Saturdays the boost runs **1 h 30** instead of 1 h. It **starts at the same
+time** (wake − 1 h) and runs 30 min past wake-up, e.g. 07:00–08:30 at the default
+08:00 weekend wake time. The duration is a template in the action's `data`
+(`now().isoweekday() == 6`), not a `choose` on weekday, so there is still only one
+`hive.boost_hot_water` step to maintain. Catch-up runs on a Saturday get 1 h 30 too.
+
+If Saturday showers still leave too little for the bath, the next step is a
+Saturday afternoon top-up timed to finish before bath time, rather than stretching
+the morning boost further.
 
 > **`wake_up_time` is not just an alarm — it is the whole morning.** Because of
 > the sync and the wake routine, moving it also moves the bedside alarm, opens
