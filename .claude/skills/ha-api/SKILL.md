@@ -4,88 +4,94 @@ description: >
   Use the scripts/ha-api helper to call the Home Assistant REST API directly.
 
   TRIGGER THIS SKILL WHEN:
-  - An MCP tool does not exist for the needed operation (e.g. creating a new integration config entry such as a new adaptive lighting instance)
-  - You need to drive a multi-step HA config entry flow (start flow → submit steps → confirm)
-  - You need to call an HA REST API endpoint not exposed by any mcp__claude_ai_ha-mcp__* tool
+  - An MCP tool does not exist for the needed operation (for example, creating a new integration config entry such as a new adaptive lighting instance)
+  - You need to drive a multi-step Home Assistant config entry flow (start flow, submit steps, confirm)
+  - You need to call a Home Assistant REST API endpoint not exposed by any mcp__claude_ai_ha-mcp__* tool
 ---
 
 # ha-api
 
-A thin wrapper around `curl` that reads the HA URL and token from `HASS_SERVER` / `HASS_TOKEN` — the same environment variables as `hass-cli` (see [access-home-assistant.md](../../../access-home-assistant.md)).
+`scripts/ha-api` is a thin wrapper around `curl` for the Home Assistant REST API.
 
-**Always prefer MCP tools (`mcp__claude_ai_ha-mcp__*`) when one exists.** Reach for `scripts/ha-api` only when no MCP tool covers the operation.
+Prefer an MCP tool (`mcp__claude_ai_ha-mcp__*`) when one covers the operation. Use
+`scripts/ha-api` only when none does.
 
 ## Usage
 
 ```
-scripts/ha-api <path> [extra curl flags...]
+scripts/ha-api API_PATH [CURL_FLAGS...]
 ```
 
-- `<path>` — the API path, starting with `/` (e.g. `/api/states`)
-- Extra flags are forwarded to `curl` verbatim (`-X POST`, `-d '{...}'`, etc.)
-- Output is raw JSON from HA; pipe through `jq` for readability
+- `API_PATH` is the API path, starting with `/`, for example `/api/states`.
+- `CURL_FLAGS` are passed to `curl` unchanged, for example `-X POST` and `-d '{...}'`.
+- The output is raw JSON. Pipe it through `jq` to read it.
 
-## Common patterns
+The script reads the URL and token from `HASS_SERVER` and `HASS_TOKEN`, the same environment
+variables as `hass-cli` (see [_Home Assistant CLI_](../../../access-home-assistant.md#home-assistant-cli)),
+and accepts `HOMEASSISTANT_URL` and `HOMEASSISTANT_TOKEN` as a fallback. The token is a
+long-lived access token: the MCP connector's OAuth sign-in cannot be used here. Keep the
+credentials in the shell environment, not in files in this repo.
 
-### GET a resource
+To read a resource, pass the path:
+
 ```bash
 scripts/ha-api /api/states/light.master_bedroom_lamp_toms | jq
 ```
 
-### POST with a body
+To send a body, add the `curl` flags:
+
 ```bash
 scripts/ha-api /api/services/light/turn_on \
   -X POST \
   -d '{"entity_id": "light.master_bedroom_lamp_toms"}'
 ```
 
----
+## Config entry flows
 
-## Config entry flows (multi-step)
+Creating an integration instance, such as an Adaptive Lighting instance, takes a stateful flow.
+Each response returns the ID or the next step that the following request needs.
 
-Creating a new integration instance (e.g. a new Adaptive Lighting instance) requires a stateful three-step flow. The flow ID returned by step 1 must be threaded through subsequent steps.
+1. Start the flow. The response carries the `flow_id` and the first `step_id`:
 
-### Step 1 — start the flow
-```bash
-scripts/ha-api /api/config/config_entries/flow \
-  -X POST \
-  -d '{"handler": "adaptive_lighting"}'
-# → {"flow_id": "<flow_id>", "step_id": "menu", ...}
-```
+   ```bash
+   scripts/ha-api /api/config/config_entries/flow \
+     -X POST \
+     -d '{"handler": "adaptive_lighting"}'
+   # {"flow_id": "FLOW_ID", "step_id": "menu", ...}
+   ```
 
-### Step 2 — navigate menus / submit form fields
-```bash
-scripts/ha-api /api/config/config_entries/flow/<flow_id> \
-  -X POST \
-  -d '{"action": "new"}'
-# → next step form, e.g. step_id: "user" asking for a name
+2. Answer each menu or form until the response has `"type": "create_entry"`, which carries the `entry_id`:
 
-scripts/ha-api /api/config/config_entries/flow/<flow_id> \
-  -X POST \
-  -d '{"name": "Master Bedroom"}'
-# → {"type": "create_entry", "result": {"entry_id": "<entry_id>", ...}}
-```
+   ```bash
+   scripts/ha-api /api/config/config_entries/flow/FLOW_ID \
+     -X POST \
+     -d '{"action": "new"}'
+   # the next step, for example step_id "user", which asks for a name
 
-### Step 3 — configure options (lights, settings)
-```bash
-# Start an options flow for the newly created entry
-scripts/ha-api /api/config/config_entries/options/flow \
-  -X POST \
-  -d '{"handler": "<entry_id>"}'
-# → {"flow_id": "<options_flow_id>", "step_id": "init", ...}
+   scripts/ha-api /api/config/config_entries/flow/FLOW_ID \
+     -X POST \
+     -d '{"name": "Master Bedroom"}'
+   # {"type": "create_entry", "result": {"entry_id": "ENTRY_ID", ...}}
+   ```
 
-# Submit options
-scripts/ha-api /api/config/config_entries/options/flow/<options_flow_id> \
-  -X POST \
-  -d '{
-    "lights": ["light.master_bedroom_lamp_toms", "light.master_bedroom_lamp_rachanas"],
-    "min_brightness": 50,
-    ...
-  }'
-# → {"type": "create_entry", ...}
-```
+3. Start an options flow for the entry, then submit the options:
 
-## Notes
+   ```bash
+   scripts/ha-api /api/config/config_entries/options/flow \
+     -X POST \
+     -d '{"handler": "ENTRY_ID"}'
+   # {"flow_id": "OPTIONS_FLOW_ID", "step_id": "init", ...}
 
-- Credentials come from the **shell environment** only, never from files in this repo. `HOMEASSISTANT_URL` / `HOMEASSISTANT_TOKEN` are accepted as a fallback.
-- The MCP connector's OAuth sign-in cannot be reused here — this needs an HA long-lived access token.
+   scripts/ha-api /api/config/config_entries/options/flow/OPTIONS_FLOW_ID \
+     -X POST \
+     -d '{
+       "lights": ["light.master_bedroom_lamp_toms", "light.master_bedroom_lamp_rachanas"],
+       "min_brightness": 25,
+       ...
+     }'
+   # {"type": "create_entry", ...}
+   ```
+
+`FLOW_ID`, `ENTRY_ID` and `OPTIONS_FLOW_ID` are the values from the preceding responses. The
+standard Adaptive Lighting options are in
+[_Adaptive lighting_](../../../lighting-automation.md#adaptive-lighting).
