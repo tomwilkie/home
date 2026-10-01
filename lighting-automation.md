@@ -1,297 +1,215 @@
-# Lighting Automation
+# Lighting automation
 
-## Overview
+Each room combines the following components for occupancy-based lighting with adaptive
+brightness and colour temperature:
 
-Each room uses a four-component pattern for occupancy-based lighting with adaptive brightness and colour temperature:
+- **Occupancy group:** one binary sensor that aggregates the area's motion, presence and TV-playing sensors.
+- **Lighting automation:** an instance of the `twilkie/motion_lights.yaml` blueprint, which turns the room lights on when the area is occupied and off after a timeout.
+- **`room-light` label:** marks the light entities in the area that the automation controls.
+- **Adaptive lighting:** a per-area instance that adjusts brightness and colour temperature by time of day and sun position.
 
-1. **Occupancy Group** — aggregates all motion, presence, and TV-playing sensors into a single binary sensor for the area.
-2. **Lighting Automation** — an instance of the `twilkie/motion_lights.yaml` blueprint that turns room lights on when the area is occupied and off after a timeout.
-3. **`room-light` Label** — marks which light entities in the area are controlled by automation.
-4. **Adaptive Lighting** — a per-area instance that continuously adjusts brightness and colour temperature of capable lights based on time of day and sun position.
+## Naming
 
----
+| Component | Display name | Entity ID | Example |
+|---|---|---|---|
+| Occupancy group | `{Area Display Name} Occupancy` | `binary_sensor.{area_id}_occupancy` | `binary_sensor.toms_office_occupancy` |
+| TV playing helper | `{Area Display Name} TV Playing` | `binary_sensor.{area_id}_tv_playing` | `binary_sensor.living_room_tv_playing` |
+| Lighting automation | `{Area Display Name} Lights` | `automation.{area_id}_lights` | `automation.living_room_lights` |
+| Adaptive lighting instance | `{Area Display Name}` | `switch.{area_id}_adaptive_lighting` | `switch.toms_office_adaptive_lighting` |
 
-## Naming Conventions
+The adaptive lighting integration creates its entities as `switch.adaptive_lighting_{area_id}`.
+Rename them area-first, as described in
+[_Entity ID format_](naming-conventions.md#entity-id-format).
 
-### Occupancy Groups
+## Occupancy group membership
 
-| | Format | Example |
-|---|---|---|
-| Display name | `{Area Display Name} Occupancy` | `Tom's Office Occupancy` |
-| Entity ID | `binary_sensor.{area_id}_occupancy` | `binary_sensor.toms_office_occupancy` |
+Each occupancy group includes the following:
 
-### TV Playing Helpers
+- Every motion sensor in the area
+- Every presence sensor in the area, such as the mmWave Everything Presence devices
+- A TV playing helper, if the area has a TV or media player, which keeps the lights on while someone watches TV without moving
 
-| | Format | Example |
-|---|---|---|
-| Display name | `{Area Display Name} TV Playing` | `Living Room TV Playing` |
-| Entity ID | `binary_sensor.{area_id}_tv_playing` | `binary_sensor.living_room_tv_playing` |
+Add every area occupancy group to the `House Occupancy (Raw)` group.
 
-### Lighting Automations
+## `room-light` eligibility
 
-| | Format | Example |
-|---|---|---|
-| Display name (alias) | `{Area Display Name} Lights` | `Living Room Lights` |
-| Entity ID | `automation.{area_id}_lights` | `automation.living_room_lights` |
+Label a light entity `room-light` if all of the following are true:
 
-### Adaptive Lighting Instances
+1. Its primary purpose is room illumination: lamps, spotlights, dimmers, ceiling lights.
+2. It is not a status or indicator light on a device whose primary purpose is something else, such as a smart plug or presence sensor.
+3. No conflicting automation governs it, such as a sleep and wake routine in a bedroom.
+4. It is in a room where occupancy-based control makes sense, which excludes server racks, garages and utility spaces.
 
-| | Format | Example |
-|---|---|---|
-| Instance name | `{Area Display Name}` | `Tom's Office` |
-| Main switch entity ID | `switch.adaptive_lighting_{area_id}` | `switch.adaptive_lighting_toms_office` |
+Decorative and accent lights and utility task lights, such as a 3D printer light, have no
+exemption. Apply the same rules.
 
----
+## Adaptive lighting
 
-## Occupancy Group Membership
+Each area with `room-light` entities has its own adaptive lighting instance, named after the
+area. Its `lights` option lists every `room-light` entity in the area that supports brightness
+or colour temperature, and is the only setting that varies by area.
 
-Each Occupancy group should include:
-
-1. **All motion sensors** in the area
-2. **All presence sensors** in the area (e.g. mmWave / Everything Presence devices)
-3. **A TV playing helper** (`binary_sensor.{area_id}_tv_playing`) if the area has a TV or media player — this keeps lights on while watching TV even when no motion is detected
-
-Every area Occupancy group must also be added as a member of the **`House Occupancy (Raw)`** group.
-
----
-
-## room-light Eligibility Rules
-
-Tag a light entity `room-light` if ALL of the following are true:
-
-1. Its primary purpose is room illumination (lamps, spotlights, dimmers, ceiling lights)
-2. It is **not** a status or indicator light on a device whose primary purpose is something else (e.g. a smart plug, presence sensor, or other appliance)
-3. It is **not** already governed by a conflicting automation (e.g. a sleep/wake routine in a bedroom)
-4. It is in a room where occupancy-based control makes sense (not server racks, garages, or utility spaces)
-
-Decorative/accent lights and utility task lights (e.g. a 3D printer light) have no special exemption — apply the four rules above as normal.
-
----
-
-## Adaptive Lighting
-
-Each area that has `room-light` entities should have its own dedicated adaptive lighting instance, named after the area. Include any `room-light` entity that supports brightness or colour temperature control.
-
-All instances should use identical settings — do not customise per-instance unless there is a specific documented reason. Divergence from the defaults is treated as configuration drift.
-
-### Standard Settings
-
-The table below lists every non-default value that all instances must share. Settings not listed here are left at the adaptive lighting integration's built-in defaults.
+Every instance uses the following non-default values. Settings that are not listed stay at the
+integration's defaults. A per-instance difference without a documented reason is configuration
+drift.
 
 | Setting | Value | Notes |
 |---|---|---|
 | `interval` | `90` | Seconds between adaptation updates |
 | `transition` | `45.0` | Seconds to transition when adapting |
-| `initial_transition` | `1.0` | Seconds for first transition after turn-on |
+| `initial_transition` | `1.0` | Seconds for the first transition after turn-on |
 | `max_brightness` | `100` | |
+| `min_brightness` | `25` | 10% was too dim after the post-sunset ramp bottomed out |
 | `min_color_temp` | `2000` | Kelvin |
 | `max_color_temp` | `5500` | Kelvin |
-| `min_brightness` | `25` | Raised from `10` on 2026-09-20 — 10 % was too dim once the post-sunset ramp bottomed out |
-| `brightness_mode` | `tanh` | Smooth S-curve; avoids harsh jumps at sunrise/sunset |
+| `brightness_mode` | `tanh` | A smooth S-curve that avoids jumps at sunrise and sunset |
 | `brightness_mode_time_dark` | `900` | Seconds over which brightness ramps at night |
-| `brightness_mode_time_light` | `1800` | Seconds over which brightness ramps at day |
-| `min_sunrise_time` | `08:00` | Earliest time adaptive lighting treats as sunrise |
-| `max_sunset_time` | `21:00` | Latest time adaptive lighting treats as sunset (prevents bright lights on long summer evenings) |
-| `take_over_control` | `true` | Pause adaptive control when lights are manually adjusted |
+| `brightness_mode_time_light` | `1800` | Seconds over which brightness ramps by day |
+| `min_sunrise_time` | `08:00` | Earliest time treated as sunrise |
+| `max_sunset_time` | `21:00` | Latest time treated as sunset, which prevents bright lights on long summer evenings |
+| `take_over_control` | `true` | Pause adaptive control when a light is adjusted by hand |
 | `take_over_control_mode` | `pause_all` | |
-| `autoreset_control_seconds` | `14400` | Auto-resume adaptive control 4 hours after manual override |
+| `autoreset_control_seconds` | `14400` | Resume adaptive control four hours after a manual override |
 | `intercept` | `true` | |
 | `multi_light_intercept` | `true` | |
 
-### Per-Instance Settings
+### Audit `lights` after a light rename
 
-The only setting that varies by area is `lights` — the `room-light` entities for that area.
+An entity rename does not reach the `lights` list. Adaptive lighting stores it in config-entry
+options, which the entity registry does not rewrite, so the instance keeps pointing at the old
+entity IDs. The switch still reports `on` and logs nothing, so a dead instance looks the same as
+a working one. The only loud symptom is that the options flow validates `lights` on every save
+and rejects any change with `entity_missing`.
 
-> ⚠️ **An entity rename does not reach the `lights` list.** Adaptive lighting
-> stores its lights in **config-entry options**, which the entity registry does
-> not rewrite on a rename — the Config-Entry blind spot in
-> [@naming-conventions.md](naming-conventions.md). The instance keeps pointing at
-> the old entity IDs, and because the switch still reports `on` and logs nothing,
-> **a wholly dead instance is indistinguishable from a working one** in the UI.
->
-> **Tom's Office was found in exactly this state on 2026-09-20, and fixed the
-> same day.** Its `lights` held four pre-rename IDs — `light.elgato_key_light`,
-> `light.nano_dimmer`, `light.tom_s_office_light_3d_printers`,
-> `light.tom_s_office_desk_lamp` — all four long since renamed to the area-first
-> convention, so it had been adapting nothing for as long as the rename was old.
-> The surfacing symptom was unrelated: a routine `min_brightness` change was
-> rejected, because the options flow re-validates `lights` on **every** save and
-> fails `entity_missing`, so no setting could be altered until the list was
-> repaired.
->
-> **The repair has to be done in the UI** (Settings → Devices & Services →
-> Adaptive Lighting → the instance → Configure — re-pick the lights, and make any
-> other pending setting change in the same submit). `ha_set_integration` **cannot**
-> do it: it never passes a `lights` value into the flow, so the stored stale list
-> is what gets validated no matter what is sent — confirmed by submitting a single
-> known-good light and getting the identical `entity_missing`.
->
-> **Audit after any light rename** — a stale ID here is silent, and the rejected
-> save is the *only* loud symptom you will ever get. Read every instance's
-> `lights` with:
->
-> ```
-> ha_get_integration(domain="adaptive_lighting", include_options=True)
-> ```
->
-> and confirm each ID still resolves in the state machine. All six instances were
-> swept clean this way on 2026-09-20 (0 missing of 18 lights).
-
----
-
-## Intentional Exceptions
-
-Some areas may be intentionally excluded from parts of the pattern:
-
-- **No occupancy automation**: If an area's lighting is already controlled by another automation (e.g. a sleep/wake routine), it should not also have a `motion_lights` automation. The `room-light` label and adaptive lighting instance still apply to eligible lights in that area.
-  - **Master Bedroom** is the current exception. It is controlled by three bespoke automations: `turn_bedroom_lights_on_before_sunset` (turns lights on at **20:00 or sunset, whichever is earlier**, plays music, closes the shutters), `toggle_bedroom_lights` (wall-switch toggles), and `turn_off_lights_in_master_bedroom` (turns lights off after 20 min no presence, but only before sunset). Adaptive lighting uses `switch.adaptive_lighting_master_bedroom`.
-
-    > **"20:00 or sunset, whichever is earlier"** is implemented as two triggers on the one automation — `sun`/`sunset` (id `sunset`) and `time`/`20:00:00` (id `eight_pm`) — plus a single `or` condition that lets only the earlier one through: the sunset trigger needs `condition: time before 20:00`, and the 20:00 trigger needs `condition: sun before: sunset`. So in winter (sunset before 20:00) the sunset trigger runs it and the 20:00 trigger is filtered out; in summer the reverse. Exactly one run per evening either way. Two triggers with conditions is preferred over a single template trigger — both conditions are native, and `mode: single` is kept (the routine's `repeat` loop holds the run open until 23:00, so a second trigger later the same evening would be dropped anyway).
-    >
-    > The shutter close is **skipped on hot evenings**: if the bedroom is more than 1 °C above the house thermostat's setpoint (`climate.house_thermostat`'s `temperature` attribute) *and* it is more than 1 °C cooler outside (`weather.home`'s `temperature` attribute) than in the room (`sensor.master_bedroom_netatmo_temperature`), the windows are presumed open to cool the room, and the shutters are left open to be closed by hand with the windows at bedtime. Only the `cover.close_cover` step is guarded — the lights and music still run. The comparison is a template condition rather than `numeric_state` because both thresholds are entity *attributes* (which `numeric_state`'s entity-reference form cannot read) and neither can carry the ±1 °C margin. Its `float()` defaults fail safe: any unavailable sensor closes the shutters as before.
-- **No adaptive lighting**: If a light is on/off only with no brightness or colour control, exclude it from the adaptive lighting instance. It still gets the `room-light` label and is controlled by the occupancy automation.
-- **No smart lights**: Some areas have occupancy sensors but no smart light entities. These areas have no automation, no adaptive lighting instance, and no `room-light` labelled entities — the occupancy sensor exists for other purposes (e.g. presence-based heating or security).
-
----
-
-## Blueprint Management
-
-The blueprint lives at `blueprints/automation/twilkie/motion_lights.yaml` in this repo. This repo is the **source of truth** — all edits must be made here, then uploaded to HA.
-
-### File path on HA
+After any light rename, read every instance's `lights` and confirm that each ID resolves:
 
 ```
-/config/blueprints/automation/twilkie/motion_lights.yaml
+ha_get_integration(domain="adaptive_lighting", include_options=True)
 ```
 
-### Workflow
+Repair a stale list in the UI: **Settings**, **Devices & Services**, **Adaptive Lighting**, the
+instance, **Configure**. Pick the lights again, and make any other pending change in the same
+submit. `ha_set_integration` cannot repair it, because it does not pass a `lights` value into
+the flow, so the stored stale list is what the flow validates.
 
-1. **Check for remote changes** before editing — if HA has changes not in this repo, pull them first:
+## Intentional exceptions
+
+- **No occupancy automation.** If another automation controls an area's lighting, the area has no `motion_lights` automation. The `room-light` label and adaptive lighting instance still apply. Master Bedroom is such an area, as described in [_Master Bedroom_](#master-bedroom).
+- **No adaptive lighting.** A light that is on/off only stays out of the adaptive lighting instance. It still gets the `room-light` label and the occupancy automation.
+- **No smart lights.** An area with occupancy sensors and no smart lights has no automation, no adaptive lighting instance and no `room-light` entities. The occupancy sensor serves other purposes, such as heating or security.
+
+### Master Bedroom
+
+The following bespoke automations control the Master Bedroom:
+
+- `turn_bedroom_lights_on_before_sunset` turns the lights on at 20:00 or sunset, whichever is earlier, plays the [sleep sound](wake-routines.md#bedroom-sleep-sound) and closes the shutters.
+- `toggle_bedroom_lights` handles the wall switch.
+- `turn_off_lights_in_master_bedroom` turns the lights off after 20 minutes with no presence, before sunset only.
+
+"20:00 or sunset, whichever is earlier" is two triggers and one `or` condition that lets only
+the earlier trigger through. The `sun` trigger (ID `sunset`) needs `condition: time` before
+20:00, and the `time` trigger (ID `eight_pm`) needs `condition: sun` before sunset. Exactly one
+run happens each evening. We prefer two triggers with native conditions over one template
+trigger. `mode: single` stays, because the routine's `repeat` loop holds the run open until
+23:00.
+
+The shutter close is skipped on hot evenings. If the bedroom
+(`sensor.master_bedroom_netatmo_temperature`) is more than 1 °C above the house thermostat's
+setpoint (the `temperature` attribute of `climate.house_thermostat`) and it is more than 1 °C
+cooler outside (the `temperature` attribute of `weather.home`), the windows are presumed open,
+and the shutters stay open to be closed by hand at bedtime. Only the `cover.close_cover` step is
+guarded. The comparison is a template condition, because `numeric_state` cannot read both
+thresholds from entity attributes or apply the 1 °C margin. Its `float()` defaults fail safe: an
+unavailable sensor closes the shutters.
+
+## Blueprint management
+
+The blueprint lives at `blueprints/automation/twilkie/motion_lights.yaml` in this repo, which is
+the source of truth, and at `/config/blueprints/automation/twilkie/motion_lights.yaml` on Home
+Assistant.
+
+1. Check for remote changes. If Home Assistant has changes that are not in this repo, download the live version first:
+
    ```bash
    diff -u blueprints/automation/twilkie/motion_lights.yaml \
      <(ssh root@homeassistant.local -C "cat /config/blueprints/automation/twilkie/motion_lights.yaml")
-   ```
-   If there are differences, download the live version before proceeding:
-   ```bash
    ssh root@homeassistant.local -C "cat /config/blueprints/automation/twilkie/motion_lights.yaml" \
      > blueprints/automation/twilkie/motion_lights.yaml
    ```
-2. Edit `blueprints/automation/twilkie/motion_lights.yaml` in this repo
-3. Diff to review your outgoing change:
-   ```bash
-   diff -u <(ssh root@homeassistant.local -C "cat /config/blueprints/automation/twilkie/motion_lights.yaml") \
-     blueprints/automation/twilkie/motion_lights.yaml
-   ```
-4. Push to HA:
+
+2. Edit the file in this repo.
+3. Review the outgoing change by running the same `diff` with its arguments swapped.
+4. Push to Home Assistant:
+
    ```bash
    scp blueprints/automation/twilkie/motion_lights.yaml \
      root@homeassistant.local:/config/blueprints/automation/twilkie/motion_lights.yaml
    ```
-5. Reload blueprints in HA (Settings → Automations → Blueprints → Reload, or restart HA)
-6. Commit to git
 
-### When there is no SSH (cloud sessions)
+5. Reload blueprints: **Settings**, **Automations**, **Blueprints**, **Reload**.
+6. Commit.
 
-Claude Code cloud environments have no `ssh`/`scp` and no route to the home LAN,
-so steps 1, 3 and 4 above cannot run. The MCP server covers all of them, and
-step 5 comes for free:
+### Without SSH
+
+Claude Code cloud environments have no `ssh` or `scp` and no route to the home LAN. The MCP
+server covers the same steps:
 
 | Step | MCP equivalent |
 |---|---|
-| Read the live file | `ha_manage_blueprints(action="get", path="twilkie/motion_lights.yaml")` — returns the on-disk YAML, comments intact; check `yaml_source` is `file` |
-| Push + reload | `ha_manage_blueprints(action="save", path=…, yaml=…, overwrite=True)` — writes `/config/…` **and** reloads every automation using it |
+| Read the live file | `ha_manage_blueprints(action="get", path="twilkie/motion_lights.yaml")`. Check that `yaml_source` is `file`. |
+| Push and reload | `ha_manage_blueprints(action="save", path=…, yaml=…, overwrite=True)`, which writes the file and reloads every automation that uses it |
 
-**Pre-flight a blueprint edit before it touches live automations.** `save` to a
-throwaway path nothing consumes (e.g. `twilkie/motion_lights_preflight.yaml`),
-then render it against each room's real inputs with
-`ha_manage_blueprints(action="substitute", path=…, input={…})` and read the
-result; `delete` it (`confirm=True`) once happy, then `save` over the real path.
-HA validates the blueprint schema on `save` and resolves every `!input` on
-`substitute`, so this catches a malformed edit *before* five live automations
-reload onto it. Rendering one `use_sun: true` room and one `use_sun: false` room
-is the check that matters — see [The two triggers](#the-two-triggers).
+Before a blueprint edit touches the live automations, test it:
 
-> ⚠️ **`save` normalises the file — every comment is lost.** Unlike `scp`, it
-> parses the YAML and re-dumps it, so the on-disk copy comes back with comments
-> stripped, selectors expanded (`filter: [{domain: [binary_sensor]}]`), numbers
-> floated (`min: 0.0`) and quoting changed. The *semantics* are untouched, but
-> **step 1's `diff -u` will never come back clean again** after an MCP save —
-> compare the rendered `config` object, or `substitute` output, rather than the
-> text. To restore the commented canonical copy, `scp` this repo's file over it
-> from a machine that has LAN access; that is the only way back to a clean
-> textual diff.
+1. `save` it to a path that nothing consumes, for example `twilkie/motion_lights_preflight.yaml`. Home Assistant validates the blueprint schema on `save`.
+2. Render it against each room's real inputs with `ha_manage_blueprints(action="substitute", path=…, input={…})`, which resolves every `!input`. Render one `use_sun: true` room and one `use_sun: false` room.
+3. `delete` the test copy with `confirm=True`, then `save` over the real path.
 
----
+`save` normalises the file. It parses the YAML and dumps it again, so the copy on disk loses
+every comment, expands selectors, floats numbers and changes quoting. The semantics are
+unchanged, but the textual `diff` in step 1 no longer comes back clean. Compare the rendered
+`config` object or the `substitute` output instead. To restore the commented copy, `scp` this
+repo's file over it from a machine with LAN access.
 
-## Blueprint Reference
+## Blueprint reference
 
-**`twilkie/motion_lights.yaml`** — "Motion Activated Light (with brightness, sun & labels)"
+`twilkie/motion_lights.yaml` is titled "Motion Activated Light (with brightness, sun & labels)"
+and takes the following inputs:
 
 | Input | Description | Default | Standard |
 |---|---|---|---|
-| `motion_entity` | The Occupancy group binary sensor | required | required |
+| `motion_entity` | The occupancy group binary sensor | required | required |
 | `area_id` | Area whose lights to control | required | required |
 | `label_filter` | Only control lights with this label | none | `room_light` |
-| `no_motion_wait` | Seconds to leave lights on after last motion | 120 | **1800** |
-| `use_sun` | Only control lights at night — **and** trigger at the window opening ([why](#the-two-triggers)) | false | per-room |
-| `sunrise_offset` | Offset from sunrise (positive = after) | 00:00:00 | **01:00:00** (if use_sun) |
-| `sunset_offset` | Offset from sunset (positive = after) | 00:00:00 | **-01:00:00** (if use_sun) |
-| `use_brightness` | Only turn on lights when room is dark | false | false |
-| `brightness_entity` | Illuminance sensor for darkness check | none | none |
+| `no_motion_wait` | Seconds to leave lights on after last motion | 120 | 1800 |
+| `use_sun` | Only control lights at night, and trigger when the night window opens | false | per room |
+| `sunrise_offset` | Offset from sunrise (positive is after) | 00:00:00 | 01:00:00 if `use_sun` |
+| `sunset_offset` | Offset from sunset (positive is after) | 00:00:00 | -01:00:00 if `use_sun` |
+| `use_brightness` | Only turn on lights when the room is dark | false | false |
+| `brightness_entity` | Illuminance sensor for the darkness check | none | none |
 | `brightness_trigger` | Maximum lux level to trigger lights | 20 | 20 |
 
-`use_sun` is decided per room. When enabled, always set `sunrise_offset: 01:00:00` and `sunset_offset: -01:00:00` so lights activate one hour before sunset and deactivate one hour after sunrise.
+`use_sun` is a per-room decision. With the standard offsets, the night window opens one hour
+before sunset and closes one hour after sunrise.
 
-### The two triggers
+### Triggers
 
-The blueprint fires on **two** things, not one:
+The blueprint has the following triggers:
 
-| Trigger id | Fires when | Gated by |
+| Trigger ID | Fires when | Gated by |
 |---|---|---|
-| `occupied` | the Occupancy group goes `off` → `on` | — |
+| `occupied` | The occupancy group goes `off` to `on` | nothing |
 | `darkness_fell` | `sunset + sunset_offset` | `enabled: !input use_sun` |
 
-A single blanket condition — the Occupancy group must be `on` — sits above the
-existing brightness and sun conditions and covers both paths.
+One condition, that the occupancy group is `on`, sits ahead of the brightness and sun conditions
+and covers both triggers.
 
-> **Why `darkness_fell` exists.** `use_sun` used to be a *condition only*, so the
-> sole way in was an `off` → `on` occupancy edge. Sit down before the window
-> opens and the group is already `on`, produces no further edge, and the lights
-> never come on — the automation is working exactly as written and does nothing
-> all evening. Living Room is the worst case because
-> `binary_sensor.living_room_tv_playing` is a member and deliberately pins
-> occupancy `on` for hours ([Occupancy Group Membership](#occupancy-group-membership)),
-> so a TV evening starting before sunset−1 h got no lights at all. Observed
-> 2026-09-20: occupancy `on` since 15:24, window open from 18:03, and
-> `last_triggered` still reading 07:36 with every stored trace
-> `failed_conditions`.
->
-> The fix is a blueprint edit, so all three `use_sun: true` rooms (Living Room,
-> Nursery, Rear Guest Room) got it at once. Basement and Tom's Office render the
-> trigger `enabled: false` and are unchanged. It also makes the paragraph above
-> literally true — lights now really do *activate* an hour before sunset, not
-> merely become *allowed* to.
+- **`darkness_fell` turns the lights on for a room that is already occupied when the window opens.** With `use_sun` as a condition alone, the only way in is an `off` to `on` occupancy edge. Someone who sits down before the window opens produces no further edge, so the lights stay off all evening. Living Room is the worst case, because `binary_sensor.living_room_tv_playing` holds occupancy `on` for hours.
+- **Two native triggers, not one template trigger.** This is the same choice as the Master Bedroom automation.
+- **`mode: restart` is safe.** Home Assistant evaluates conditions before it stops the previous run, so a `darkness_fell` firing into an empty room does nothing and cannot cancel a pending turn-off. The occupancy condition also closes a race on the `occupied` trigger, where the group flickers back to `off` before the run starts.
 
-> **Two triggers with conditions, not one template trigger** — the same choice
-> made for `turn_bedroom_lights_on_before_sunset`
-> ([Intentional Exceptions](#intentional-exceptions)). Both triggers and all
-> conditions stay native.
+### Known gaps
 
-> **`mode: restart` is safe here.** Conditions are evaluated *before* the
-> previous run is stopped, so a `darkness_fell` firing into an empty room is a
-> no-op and cannot cancel a pending turn-off. The occupancy condition also closes
-> a pre-existing race on the `occupied` path: if the group flickered back to
-> `off` before the run started, the old code turned the lights on and then waited
-> forever for an `off` edge that had already passed.
-
-#### Known gaps left open
-
-- **`unavailable` → `on` is still not a trigger.** The Occupancy groups go
-  `unavailable` at every 04:00 restart and on sensor dropouts. Relaxing the
-  trigger to a bare `to: "on"` would catch those — and switch the lights on at
-  04:00 in an occupied dark room. The narrow `from: "off"` is protective; it
-  stays.
-- **`use_brightness` has the identical gap** (a room darkening around someone
-  already in it). No room sets it, so no lux-threshold trigger was added.
-- **The window *closing* at `sunrise + sunrise_offset` still turns nothing off.**
-  Lights go off on the `no_motion_wait` tail as before.
+- **`unavailable` to `on` is not a trigger.** The occupancy groups go `unavailable` at every 04:00 restart and on sensor dropouts. A bare `to: "on"` trigger would catch those and switch the lights on at 04:00 in an occupied dark room, so the narrow `from: "off"` stays.
+- **`use_brightness` has the same gap as `use_sun` had:** a room that darkens around someone already in it. No room sets it, so the blueprint has no lux-threshold trigger.
+- **The window closing turns nothing off.** At `sunrise + sunrise_offset` the lights stay as they are, and go off on the `no_motion_wait` timeout.
