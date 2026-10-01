@@ -1,0 +1,40 @@
+{
+  "uid": "exporter-down",
+  "title": "Exporter down",
+  "folderUID": "observability",
+  "ruleGroup": "exporters",
+  "condition": "threshold",
+  "for": "5m",
+  "noDataState": "Alerting",
+  "execErrState": "Error",
+  "annotations": {
+    "summary": "No healthy scrape of {{ $labels.job }} for 5 minutes. A job that vanished entirely (never discovered) fires too — see observability.md#exporter-down."
+  },
+  "labels": {},
+  "data": [
+    {
+      "refId": "query",
+      "datasourceUid": "grafanacloud-prom",
+      "relativeTimeRange": { "from": 600, "to": 0 },
+      "model": {
+        "refId": "query",
+        "datasource": { "type": "prometheus", "uid": "grafanacloud-prom" },
+        "editorMode": "code",
+        "instant": true,
+        "expr": "min by (job) (up)\nor label_replace(vector(0), \"job\", \"integrations/alloy\", \"\", \"\")\nor label_replace(vector(0), \"job\", \"integrations/docker\", \"\", \"\")\nor label_replace(vector(0), \"job\", \"integrations/homeassistant\", \"\", \"\")\nor label_replace(vector(0), \"job\", \"integrations/node_exporter\", \"\", \"\")\nor label_replace(vector(0), \"job\", \"integrations/zigbee2mqtt\", \"\", \"\")\nor label_replace(vector(0), \"job\", \"integrations/unpoller\", \"\", \"\")"
+      }
+    },
+    {
+      "refId": "threshold",
+      "datasourceUid": "__expr__",
+      "relativeTimeRange": { "from": 600, "to": 0 },
+      "model": {
+        "refId": "threshold",
+        "datasource": { "type": "__expr__", "uid": "__expr__" },
+        "type": "threshold",
+        "expression": "query",
+        "conditions": [ { "evaluator": { "type": "lt", "params": [1] } } ]
+      }
+    }
+  ]
+}

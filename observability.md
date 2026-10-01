@@ -21,7 +21,7 @@ HAOS host
 │   ├── reads /var/log/journal       → systemd journal logs
 │   ├── scrapes localhost:8123       → Home Assistant metrics
 │   ├── scrapes localhost:9142       → zigbee2mqtt metrics
-│   ├── discovers unpoller addon     → UniFi network metrics
+│   ├── discovers unpoller add-on    → UniFi network metrics
 │   ├── receives UDM syslog on :514  → UniFi events (raw/UDP, split by log_type)
 │   └── tails AdGuard querylog.json  → IOT DNS query log (per-domain, permanent)
 └── ships everything → Grafana Cloud (Prometheus + Loki)
@@ -40,7 +40,24 @@ Alloy runs with `network_mode: host` so it can reach Home Assistant on `localhos
 | Docker containers | `integrations/docker` | Per-container resource usage via cAdvisor |
 | Home Assistant | `integrations/homeassistant` | All HA entity states via `/api/prometheus` |
 | zigbee2mqtt | `integrations/zigbee2mqtt` | Zigbee metrics (link quality, message/join counters, adapter queue/retry) from the dev/edge z2m exporter on `localhost:9142`; Alloy reaches it via host networking |
-| Unpoller | `integrations/unpoller` | UniFi device metrics; discovered via Docker SD because addon DNS is unreachable from host network |
+| Unpoller | `integrations/unpoller` | UniFi device metrics; discovered via Docker SD because add-on DNS is unreachable from host network. Matched on the add-on **slug** (`/.+_unpoller`), not the Supervisor prefix — see below. **Does not cover the U5G Max** (unpoller 5.0.2 has no `umbb` device support), so there is no cellular signal history |
+
+> ⚠️ **Never key discovery on the Supervisor's container-name prefix.** Add-on
+> containers are named `<kind>_<repo>_<slug>` — `<repo>` is `core`, `local` or an
+> 8-hex repository hash — and the Supervisor renamed `<kind>` from `addon` to
+> `app`. The unpoller keep rule was `/addon_[a-z0-9]+_unpoller`, so after the
+> rename it matched nothing, and `up{job="integrations/unpoller"}` simply
+> **disappeared** — no error, no `up == 0`, nothing in the Alloy log. It went
+> unnoticed for months (no unpoller series at all in the 120 days checked on
+> 2026-09-30). The same rename leaked `app_<repo>_` into every Docker
+> `service_name`, since the strip regex only knew `addon_`.
+>
+> Both now match the stable parts: the scrape keeps `/.+_unpoller` (the slug,
+> which only changes on reinstall), and the log strip removes any
+> `[a-z]+_(core|local|<8 hex>)_` prefix. `hassio_*` and compose containers have no
+> `<repo>` segment, so they pass through unchanged. The backstop is the
+> [`Exporter down`](#exporter-down) alert, which fires on a job that has
+> *vanished*, not just one reporting `up == 0`.
 
 ### Logs
 
@@ -48,20 +65,20 @@ Every log stream is given an explicit **`service_name`** label in Alloy (the bar
 name; its `job` is `integrations/<name>`). This overrides Loki's default
 `discover_service_name` auto-detection, which otherwise derives `service_name`
 from the first matching label and produced surprises: it used the raw `container`
-name for Docker (incl. the `addon_<hash>_` prefix) and, worse, the per-event CEF
+name for Docker (incl. the `app_<repo>_` prefix) and, worse, the per-event CEF
 `name` label for UniFi (`motion`, `Ring`, …) — yielding many noisy `service_name`
 values on the UniFi stream. The explicit values are:
 
 | `service_name` | `job` | `instance` | Source |
 |---|---|---|---|
 | `alloy` | `integrations/alloy` | hostname | Alloy's own logs (`logging{}` block) |
-| container name (`addon_<hash>_` stripped) | `integrations/docker` | hostname | Docker container logs |
+| container name (`<kind>_<repo>_` prefix stripped) | `integrations/docker` | hostname | Docker container logs |
 | `linux` | `integrations/linux` | hostname | Systemd journal |
 | `unifi` | `integrations/unifi` | `udm` | UniFi syslog |
 | `adguard` | `integrations/adguard` | hostname | AdGuard Home query log (file tail) |
 
 > Note: the AdGuard add-on's **container stdout** is also collected by the Docker
-> pipeline and (addon prefix stripped) lands as `service_name=adguard`,
+> pipeline and (add-on prefix stripped) lands as `service_name=adguard`,
 > `job=integrations/docker` — that's AdGuard's operational log (dnsproxy errors,
 > etc.), **not** the query log. The per-domain query log is the file-tail stream
 > `job=integrations/adguard`. Select on `job`, not `service_name`, to tell them
@@ -70,7 +87,7 @@ values on the UniFi stream. The explicit values are:
 | Source | Labels |
 |---|---|
 | Systemd journal (`/var/log/journal`) | `service_name=linux`, `unit`, `level`, `container` |
-| Docker container logs | `service_name` (container name, addon prefix stripped), `container`, `stream`, `compose_service` |
+| Docker container logs | `service_name` (container name, add-on prefix stripped), `container`, `stream`, `compose_service` |
 | AdGuard Home query log (`querylog.json`, file tail) | `service_name=adguard`, `job=integrations/adguard`, `instance=<hostname>` |
 | UniFi syslog (UDP 514) — all kinds share `service_name=unifi`, `job=integrations/unifi`, `instance=udm`, and are split by a `log_type` label (see below) | `log_type` ∈ {`firewall`, `dns`, `cef`, `system`} |
 | └ `log_type=firewall` — kernel iptables per-flow logs | + `rule` (firewall policy name) |
@@ -420,8 +437,10 @@ gcx dashboards snapshot {uid} --panel {panelId} --var area=toms_office \
 ## Grafana Alerting
 
 Alert and recording rules are **Grafana-managed** (provisioned via
-`/api/v1/provisioning/alert-rules`). They are **not** yet file-managed in this
-repo; this section records their intent. Datasources are referenced by their
+`/api/v1/provisioning/alert-rules`). Most are **not** yet file-managed in this
+repo, and this section records their intent; the exception is
+`observability/alerts/`, which holds the provisioning JSON for rules created
+since (currently [`Exporter down`](#exporter-down)). Datasources are referenced by their
 generic UIDs `grafanacloud-logs` (Loki) and `grafanacloud-prom` (Prometheus) —
 **never** the stack-slug-prefixed datasource names, which embed PII (see
 [CLAUDE.md](CLAUDE.md)).
@@ -439,6 +458,51 @@ The stack already uses the **recording-rule → metric → alert** pattern (e.g.
 `zigbee2mqtt_errors:rate15m`): a Grafana-managed recording rule runs a LogQL
 metric query and writes the result to Prometheus, then an alert thresholds the
 metric.
+
+### Exporter down
+
+`observability/alerts/exporter-down.json` — folder `Observability`, group
+`exporters` (1-minute interval), `for: 5m`, routed by the default notification
+policy (email). One rule, **one alert instance per `job`**:
+
+```promql
+min by (job) (up)
+or label_replace(vector(0), "job", "integrations/alloy", "", "")
+or label_replace(vector(0), "job", "integrations/unpoller", "", "")
+# … one line per expected job
+```
+
+firing when the value is `< 1`.
+
+- **Why not just `up == 0`.** That only catches a target that is discovered but
+  failing. The failure that actually happened was a target that was never
+  discovered, so it had no `up` series at all, and an `up == 0` alert stays
+  silent. Each `label_replace(vector(0), …)` line supplies a `0` for an expected
+  job, and `or` keeps it only when that job has no real `up` series.
+- **`min`, not `sum`**, so one failing target in a multi-target job still fires.
+- **Any** job's `up` is covered by the first line; the expected-job lines only add
+  absence detection. **Adding an exporter = add its line** (and re-POST/PUT the
+  JSON). Expected today: `alloy`, `docker`, `homeassistant`, `node_exporter`,
+  `zigbee2mqtt`, `unpoller`.
+- **If Alloy itself dies**, every `up` series goes stale and all six instances fire
+  together — that is intended.
+- `noDataState: Alerting` — the fallbacks mean the query always returns data, so
+  no-data can only mean the datasource is broken.
+
+Test the absence path without breaking anything by evaluating the expression with
+a made-up job (it must return `0` for it):
+
+```sh
+gcx metrics query -d grafanacloud-prom \
+  'min by (job) (up) or label_replace(vector(0), "job", "integrations/does_not_exist", "", "")'
+```
+
+Update after editing the file:
+
+```sh
+gcx api /api/v1/provisioning/alert-rules/exporter-down -X PUT \
+  -H "X-Disable-Provenance: true" -d @observability/alerts/exporter-down.json
+```
 
 ### IOT DNAT redirect drift tripwire
 

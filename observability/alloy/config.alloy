@@ -191,10 +191,15 @@ discovery.relabel "logs_integrations_docker" {
     regex         = "/(.*)"
     target_label  = "container"
   }
-  // service_name = container name with any HAOS addon_<hash>_ prefix stripped.
+  // service_name = container name with the Supervisor's add-on prefix stripped.
+  // Add-on containers are named <kind>_<repo>_<slug>: <kind> was "addon" and is
+  // now "app" (Supervisor renamed add-ons to apps), and <repo> is "core",
+  // "local" or an 8-hex repository hash. Match any <kind> rather than naming
+  // it, so the next rename does not leak the prefix into service_name again.
+  // hassio_* and compose containers have no <repo> segment and pass unchanged.
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/(?:addon_[a-z0-9]+_)?(.*)"
+    regex         = "/(?:[a-z]+_(?:core|local|[0-9a-f]{8})_)?(.*)"
     target_label  = "service_name"
     replacement   = "$1"
   }
@@ -252,8 +257,14 @@ prometheus.scrape "zigbee2mqtt" {
 
 // ── Gather Unpoller metrics ───────────────────────────────────────────────────
 // Uses Docker SD to resolve the container's IP on the hassio network.
-// The static hostname (addon_<hash>_unpoller) only resolves inside Docker
-// networks; Alloy runs with host networking so DNS lookup fails.
+// The container's hostname only resolves inside Docker networks; Alloy runs
+// with host networking so DNS lookup fails.
+//
+// Match on the add-on *slug* (the trailing "_unpoller"), not the full name.
+// The Supervisor's prefix is not stable: it renamed addon_<repo>_<slug> to
+// app_<repo>_<slug>, which silently dropped this target — no error, the keep
+// rule just matched nothing and up{job="integrations/unpoller"} vanished.
+// The `Exporter down` alert (see observability.md) now catches that case.
 
 discovery.docker "metrics_containers" {
   host             = "unix:///var/run/docker.sock"
@@ -265,7 +276,7 @@ discovery.relabel "unpoller" {
 
   rule {
     source_labels = ["__meta_docker_container_name"]
-    regex         = "/addon_[a-z0-9]+_unpoller"
+    regex         = "/.+_unpoller"
     action        = "keep"
   }
 
