@@ -1,0 +1,61 @@
+{
+  "uid": "u5g-modem-reset",
+  "title": "U5G Max modem reset",
+  "folderUID": "fwvr7h",
+  "ruleGroup": "u5g-max",
+  "condition": "threshold",
+  "for": "0s",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "annotations": {
+    "summary": "The U5G Max's cellular modem reset, or the UDM saw the 5G WAN (gre1) go down. See observability.md#u5g-max-modem-reset."
+  },
+  "labels": {},
+  "data": [
+    {
+      "refId": "query",
+      "datasourceUid": "grafanacloud-logs",
+      "relativeTimeRange": {
+        "from": 600,
+        "to": 0
+      },
+      "model": {
+        "refId": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "grafanacloud-logs"
+        },
+        "editorMode": "code",
+        "queryType": "instant",
+        "expr": "sum(count_over_time({job=\"integrations/unifi\"} |~ \"U5G-Max.*(schedule syserr_worker|Modem disconnect detected)|wf-interface-gre1 .* is down\" [10m])) or vector(0)"
+      }
+    },
+    {
+      "refId": "threshold",
+      "datasourceUid": "__expr__",
+      "relativeTimeRange": {
+        "from": 600,
+        "to": 0
+      },
+      "model": {
+        "refId": "threshold",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "type": "threshold",
+        "expression": "query",
+        "conditions": [
+          {
+            "evaluator": {
+              "type": "gt",
+              "params": [
+                0
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
