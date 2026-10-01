@@ -131,6 +131,34 @@ curl -sk -H "X-API-KEY: $UNIFI_API_KEY" \
   https://192.168.0.1/proxy/network/v2/api/site/default/firewall-policies[/POLICY_ID]
 ```
 
+## UniFi SSH
+
+`scripts/unifi-ssh` logs in to the UniFi gateway or to an adopted UniFi device, with the
+credentials read from 1Password by the `op` CLI. Both sets live on the
+`House Stuff/Unifi Ubiquiti Account` item:
+
+| Target | User | 1Password fields |
+|---|---|---|
+| Gateway (UDM, `192.168.0.1`) | `root` | `Gateway SSH Password` |
+| Adopted devices (access points, switches, U5G Max) | `Device SSH User` | `Device SSH Password` |
+
+```sh
+scripts/unifi-ssh gateway                                   # interactive shell on the UDM
+scripts/unifi-ssh gateway 'conntrack -L -d 192.168.2.10'    # one command
+scripts/unifi-ssh device 192.168.4.34                       # shell on the U5G Max
+scripts/unifi-ssh device 192.168.4.34 "uiwwand-chat -t 5 'AT!GSTATUS?'"
+```
+
+Arguments after the target pass straight to `ssh`. For the `ssh root@192.168.0.1 …` commands in
+[network-security.md](network-security.md), substitute `scripts/unifi-ssh gateway`.
+
+- **The two sets of credentials are not interchangeable.** The gateway takes its own root password. Every adopted device takes the site-wide **Device SSH Settings** credentials (UniFi Network → Devices → **Device Updates and Settings**), so a change there must be copied to 1Password.
+- **The script is its own askpass helper.** `ssh` reads a password only from a terminal or from an `SSH_ASKPASS` program. The script sets `SSH_ASKPASS` to itself with `SSH_ASKPASS_REQUIRE=force`, and when `ssh` calls it back it prints the `op read` result. Only the 1Password *reference* is passed in the environment, so the password never reaches the command line, the environment or a file, and `sshpass` is not needed.
+- **`op` must be signed in.** If 1Password is locked, the desktop app prompts to unlock it. If `op read` fails, `ssh` gets no password and reports `Permission denied`, so run the `op read` on its own to see the real error.
+- **New host keys are accepted automatically** (`StrictHostKeyChecking=accept-new`). With askpass forced, a host-key yes/no prompt would be answered with the password and fail. A *changed* key still fails, as it should: after a reinstall, remove the old entry with `ssh-keygen -R HOST`.
+- **The script requires OpenSSH 10.1 or later.** It passes `WarnWeakCrypto=no-pq-kex`, because UniFi devices offer no post-quantum key exchange and OpenSSH 10 otherwise warns on every connection. Older clients reject the option.
+- **The devices run BusyBox `ash`, not bash**, with a reduced command set (the U5G Max has no `hostname`, for example).
+
 ## Grafana
 
 Home Assistant logs and metrics go to Grafana Cloud. To query them, use the `gcx` skills and

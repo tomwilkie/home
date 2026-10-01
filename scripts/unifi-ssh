@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# SSH to the UniFi gateway or an adopted UniFi device, with credentials read
+# from 1Password.  See access-home-assistant.md.
+#
+#   scripts/unifi-ssh gateway [ssh args...] [command]       root@192.168.0.1
+#   scripts/unifi-ssh device HOST [ssh args...] [command]   site-wide device credentials
+set -euo pipefail
+
+ITEM="op://House Stuff/Unifi Ubiquiti Account"
+
+# ssh re-invokes this script as its askpass helper; answer with the password.
+if [[ -n "${UNIFI_SSH_OP_REF:-}" ]]; then
+  exec op read "$UNIFI_SSH_OP_REF"
+fi
+
+usage() {
+  echo "usage: $0 gateway [ssh args...] | $0 device HOST [ssh args...]" >&2
+  exit 2
+}
+
+case "${1:-}" in
+  gateway)
+    shift
+    target="root@192.168.0.1"
+    export UNIFI_SSH_OP_REF="$ITEM/Gateway SSH Password"
+    ;;
+  device)
+    [[ $# -ge 2 ]] || usage
+    host="$2"
+    shift 2
+    target="$(op read "$ITEM/Device SSH User")@$host"
+    export UNIFI_SSH_OP_REF="$ITEM/Device SSH Password"
+    ;;
+  *) usage ;;
+esac
+
+export SSH_ASKPASS="$(realpath "$0")" SSH_ASKPASS_REQUIRE=force
+
+# accept-new: with askpass forced, a host-key yes/no prompt would be answered
+# with the password and fail.
+# WarnWeakCrypto: UniFi devices offer no post-quantum key exchange, and
+# OpenSSH 10 warns about it on every connection. Older OpenSSH rejects this option.
+exec ssh \
+  -o PubkeyAuthentication=no \
+  -o PreferredAuthentications=password,keyboard-interactive \
+  -o NumberOfPasswordPrompts=1 \
+  -o StrictHostKeyChecking=accept-new \
+  -o WarnWeakCrypto=no-pq-kex \
+  "$target" "$@"
