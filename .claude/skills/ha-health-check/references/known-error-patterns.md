@@ -1,130 +1,112 @@
-# Known Error Patterns
+# Known error patterns
 
-Catalogue of recurring error and warning signatures seen in this HA instance. Use this to interpret `ha_get_logs` results.
+This catalogue lists the recurring error and warning signatures in this Home Assistant instance.
+Use it to interpret `ha_get_logs` results.
 
-## How to use
-
-For each log entry, check the `name` (logger source) and `message` against the patterns below. If a match is found, apply the catalogued severity and action instead of the default count-based threshold.
-
----
+For each log entry, check the `name` (the logger source) and the `message` against the patterns.
+On a match, apply the catalogued severity and action instead of the count-based threshold. Each
+section covers one logger source, and its table lists that source's patterns.
 
 ## Apple TV (`homeassistant.components.apple_tv`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `Connection lost to Apple TV` + `Connection was re-established` cycling | Warning | Integration reconnecting in a loop | Check ATV power/WiFi settings; may be normal during ATV sleep |
-| `RuntimeError: loop is not the running loop` in `binary_sensor.py` | Warning | Python 3.14 + apple_tv incompatibility; fires on each reconnect | Upstream HA bug — monitor HA release notes; no local fix |
-| `Task was destroyed but it is pending! … binary_sensor.apple_tv` | Warning | Side-effect of the loop-not-running bug above | Same as above — suppress once identified |
-| `Failed to update app list` / `FetchLaunchableApplicationsEvent failed` | Warning | Companion protocol timeout; power_state and app list unavailable | Usually resolves on next reconnect |
-| `Could not fetch SystemStatus` / `FetchAttentionState failed` | Warning | Same protocol timeout | Same as above |
+| `Connection lost to Apple TV` and `Connection was re-established`, cycling | Warning | The integration reconnects in a loop | Check the Apple TV's power and WiFi settings. It can be normal during Apple TV sleep. |
+| `RuntimeError: loop is not the running loop` in `binary_sensor.py` | Warning | A Python 3.14 and `apple_tv` incompatibility that fires on each reconnect | An upstream bug with no local fix. Watch the Home Assistant release notes. |
+| `Task was destroyed but it is pending! … binary_sensor.apple_tv` | Warning | A side effect of the loop bug | The same as the loop bug |
+| `Failed to update app list` or `FetchLaunchableApplicationsEvent failed` | Warning | A Companion protocol timeout. The power state and app list are unavailable. | It usually resolves on the next reconnect. |
+| `Could not fetch SystemStatus` or `FetchAttentionState failed` | Warning | The same protocol timeout | It usually resolves on the next reconnect. |
 
-Group all Apple TV errors into a single report item per device.
-
----
+Group all Apple TV errors into one report item per device.
 
 ## Bermuda BLE (`custom_components.bermuda`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `Calling process_advertisement on a metadevice … is a bug` | Warning | Bermuda BLE tracker bug with Everything Presence Lite devices | Check HACS for Bermuda update |
-
----
+| `Calling process_advertisement on a metadevice … is a bug` | Warning | A Bermuda tracker bug with Everything Presence Lite devices | Check HACS for a Bermuda update. |
 
 ## Hive (`apyhiveapi`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `Failed to fetch devices` | Warning | Intermittent Hive cloud connectivity | Monitor; check Hive service status page |
-| `Hive API request timed out` | Warning | Same as above | Same |
+| `Failed to fetch devices` | Warning | Intermittent Hive cloud connectivity | Monitor, and check the Hive service status page. |
+| `Hive API request timed out` | Warning | Intermittent Hive cloud connectivity | Monitor, and check the Hive service status page. |
 
-Hub entity usually still shows `on` even during API failures. Check `binary_sensor.*_hive_hub_status`.
+The hub entity usually still shows `on` during API failures. Check
+`binary_sensor.*_hive_hub_status`. A Hive config entry that failed to set up is a different
+fault, covered in [_Hive_](../../../../maintenance.md#hive).
 
----
-
-## Deebot / Ecovacs (`deebot_client`)
+## Deebot and Ecovacs (`deebot_client`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `Connection lost; Reconnecting in 5 seconds …` (×50+) | Warning | Ecovacs cloud MQTT flapping — usually transient | Monitor; if persistent, re-authenticate in Settings → Devices & Services |
-| `504 Gateway Time-out` from `portal-eu.ecouser.net` | Warning | Ecovacs cloud outage | Monitor cloud status |
-| `Could not execute command … Timeout reached` | Info | Per-command cloud timeout during MQTT outage | Resolves when MQTT reconnects |
-
----
+| `Connection lost; Reconnecting in 5 seconds …`, 50 times or more | Warning | The Ecovacs cloud MQTT connection is flapping, which is usually transient | Monitor. If it persists, re-authenticate in **Settings**, **Devices & Services**. |
+| `504 Gateway Time-out` from `portal-eu.ecouser.net` | Warning | An Ecovacs cloud outage | Monitor the cloud status. |
+| `Could not execute command … Timeout reached` | Info | A per-command cloud timeout during an MQTT outage | It resolves when MQTT reconnects. |
 
 ## AirGradient (`homeassistant.components.airgradient`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `Error fetching AirGradient <IP> data: Timeout occurred` | Warning | Device at that IP is intermittently unreachable | Assign static DHCP reservation for the device's MAC; check WiFi signal |
+| `Error fetching AirGradient <IP> data: Timeout occurred` | Warning | The device at that address is intermittently unreachable | Reserve a DHCP address for the device's MAC, and check its WiFi signal. |
 
-Note: HA caches last-known values — entities may still show valid readings even when the device is intermittently offline. Confirm by checking `last_updated` on a key entity like `sensor.*_airgradient_carbon_dioxide`.
-
----
+Home Assistant caches the last known values, so the entities can show valid readings while the
+device is intermittently offline. To confirm, check `last_updated` on an entity such as
+`sensor.*_airgradient_carbon_dioxide`.
 
 ## Z-Wave JS (`homeassistant.components.zwave_js.services`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `This service is deprecated in favor of the ping button entity` | Warning | Something is calling `zwave_js.ping`; will break in a future HA version | Find the caller with `ha_deep_search(query="zwave_js.ping")`; replace with `button.press` targeting `button.*_ping` entities |
-
----
+| `This service is deprecated in favor of the ping button entity` | Warning | Something calls `zwave_js.ping`, which a later Home Assistant version removes | Find the caller with `ha_search(query="zwave_js.ping")`, and replace the call with `button.press` on the `button.*_ping` entities. |
 
 ## ChimeTTS (`custom_components.chime_tts`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `Unable to generate local audio filepath` | Warning | ChimeTTS can't find/write an audio file | Check ChimeTTS integration config; ensure audio path is writable |
-| `expected str for dictionary value @ data['say']['fields']['chime_path']` | Info | services.yaml parse issue in ChimeTTS version | HACS update likely resolves it |
-
----
+| `Unable to generate local audio filepath` | Warning | ChimeTTS cannot find or write an audio file | Check the ChimeTTS integration config, and check that the audio path is writable. |
+| `expected str for dictionary value @ data['say']['fields']['chime_path']` | Info | A `services.yaml` parse issue in the installed ChimeTTS version | A HACS update is the likely fix. |
 
 ## Automations (`homeassistant.components.automation.*`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `extra keys not allowed @ data['kelvin']` | Critical | `light.turn_on` `kelvin` param renamed `color_temp_kelvin` in HA 2023.x | Find automation action passing `kelvin` and rename to `color_temp_kelvin` |
-| `extra keys not allowed @ data[...]` (any key) | Critical | Service schema changed; automation passing a removed/renamed parameter | Get automation traces to identify the bad action; fix the parameter |
-
----
+| `extra keys not allowed @ data['kelvin']` | Critical | The `kelvin` parameter of `light.turn_on` was renamed `color_temp_kelvin` | Find the automation action that passes `kelvin` and rename the parameter. |
+| `extra keys not allowed @ data[...]`, any key | Critical | A service schema changed, and an automation passes a removed or renamed parameter | Read the automation's traces to find the action, and fix the parameter. |
 
 ## Netatmo (`homeassistant`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `ValueError: Handler is already defined!` from `netatmo.__init__` | Info | Webhook registered twice on HA restart | Harmless; no action needed |
+| `ValueError: Handler is already defined!` from `netatmo.__init__` | Info | The webhook registers twice on restart | Harmless. No action. |
 
----
+Netatmo sensors that stay `unavailable` after a restart are a different fault, covered in
+[_Netatmo_](../../../../maintenance.md#netatmo).
 
-## Roomba / iRobot (`homeassistant.components.sensor`)
-
-| Pattern | Severity | Interpretation | Action |
-|---|---|---|---|
-| `Platform roomba does not generate unique IDs. ID dock_tank_level_… already exists` | Info | Duplicate sensor ID silently dropped | Cosmetic; those sensors just won't exist |
-
----
-
-## Frontend / WebRTC (`frontend.js.modern.*`)
+## Roomba (`homeassistant.components.sensor`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `InvalidStateError: Failed to read the 'buffered' property from 'SourceBuffer'` | Info | WebRTC camera playback glitch on Android Chrome | Cosmetic; raise frontend log level to reduce noise: Settings → System → Logs → set `frontend` to WARNING |
-| `RangeError: offset is out of bounds` in `video-rtc.js` | Info | Same WebRTC bug | Same |
+| `Platform roomba does not generate unique IDs. ID dock_tank_level_… already exists` | Info | Home Assistant drops a duplicate sensor ID | Cosmetic. The duplicate sensors are not created. |
 
-These errors typically accumulate to 100k+ counts. Do not escalate.
-
----
-
-## Nabu Casa / Remote Access (`hass_nabucasa.remote`)
+## Frontend and WebRTC (`frontend.js.modern.*`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `Can't connect to SniTun server … Try again` | Warning | Brief remote access interruption | Usually self-resolves; check nabu.casa status if persistent |
-| `Timeout error while pinging peer` | Info | Single timeout during remote connection | Harmless if infrequent |
+| `InvalidStateError: Failed to read the 'buffered' property from 'SourceBuffer'` | Info | A WebRTC camera playback glitch on Android Chrome | Cosmetic. To cut the noise, set the `frontend` log level to WARNING in **Settings**, **System**, **Logs**. |
+| `RangeError: offset is out of bounds` in `video-rtc.js` | Info | The same WebRTC glitch | The same as the `SourceBuffer` error |
 
----
+These errors accumulate to counts above 100,000. Don't escalate them.
+
+## Nabu Casa remote access (`hass_nabucasa.remote`)
+
+| Pattern | Severity | Interpretation | Action |
+|---|---|---|---|
+| `Can't connect to SniTun server … Try again` | Warning | A brief remote access interruption | It usually resolves without action. If it persists, check the Nabu Casa status page. |
+| `Timeout error while pinging peer` | Info | One timeout during a remote connection | Harmless if infrequent |
 
 ## LinkPlay media players (`homeassistant.components.media_player`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
-| `Updating linkplay media_player took longer than the scheduled update interval 0:00:05` | Info | Slow response from a LinkPlay speaker (Arylic) | Harmless if infrequent; check speaker WiFi if persistent |
+| `Updating linkplay media_player took longer than the scheduled update interval 0:00:05` | Info | A slow response from an Arylic speaker | Harmless if infrequent. If it persists, check the speaker's WiFi. |
