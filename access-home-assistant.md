@@ -1,171 +1,155 @@
-# Accessing Home Assistant
+# Access Home Assistant
 
-You can talk to Home Assistant in the following ways
+This document covers each way to reach Home Assistant, the UniFi gateway and Grafana Cloud, and
+the operating quirks of each tool.
 
 ## Home Assistant MCP server
 
-Use the `mcp__claude_ai_ha-mcp__*` tools to read and write live HA configuration.
-
-The server is **[`ha-mcp`](https://github.com/homeassistant-ai/ha-mcp)** (the "unofficial" Home Assistant MCP server) — its tool set is the `ha_*` family (`ha_get_state`, `ha_set_entity`, `ha_get_integration`, `ha_search`, `ha_config_get_dashboard`, etc.).
+To read and write live Home Assistant configuration, use the `mcp__claude_ai_ha-mcp__*` tools.
+The server is [`ha-mcp`](https://github.com/homeassistant-ai/ha-mcp), the unofficial Home
+Assistant MCP server, and its tools are the `ha_*` family (`ha_get_state`, `ha_set_entity`,
+`ha_get_integration`, `ha_search`, `ha_config_get_dashboard`).
 
 ### Setup
 
-ha-mcp runs **inside Home Assistant** as its in-process server (the `ha_mcp_tools` custom component, from HACS), and reaches Claude Code as a **claude.ai connector** rather than as a local MCP server. One connector serves both terminal sessions and Claude Code cloud environments, with nothing to configure per machine.
+ha-mcp runs inside Home Assistant as the `ha_mcp_tools` custom component from HACS, and reaches
+Claude Code as a claude.ai connector rather than as a local MCP server. One connector serves
+terminal sessions and Claude Code cloud environments, with nothing to configure per machine.
 
-- **Endpoint:** an HA webhook, `https://<your-ha-external-host>/api/webhook/<your-webhook-id>` — the connect URL on the integration entry's Configure screen, reached through HA's own remote access. Don't put a port in it, not even `:443`: ha-mcp warns that any port breaks remote MCP clients.
-- **Auth:** the entry's **Authentication mode** is `ha_auth`. HA itself is the OAuth server, and clients sign in with an HA **administrator** account (non-admin logins are refused). A request without a token gets `401` plus an OAuth challenge, so the URL on its own is not a credential. Don't switch back to `none`, where the URL *is* the credential — the endpoint is internet-facing.
-- **Connector:** added at [claude.ai/customize/connectors](https://claude.ai/customize/connectors) as a custom connector named `ha-mcp`. That name sets the tool prefix, `mcp__claude_ai_ha-mcp__*`. It's authorized once in the browser; claude.ai holds the token, and in cloud sessions the session proxy authenticates for you. To re-authorize, reconnect it on claude.ai, not with `/mcp`.
-- Terminal sessions fetch connectors **at startup**, so restart Claude Code after adding or re-authorizing the connector. Connectors only load when Claude Code is logged in with a claude.ai subscription — not when `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` or `apiKeyHelper` is in use.
-- **Don't** add HA to a project `.mcp.json` (it's gitignored). It would duplicate every tool under a second prefix, the connect URL (external hostname + webhook ID) must not be committed (see the [PII policy](CLAUDE.md)), and OAuth tokens from `/mcp` sit in the local macOS Keychain, so they would never reach a cloud environment anyway.
+- **Endpoint:** a Home Assistant webhook, `https://<your-ha-external-host>/api/webhook/<your-webhook-id>`. It is the connect URL on the integration entry's **Configure** screen. Don't put a port in it, not even `:443`, because any port breaks remote MCP clients.
+- **Auth:** the entry's **Authentication mode** is `ha_auth`. Home Assistant is the OAuth server, and clients sign in with an administrator account. A request without a token gets `401` and an OAuth challenge, so the URL alone is not a credential. Don't switch back to `none`, where the URL is the credential, because the endpoint is internet-facing.
+- **Connector:** a custom connector named `ha-mcp`, added at [claude.ai/customize/connectors](https://claude.ai/customize/connectors). The name sets the tool prefix. To re-authorise, reconnect it on claude.ai, not with `/mcp`.
+- **Startup:** terminal sessions fetch connectors at startup, so restart Claude Code after you add or re-authorise the connector. Connectors only load when Claude Code is logged in with a claude.ai subscription, not when `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` or `apiKeyHelper` is in use.
+- **No `.mcp.json`:** don't add Home Assistant to a project `.mcp.json`. It duplicates every tool under a second prefix, the connect URL must not be committed (see the [PII and secrets policy](CLAUDE.md#pii-and-secrets-policy)), and OAuth tokens from `/mcp` stay in the local macOS Keychain, so they don't reach a cloud environment.
 
 ### Operating notes
 
-- **Write tools are gated on a rotating acknowledgment key.** `ha_config_set_automation`
-  / `_script` / `_scene` / `_helper` / `_dashboard` refuse with `BPS_ACKNOWLEDGMENT_REQUIRED`
-  until you read the server's best-practices skill and pass the key it prints as
-  `BestPracticeKey`. **The key rotates hourly**, so one obtained earlier in a long
-  session will be rejected — re-read the skill rather than resending it.
-- **Pass `MandatoryBPS=false` on subsequent writes.** Otherwise each write echoes the
-  full reference files back inline, which is large enough to blow a tool result past
-  its size limit and bury the actual `success`/`entity_id` result.
-- **`python_transform` needs a `config_hash`** from a preceding `ha_config_get_automation`.
-  It is the cheapest way to make a small edit without re-sending a large config.
-- **To sidestep both**, the plain REST config API works and is not gated:
-  `./scripts/ha-api /api/config/automation/config/<id> -X POST -d @file.json`, followed by
-  `POST /api/services/automation/reload`. Same validation, no skill round-trip.
-- **`ha_get_logs` only searches a bounded window** of a buffer holding ~4 hours. For
-  anything older, query Loki — see
-  [observability.md](observability.md#home-assistants-own-logs-service_namehomeassistant).
+- **Write tools need a rotating acknowledgement key.** `ha_config_set_automation`, `_script`, `_scene`, `_helper` and `_dashboard` refuse with `BPS_ACKNOWLEDGMENT_REQUIRED` until you read the server's best-practices skill and pass the key it prints as `BestPracticeKey`. The key rotates hourly, so re-read the skill when a key from earlier in the session is rejected.
+- **Pass `MandatoryBPS=false` on later writes.** Without it, each write echoes the full reference files back, which can push the tool result past its size limit and hide the `success` and `entity_id` fields.
+- **`python_transform` needs a `config_hash`** from a preceding `ha_config_get_automation`. It is the cheapest way to make a small edit without re-sending a large config.
+- **The REST config API is not gated.** `./scripts/ha-api /api/config/automation/config/<id> -X POST -d @file.json`, followed by `POST /api/services/automation/reload`, runs the same validation with no skill round trip.
+- **`ha_get_logs` searches a bounded window** of a buffer that holds about four hours. For anything older, query Loki as described in [_Home Assistant's own logs_](observability.md#home-assistants-own-logs).
 
 ## Home Assistant CLI
 
-There is the `hass-cli` command which can be used to e.g. download & upload dashboards.
+`hass-cli` downloads and uploads dashboards, and sends raw WebSocket commands
+(`hass-cli raw ws`) for registry updates that the MCP server cannot make. The dashboard commands
+are in [_Workflow_](dashboards.md#workflow).
 
-### Setup
-
-The `dashboard` subcommands used below are **not yet in upstream** [`home-assistant/home-assistant-cli`](https://github.com/home-assistant/home-assistant-cli) — they live on the `add-dashboard-commands` branch of the fork [`tomwilkie/home-assistant-cli`](https://github.com/tomwilkie/home-assistant-cli/tree/add-dashboard-commands) (PR pending). Install from the fork until it's merged:
+The `dashboard` subcommands are not in upstream
+[`home-assistant/home-assistant-cli`](https://github.com/home-assistant/home-assistant-cli).
+They live on the `add-dashboard-commands` branch of the fork
+[`tomwilkie/home-assistant-cli`](https://github.com/tomwilkie/home-assistant-cli/tree/add-dashboard-commands).
+Install from the fork:
 
 ```sh
 pipx install git+https://github.com/tomwilkie/home-assistant-cli.git@add-dashboard-commands
 ```
 
-`hass-cli` reads the HA connection from the environment — a long-lived access token, separate from the MCP connector's OAuth sign-in (see [PII policy](CLAUDE.md), keep it out of files):
+`hass-cli` reads the connection from the environment. The token is a long-lived access token,
+separate from the MCP connector's OAuth sign-in, and stays out of files:
 
 ```sh
 export HASS_SERVER=http://homeassistant.local:8123
 export HASS_TOKEN=<your-long-lived-token>
 ```
 
-To list dashboards in home assistant:
-```sh
-% hass-cli dashboard list
-```
-
-To download dashboards from home assistant
-```sh
-% hass-cli -o yaml dashboard get kitchen-home > dashboards/kitchen-home.yaml
-```
-
-To upload dashboards to home assistant
-```sh
-% hass-cli dashboard set dashboards/kitchen-home.yaml kitchen-home
-```
-
-To see difference between version controlled dashboard and uploaded dashboard
-```sh
-% diff -u dashboards/kitchen-home.yaml <(hass-cli -o yaml dashboard get kitchen-home)
-```
-
 ## SSH
 
-For information not exposed via MCP/API, SSH access is available as `root@homeassistant.local`. 
-SSH is a last resort — prefer MCP tools. In particular:
-- Use `ha_get_integration(domain="<domain>")` to inspect config entries and their current option values (the `options_schema` on each entry shows `suggested_value` for every field, which is the live value).
-- Use `ha_get_integration(entry_id="...", include_schema=True)` to get the full options flow schema for a specific entry before updating it.
+SSH is a last resort for information that the MCP server and API don't expose. Before you reach
+for it, try `ha_get_integration(domain="<domain>")`, which returns config entries and their
+option values: the `suggested_value` of each field in `options_schema` is the live value. For
+the full options flow schema of one entry, use
+`ha_get_integration(entry_id="...", include_schema=True)`.
 
-SSH access: `ssh root@homeassistant.local -C "<command>"` — always use `root@homeassistant.local`; host key verification fails with other usernames or hostnames.
+To run a command, use `ssh root@homeassistant.local -C "<command>"`. Host key verification fails
+with any other username or hostname.
 
-Registry files live at `/config/.storage/` on the HA host:
-- `core.entity_registry` — entities; structure: `.data.entities[]` (active), `.data.deleted_entities[]` (orphaned/removed)
-- `core.device_registry` — devices; structure: `.data.devices[]` (active), `.data.deleted_devices[]` (removed)
-- `core.config_entries` — integration config entries; structure: `.data.entries[]` (active only, no deleted section)
+The registry files live in `/config/.storage/` on the Home Assistant host:
 
-Orphaned entity fields: `orphaned_timestamp` (unix float), `platform`, `entity_id`
-Deleted device fields: `identifiers` (array of `[integration, id]` pairs), `orphaned_timestamp`
+| File | Contents |
+|---|---|
+| `core.entity_registry` | `.data.entities[]` (active) and `.data.deleted_entities[]` (orphaned, with `orphaned_timestamp`, `platform` and `entity_id`) |
+| `core.device_registry` | `.data.devices[]` (active) and `.data.deleted_devices[]` (removed, with `identifiers` as `[integration, id]` pairs and `orphaned_timestamp`) |
+| `core.config_entries` | `.data.entries[]` (active only) |
 
-**Never modify these files** — inspect only. HA must be stopped before any edits to prevent it overwriting changes.
+Inspect these files only. Don't edit them while Home Assistant is running, because it overwrites
+the changes.
 
-Useful jq patterns:
+The following `jq` query counts deleted entities by platform, and the same shape works for the
+other registries:
+
 ```bash
-# Deleted entities by platform count
 jq '[.data.deleted_entities[] | .platform] | group_by(.) | map({platform: .[0], count: length}) | sort_by(-.count)' /config/.storage/core.entity_registry
-
-# Deleted devices by integration count
-jq '[.data.deleted_devices[] | .identifiers[0][0]] | group_by(.) | map({integration: .[0], count: length}) | sort_by(-.count)' /config/.storage/core.device_registry
-
-# Find orphaned entities for a specific platform
-jq '[.data.deleted_entities[] | select(.platform == "some_integration") | .entity_id]' /config/.storage/core.entity_registry
 ```
 
 ## UniFi MCP servers
 
-The home network and cameras run on a UniFi **Dream Machine Pro Max** (UniFi Network + Protect). Two MCP plugin servers from the [`sirkirby/unifi-mcp`](https://github.com/sirkirby/unifi-mcp) marketplace expose it to Claude:
+The home network and cameras run on a UniFi Dream Machine Pro Max (UDM), which hosts UniFi
+Network and UniFi Protect. Two MCP plugin servers from the
+[`sirkirby/unifi-mcp`](https://github.com/sirkirby/unifi-mcp) marketplace expose it:
 
-- **`unifi-protect`** — cameras, NVR, events, and Alarm Manager rules
-- **`unifi-network`** — clients, devices, firewall, and DHCP reservations
+- **`unifi-protect`** covers cameras, the network video recorder (NVR), events and Alarm Manager rules.
+- **`unifi-network`** covers clients, devices, firewall and DHCP reservations.
 
 ### Setup
 
-- Installed via the Claude Code plugin marketplace (`/plugin marketplace add sirkirby/unifi-mcp`, then `/plugin install unifi-protect@unifi-plugins` and `unifi-network@unifi-plugins`).
-- Auth uses a **dedicated local admin account on the UDM** (UniFi OS → Admins & Users, "Restrict to Local Access Only", no MFA) — **not** a Ubiquiti SSO cloud account.
-- Credentials are read from the **shell environment** (`UNIFI_PROTECT_*`, `UNIFI_NETWORK_*`, and `UNIFI_API_KEY` — the last is required for the firewall integration API; host `192.168.0.1`) — exported from `~/.zshrc` or a sourced secrets file, **never** in this repo or in `settings.json`. Changing them requires a **full Claude Code restart** (MCP servers read env only at process startup; `/reload-plugins` is not enough).
-- Both servers use lazy tool loading: call `protect_tool_index` / `unifi_tool_index` to discover tools, then `protect_execute` / `unifi_execute` to run them. Write tools take `confirm: false` (returns a preview) then `confirm: true` (applies).
-- ⚠️ The UniFi **site name is the home street address**, so `unifi_get_site_settings` and some device payloads return it. **Never** echo it into repo files or commit messages (see the PII policy in [CLAUDE.md](CLAUDE.md)).
+- **Install** through the Claude Code plugin marketplace: `/plugin marketplace add sirkirby/unifi-mcp`, then `/plugin install unifi-protect@unifi-plugins` and `unifi-network@unifi-plugins`.
+- **Auth** uses a dedicated local admin account on the UDM (**Admins & Users**, **Restrict to Local Access Only**, no MFA), not a Ubiquiti cloud account.
+- **Credentials** come from the shell environment: `UNIFI_PROTECT_*`, `UNIFI_NETWORK_*` and `UNIFI_API_KEY`, with host `192.168.0.1`. Export them from `~/.zshrc` or a sourced secrets file, and keep them out of this repo and `settings.json`. The MCP servers read the environment at process startup, so a change needs a full Claude Code restart. `/reload-plugins` is not enough.
+- **Tool loading is lazy.** Call `protect_tool_index` or `unifi_tool_index` to discover tools, then `protect_execute` or `unifi_execute` to run them. Write tools take `confirm: false`, which returns a preview, then `confirm: true`, which applies the change.
+- **The UniFi site name is the home street address**, so `unifi_get_site_settings` and some device payloads return it. Don't echo it into repo files or commit messages.
 
 ### Useful operations
 
-- DHCP reservation: `unifi_set_client_ip_settings(mac_address, use_fixedip=true, fixed_ip=...)`. Clients are matched by **lowercase** MAC; if a MAC lookup returns "not found", find the record with `unifi_lookup_by_ip`.
-- Read/write Protect alarm rules: `protect_alarm_list_rules` / `protect_alarm_get_rule` / `protect_alarm_update_rule`. Legacy rules have `_new`-suffixed ids (e.g. `66d12910038b6803e40003eb_new`) — these are accepted by the write tools as of v0.5.2+.
-- Find a wired device's switch + port (e.g. to apply port isolation): `unifi_get_client_details(mac_address, summary=false)` → `sw_mac`, `sw_port`, `last_uplink_name`. Read/confirm port isolation via `unifi_get_switch_ports(device_mac)` → `port_overrides[].isolation`.
+- **Reserve a DHCP address** with `unifi_set_client_ip_settings(mac_address, use_fixedip=true, fixed_ip=...)`. The server matches clients by lowercase MAC. If a MAC lookup returns "not found", find the record with `unifi_lookup_by_ip`.
+- **Read and write Protect alarm rules** with `protect_alarm_list_rules`, `protect_alarm_get_rule` and `protect_alarm_update_rule`. This console has only legacy Protect automations, whose IDs carry a `_new` suffix (for example `66d12910038b6803e40003eb_new`), because the unified Alarm Manager API (`/api/v2/alarms`) is not active on it. The write tools accept these IDs from v0.5.2.
+- **Find a wired device's switch and port** with `unifi_get_client_details(mac_address, summary=false)`, which returns `sw_mac`, `sw_port` and `last_uplink_name`. Read port isolation from `unifi_get_switch_ports(device_mac)` in `port_overrides[].isolation`.
+- **Update a WLAN or network** with `unifi_update_wlan` or `unifi_update_network`. Both take the changed fields inside an `update_data` object, for example `update_data: {l2_isolation: true}`.
 
-### Firewall (Zone-Based Firewall)
+### Firewall tools
 
-The full VLAN/firewall design and audit procedure live in [@network-security.md](network-security.md). MCP operating notes:
+The VLAN and firewall design is in [network-security.md](network-security.md). The following
+notes cover the tools:
 
-- The firewall tools (`unifi_list_firewall_zones` / `_policies` / `_groups`, `unifi_create_firewall_policy`, the ordering tools) need **`UNIFI_API_KEY`** set **and** **Zone-Based Firewall enabled** on the UDM. If either is missing the reads return `success: true` with an **empty** list — *not* an auth error. To disambiguate, call a key-only endpoint like `unifi_get_firewall_policy_ordering`: a `401` means the key is missing/wrong; a `400` (argument validation) means the key works and the gap is elsewhere (e.g. ZBF not enabled).
-- The MCP can create/update firewall **policies** and **groups**, but **not zones** — create zones and assign networks in the UniFi UI, then reference their ids. After ZBF migration, all corporate LANs default into the `Internal` zone; dedicated per-VLAN zones give a default-deny posture.
-- `unifi_create_firewall_policy` takes a `policy_data` object; `source`/`destination` each are `{zone_id, matching_target}` where `matching_target` is `ANY`, or `IP` + `matching_target_type: SPECIFIC` + `ips: [...]`, or `NETWORK` + `OBJECT` + `network_ids: [...]`. Set `logging: true` on BLOCK rules. New custom rules auto-index above predefined ones; within a zone-pair order ALLOW above BLOCK.
-- `unifi_update_wlan` / `unifi_update_network` take changed fields inside an **`update_data`** object (e.g. WLAN client isolation = `update_data: {l2_isolation: true}`).
-- **Traffic Flows** (`unifi_get_traffic_flows`) is read-only, **batches/lags** (not real-time), and only logs traffic that **matches a policy** — so containment audits depend on the BLOCK policies having `logging` enabled.
+- **The firewall tools need `UNIFI_API_KEY` and Zone-Based Firewall enabled on the UDM.** If either is missing, the reads return `success: true` with an empty list, not an auth error. To tell the two apart, call `unifi_get_firewall_policy_ordering`: a `401` means the key is missing or wrong, and a `400` means the key works and the gap is elsewhere.
+- **The MCP server creates, updates and deletes policies and groups, but not zones.** Create zones and assign networks in the UniFi UI, then reference their IDs.
+- **`unifi_create_firewall_policy` takes a `policy_data` object.** The `source` and `destination` fields are each `{zone_id, matching_target}`, where `matching_target` is one of the following:
+  - `ANY`
+  - `IP` with `matching_target_type: SPECIFIC` and `ips: [...]`
+  - `NETWORK` with `matching_target_type: OBJECT` and `network_ids: [...]`
+  - `CLIENT` with `matching_target_type: SPECIFIC` and `client_macs: [...]`
+- **Set `logging: true` on BLOCK rules**, so the audit and the Loki pipeline see them.
+- **A created custom rule lands last in its zone pair.** `unifi_reorder_firewall_policies` returned HTTP 500 and `index` edits through `unifi_update_firewall_policy` had no effect when the IOT rules were built, so the working way to move a rule is in [_Rule ordering_](network-security.md#rule-ordering).
+- **`unifi_get_traffic_flows` is read-only and lags real time.** It returns allowed and blocked flows, one page per call, and each flow names the policies it matched.
 
-### Limitations
+If an MCP write tool fails, the UniFi API key also authenticates the raw v2 API. `GET` and
+`POST` the collection, and `PUT` or `DELETE` a single policy by `_id`:
 
-- The unified UniFi-OS Alarm Manager API (`/api/v2/alarms`) is **not active** on this console; only the legacy Protect automations are present (ids carry a `_new` suffix). The write tools (`protect_alarm_update_rule`, `protect_alarm_create_rule`) handle these correctly as of v0.5.2+.
+```sh
+curl -sk -H "X-API-KEY: $UNIFI_API_KEY" \
+  https://192.168.0.1/proxy/network/v2/api/site/default/firewall-policies[/POLICY_ID]
+```
 
 ## Grafana
 
-Home Assistant logs and metrics are sent to Grafana Cloud.
-For access metrics & logs related to this home assistant instance, use the `gcx` skill & tools.
+Home Assistant logs and metrics go to Grafana Cloud. To query them, use the `gcx` skills and
+CLI. `gcx` is the [Grafana Cloud CLI](https://github.com/grafana/gcx), and the Claude skills are
+a thin layer over it, so you install the two separately:
 
-`gcx` is the [Grafana Cloud CLI](https://github.com/grafana/gcx); the Claude skills/workflows are a thin layer over it, so the **CLI and the plugin are installed separately**.
-
-### Setup
-
-1. **CLI** — via Homebrew (installs to `/opt/homebrew/bin/gcx`):
+1. Install the CLI with Homebrew, then check it with `gcx version`:
 
    ```sh
    brew install grafana/grafana/gcx
    ```
 
-   Verify with `gcx version`. (An older build installed from source under `~/go/bin` would shadow the brew binary on `PATH` — remove it so `gcx` resolves to the brew copy.)
+   An older build under `~/go/bin` shadows the Homebrew binary on `PATH`, so remove it.
 
-2. **Claude skills/workflows** — via the Claude Code plugin marketplace (`grafana/gcx`):
+2. Install the skills through the Claude Code plugin marketplace, then run `gcx:setup-gcx` to authenticate:
 
    ```sh
    claude plugin marketplace add grafana/gcx
    claude plugin install gcx@gcx-marketplace
    ```
 
-   This ships the `gcx:*` namespaced skills (e.g. `gcx:debug-with-grafana`, `gcx:setup-gcx`, `gcx:slo-manage`, `gcx:oncall-triage`). Run `gcx:setup-gcx` for first-run authentication.
-
-- `gcx` stores its own config/credentials under `~/.config/gcx` (written by its auth flow) — **never** commit those into this repo.
+`gcx` stores its config and credentials under `~/.config/gcx`. Don't commit them.
