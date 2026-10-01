@@ -1,164 +1,103 @@
-# Device Maintenance
+# Device maintenance
 
-Scheduled restarts of devices that degrade with uptime, driven by **labels on
-devices** rather than a hardcoded entity list.
+This document covers two schemes. The scheduled restart sweep restarts devices that degrade with
+uptime, driven by labels on devices rather than a hardcoded entity list. The
+[integration watchdogs](#integration-watchdogs) are its reactive counterpart: they reload a
+config entry that has wedged.
 
-Two schemes live here. Everything up to [Notes](#notes) is that label-driven
-sweep. [Integration Watchdogs](#integration-watchdogs) at the end is its reactive
-counterpart — bouncing a *config entry* that has wedged rather than a device that
-has degraded.
+## Scheduled restarts
 
-## Why
+ESPHome voice assistants develop choppy, delayed audio after long uptimes. The response is
+computed quickly, but playback stutters, arrives late, or the device stays in `responding` with
+no audio. This is an upstream failure mode caused by
+[ESP32 heap fragmentation](https://hubble.com/community/guides/esp32-memory-fragmentation-why-your-device-crashes-after-running-for-days/):
+free heap remains, but no contiguous block large enough for an audio buffer. The upstream
+reports include [Voice PE stuck in `responding`](https://github.com/esphome/home-assistant-voice-pe/issues/382)
+and [20-second delays before playback](https://github.com/esphome/home-assistant-voice-pe/issues/257).
 
-ESPHome voice assistants develop **choppy, delayed audio** after long uptimes —
-the response is computed quickly but playback stutters, arrives late, or the
-device wedges in `responding` with no audio at all. This is a well-documented
-upstream failure mode, not a local misconfiguration:
+A periodic reboot treats the symptom and hides a diagnosable fault. The cadences are judgement
+calls, not measurements, as [_Known gaps_](#known-gaps) explains.
 
-- [Voice PE stuck in `responding`](https://github.com/esphome/home-assistant-voice-pe/issues/382)
-  (~daily across a 5-device fleet; the reporter's own workaround is a restart automation)
-- [20+ second delays before playback](https://github.com/esphome/home-assistant-voice-pe/issues/257)
-  on one device while an identical sibling is fine — open since Dec 2024, no root cause
-- [Choppy/truncated speech, "DMA queue destroyed"](https://github.com/home-assistant/core/issues/93280),
-  [I2S race conditions](https://github.com/esphome/esphome/issues/14016),
-  ["Speaker buffer full"](https://github.com/esphome/issues/issues/5180)
+### How it works
 
-The mechanism is [ESP32 heap fragmentation](https://hubble.com/community/guides/esp32-memory-fragmentation-why-your-device-crashes-after-running-for-days/):
-plenty of free heap but no large *contiguous* block — exactly what starves an
-audio buffer. Devices in this house routinely reach 75+ days uptime.
+`automation.scheduled_device_restarts` (Maintenance category) fires at 04:30 and presses the
+restart button on every device labelled for that day's cadence. To add a device to the schedule,
+apply one label. The automation needs no edit.
 
-> **This treats a symptom.** A periodic reboot hides a diagnosable fault, and the
-> cadences below are judgement calls rather than measurements — see
-> [Known gaps](#known-gaps).
-
-## How it works
-
-One automation, **`automation.scheduled_device_restarts`** (Maintenance
-category), fires at **04:30** and presses the restart button on every device
-labelled for that day's cadence.
-
-**Adding a device to the schedule is one label. No automation edit is needed.**
-
-### The labels
-
-Applied to **devices**, not entities.
+Apply the labels to devices, not entities:
 
 | Label | `label_id` | Fires |
 |---|---|---|
-| `restart-daily` | `restart_daily` | every day |
+| `restart-daily` | `restart_daily` | Every day |
 | `restart-weekly` | `restart_weekly` | Mondays |
-| `restart-monthly` | `restart_monthly` | first Monday of the month |
+| `restart-monthly` | `restart_monthly` | The first Monday of the month |
 
-**No label = never restarted.** Opt-in, so a newly adopted device is inert until
-deliberately tagged.
+A device with no label is not restarted, so an adopted device is inert until it is labelled.
 
-### Target derivation
+- **Target:** for each labelled device, the automation selects the entity whose `device_class` is `restart`. Every ESPHome reboot button carries that class, and `factory_reset_mmwave_sensor`, `reboot_mmwave_sensor`, `apply_update` and `sync_time` carry no device class, so the automation cannot select them.
+- **Guard:** the automation skips a device if any entity on it is in use: a `media_player` that is `playing`, a `vacuum` that is `cleaning` or a `fan` that is `on`. The guard entity lives on the same device as the restart button, so there is no per-device configuration. A skipped device is not retried until its next scheduled night.
+- **Stagger:** presses are 20 seconds apart, so the fleet does not drop off WiFi at once.
 
-For each labelled device the automation selects **the entity whose
-`device_class` is `restart`**. This is what makes device-level labelling safe:
+Don't label the button entity, and don't use `target: {label_id: …}`. A device label passed to a
+`button.press` target expands to every button on that device, which on an Everything Presence
+Lite includes `factory_reset_mmwave_sensor`. The automation iterates devices in a template and
+selects the button instead.
 
-- Every ESPHome reboot button carries `device_class: restart`.
-- `factory_reset_mmwave_sensor`, `reboot_mmwave_sensor`, `apply_update` and
-  `sync_time` all carry **no** device class, so they can never be selected.
-- Every device currently labelled has **exactly one** `device_class: restart`
-  button.
-
-> ⚠️ **Do not label the button entity, and do not use `target: {label_id: …}`.**
-> A device label passed straight to a `button.press` target expands to *every*
-> button on that device — on an Everything Presence Lite that includes
-> `factory_reset_mmwave_sensor`. The automation iterates devices in a template and
-> *selects* the right button instead, which is why it is safe.
-
-### Guard
-
-A device is **skipped** if any entity on it is in use — a `media_player`
-`playing`, a `vacuum` `cleaning`, or a `fan` `on`. Because the guard entity lives
-on the same device as the restart button, it is found automatically; there is no
-per-device configuration.
-
-A skipped device is **not retried** — a daily device simply goes the next night.
-
-Devices with no such entity (the Everything Presence Lites) can never skip.
-
-### Stagger
-
-Presses are 20 s apart so the whole fleet does not drop off WiFi at once. Worst
-case (a first Monday, all 14 devices) is ~5 minutes.
-
-## Current assignment
+### Assignment
 
 | Cadence | Devices | Rationale |
 |---|---|---|
-| **daily** (6) | 3 × Voice Assistant; Hallway - Doorbell; Living Room + Tom's Office Arylic LP10 | The reported fault. Community reports daily hangs on Voice PE. The doorbell must never be wedged. |
-| **weekly** (1) | Kitchen - Boiler Monitor | 77 d uptime, WiFi −76 dBm — the weakest link in the fleet. |
-| **monthly** (7) | Master Bedroom - Clock; 6 × Everything Presence Lite | No known fault, and the EP Lites drive occupancy → lighting, so churn is worth minimising. |
+| Daily | The Voice Assistants, Hallway - Doorbell, and the Living Room and Tom's Office Arylic LP10s | The reported audio fault. The doorbell must not be wedged. |
+| Weekly | Kitchen - Boiler Monitor | The weakest WiFi link in the fleet (−76 dBm) |
+| Monthly | Master Bedroom - Clock and the Everything Presence Lites | No known fault. The presence sensors drive occupancy and lighting, so churn is worth minimising. |
 
-## Timing — why 04:30
+### Timing
 
-The slot is boxed in on both sides by other Maintenance automations. **Do not
-move it without re-checking these:**
+Other Maintenance automations box the 04:30 slot in on both sides. Check the following before
+you move it:
 
 | Time | Automation | Interaction |
 |---|---|---|
-| 04:00 | `automation.restart_home_assistant_at_4am_every_day` | Bounces every ESPHome connection; the sweep needs it finished first. |
-| **04:30** | **`automation.scheduled_device_restarts`** | ~5 min worst case, so it ends by ~04:35. |
-| 05:30 | `automation.update_esphome_devices` | OTA flashes with 3-min waits per device — must not be interrupted. |
-| 06:00 | `automation.set_assistant_volumes` | Ordering the sweep *before* this means any volume a restart disturbs is re-applied the same morning. (In the 2026-08-02 test the three Voice PEs came back at `volume_level: 1.0` — already the target — so this is a safety margin, not a demonstrated need.) |
+| 04:00 | `automation.restart_home_assistant_at_4am_every_day` | Bounces every ESPHome connection. The sweep needs it finished first. |
+| 04:30 | `automation.scheduled_device_restarts` | Takes about five minutes with every device due |
+| 04:45 | `automation.restart_kitchen_display_browser` | Clears the Fully Kiosk WebView |
+| 05:30 | `automation.update_esphome_devices` | Flashes firmware with three-minute waits per device, and must not be interrupted |
+| 06:00 | `automation.set_assistant_volumes` | Runs after the sweep, so it re-applies any volume that a restart disturbs |
 
-> The 04:00 restart is also what strands the Netatmo integration every night —
-> see [Netatmo](#netatmo--automationnetatmo_watchdog). Moving it changes that
-> exposure too, for better or worse.
+The 04:00 restart is also what strands Netatmo and Hive, as described in
+[_Integration watchdogs_](#integration-watchdogs).
 
-## Related automations
+### Related automations
 
-- **`automation.restart_audio_streamers` was deleted** and absorbed into this
-  scheme. It did the same job for the two Arylic LP10s at 09:00 with a hardcoded
-  entity list and an inline "not playing" guard — exactly what the labels and the
-  generic guard now express.
-- **`automation.restart_kitchen_display_browser` is deliberately NOT part of this
-  scheme.** It presses `button.kitchen_display_restart_browser` at **04:45** to
-  clear the Fully Kiosk WebView, which leaks memory while rendering the kitchen
-  dashboard's WebRTC camera streams (see [dashboards.md](dashboards.md)). It
-  cannot be a `restart-daily` label because the Kitchen Display exposes **two**
-  `device_class: restart` buttons — `restart_browser` and `restart_device` — so
-  the target-derivation step above cannot pick between them, and picking wrong
-  would reboot the whole tablet nightly. 04:45 sits in the same gap the rest of
-  the sweep uses: after `scheduled_device_restarts` (04:30, ~5 min worst case)
-  and well before `update_esphome_devices` (05:30).
-- **`automation.power_cycle_dyson_fan` is deliberately NOT part of this scheme.**
-  It cuts mains power to a smart plug for 10 s rather than pressing a restart
-  button, and its guard reads a *different device* from the one it acts on:
-  `fan.master_bedroom_dyson_fan` is one device, `switch.master_bedroom_switch_dyson_fan`
-  (a Z-Wave metering plug) is another. No label can express "this plug powers that
-  fan", so it stays standalone at 00:00.
+- **`automation.restart_kitchen_display_browser` is separate from this scheme.** It presses `button.kitchen_display_restart_browser` to clear the Fully Kiosk WebView, which leaks memory while it renders the kitchen dashboard's camera streams (see [dashboards.md](dashboards.md#keep-background-false-on-the-camera-cards)). The Kitchen Display exposes two `device_class: restart` buttons, `restart_browser` and `restart_device`, so the target selection cannot choose between them, and the wrong choice would reboot the tablet nightly.
+- **`automation.power_cycle_dyson_fan` is separate from this scheme.** At 00:00 it cuts mains power for 10 seconds at `switch.master_bedroom_switch_dyson_fan`, a Z-Wave metering plug, and its guard reads `fan.master_bedroom_dyson_fan`, which is a different device. No label can express "this plug powers that fan".
+- **Nursery - WiiM Sound has no restart button.** The `wiim` integration exposes only a `media_player`. The only way to reboot it from Home Assistant is the undocumented HTTP command `curl -sk "https://192.168.2.10/httpapi.asp?command=StartRebootTime:1"`, which would need a `rest_command` automation rather than a label. The speaker's firmware does not implement the `reboot` command that the `linkplay` integration sends.
+- **A `linkplay` config entry for the WiiM is parked as ignored.** Zeroconf rediscovers the speaker within seconds, and deleting the ignored entry brings back a duplicate device alongside the `wiim` one.
 
-## Adding a device
+### Add a device
 
-1. Confirm the device has exactly one entity with `device_class: restart`:
+1. Confirm that the device has exactly one entity with `device_class: restart`. If the following template returns more than one entity, this scheme cannot choose between them:
+
    ```jinja
    {{ device_entities(device_id('button.your_device_restart'))
       | select('match','button\.')
       | select('is_state_attr','device_class','restart') | list }}
    ```
-   If it returns more than one (e.g. the Kitchen Display, which has both
-   `restart_browser` and `restart_device`), this scheme cannot pick for you —
-   leave it out or restructure.
-2. Apply one cadence label to the **device** (Settings → Devices → the device →
-   ⋮ → Add label), or `ha_set_device(device_id=…, labels=["restart_weekly"])`.
-   Note `ha_set_device` **replaces** the label list — read the existing labels
-   first if the device has any.
-3. Verify it appears in the right bucket:
-   ```jinja
-   {{ label_devices('restart_weekly') }}
-   ```
 
-## Verifying
+2. Apply one cadence label to the device: **Settings**, **Devices**, the device, **Add label**, or `ha_set_device(device_id=…, labels=["restart_weekly"])`. `ha_set_device` replaces the label list, so read the existing labels first.
+3. Confirm that it appears in the bucket with `{{ label_devices('restart_weekly') }}`.
 
-Re-run these after changing labels, the automation, or the fleet.
+A Voice PE restart button can ship `disabled_by: integration`. Enable it and reload the config
+entry before the entity appears in the state machine.
 
-**1. The buckets resolve to the right buttons.** This is the make-or-break check —
-if a label was attached to an *entity* rather than a device, `label_devices()`
-returns empty and the sweep silently does nothing.
+### Verify
+
+Run these checks after you change labels, the automation or the fleet.
+
+**The buckets resolve to the right buttons.** If a label is attached to an entity rather than a
+device, `label_devices()` returns nothing and the sweep does nothing, with no error. Compare the
+output of the following template with the assignment table, and confirm that no
+`factory_reset_mmwave_sensor`, `sync_time` or `apply_update` button appears:
 
 ```jinja
 {% macro targets(label) %}
@@ -178,262 +117,94 @@ WEEKLY:  {{ targets('restart_weekly') }}
 MONTHLY: {{ targets('restart_monthly') }}
 ```
 
-Expect **6 / 1 / 7**, and confirm no `factory_reset_mmwave_sensor`, `sync_time`
-or `apply_update` button appears.
-
-**2. The guard actually discriminates** (it is easy to write a busy-filter that
-silently matches nothing). List everything in the house currently matching it:
+**The guard discriminates.** A busy filter can match nothing without any error. The following
+template lists everything in the house that matches it. If it is non-empty while the buckets are
+full, the filter is live:
 
 ```jinja
 {{ states | map(attribute='entity_id') | select('match','media_player\.|vacuum\.|fan\.')
    | select('is_state',['playing','cleaning','on']) | list }}
 ```
 
-If that is non-empty while the buckets above are full, the filter is live.
+**A press reaches the device.** The button's state is a timestamp that updates even when the
+underlying call fails. Check an uptime sensor instead, such as `sensor.hallway_doorbell_uptime`,
+or watch the device's `media_player` blip `unavailable` in `ha_get_history`.
 
-**3. A press really reaches the device** — the button's state is a timestamp that
-updates *even when the underlying call fails*, so a fresh timestamp alone proves
-nothing. Check an uptime sensor instead (`sensor.hallway_doorbell_uptime`,
-`sensor.kitchen_boiler_monitor_uptime`), or watch the device's `media_player`
-blip `unavailable` in `ha_get_history`.
+**The cadence branches gate correctly.** Trigger the automation by hand and read the trace with
+`ha_get_automation_traces("automation.scheduled_device_restarts")`. On a day other than Monday,
+the weekly and monthly `if` blocks show `result: false`.
 
-**4. The cadence branches gate correctly.** Trigger manually and read the trace:
-`ha_get_automation_traces("automation.scheduled_device_restarts")`. On a non-Monday
-the weekly and monthly `if` blocks must both show `result: false` with
-`now_weekday` set accordingly.
+### Accepted deviations
 
-### Result of the 2026-08-02 commissioning run
+`ha_config_set_automation` raises two warnings against this automation. Both are deliberate:
 
-Triggered manually on a Sunday, so only the daily block ran.
+- **Templated `target.entity_id`** (`{{ repeat.item }}`). This is the `repeat.for_each` idiom, and hardcoded literals would defeat a label-driven list. The list comes from the live registry, the template rejects `unavailable` entities, and `continue_on_error: true` contains a failed press.
+- **`{{ now().day <= 7 }}` date condition.** A state condition is equality-based and cannot express "day of month at most 7", and Home Assistant has no native day-of-month condition. The step carries an inline `alias` that says so.
 
-- All 7 iterations fired **exactly 20 s apart** (15:53:20 → 15:55:21 UTC).
-- Weekly and monthly blocks correctly skipped (`now_weekday: "sun"`).
-- **Hallway - Doorbell went from 77.8 days uptime to 23 seconds** — proof the
-  press reached the hardware.
-- Living Room Arylic blipped `unavailable` → `idle`, confirming its reboot.
-- All three `assist_satellite` entities returned to `idle`.
-- The Nursery WiiM press **failed** (see [Known gaps](#known-gaps)) and
-  `continue_on_error: true` did its job — the sweep completed regardless
-  (`script_execution: finished`). This is why that flag is there.
+The automation uses `label_devices()`, `device_entities()` and `device_id()`, which resolve at
+render time. That is the exception for Jinja `device_id(...)` calls in the
+[entity ID rule](CLAUDE.md#entity-ids-not-device-ids): the automation hardcodes no IDs.
 
-## Accepted best-practice deviations
+Deliberate reboots do not trip ESPHome's [`safe_mode`](https://esphome.io/components/safe_mode/),
+because its failure counter resets after `boot_is_good_after: 1min`.
 
-`ha_config_set_automation` raises two warnings against this automation. Both are
-deliberate; do not "fix" them without reading this.
+### Known gaps
 
-- **Templated `target.entity_id`** (`{{ repeat.item }}`). This is the standard
-  `repeat.for_each` idiom. The suggested alternative — hardcoded literals or a
-  `choose` — would defeat the whole point of a label-driven list. The stated risk
-  (a template resolving to a non-existent entity) is mitigated three ways: the
-  list is derived from the live registry, `unavailable` entities are rejected, and
-  `continue_on_error: true` contains any failure.
-- **`{{ now().day <= 7 }}` date condition.** The warning suggests a `sensor.date`
-  state condition, but a state condition is equality-based and cannot express
-  "day of month ≤ 7", and the one-shot self-disabling pattern does not apply to
-  recurring logic. There is no native day-of-month condition, so "first Monday"
-  requires this template. It carries an inline `alias` saying so.
+- **No telemetry backs the cadences.** The ESPHome [`debug` component](https://esphome.io/components/debug/) exposes free heap, largest contiguous block and fragmentation, which would show when a device needs a restart. It needs device YAML edits and reflashing, which this repo does not manage.
+- **No symptom-driven restart.** A watchdog on an `assist_satellite` stuck in `responding`, or on a device unavailable for some minutes, would catch a hang the same day. Add one if the schedule does not settle the audio.
+- **Upstream might fix the fault.** ESPHome has been [rewriting its audio stack](https://esphome.io/changelog/2026.6.0/). After a major ESPHome release, re-evaluate whether the sweep is still needed.
+- **Tom's Office - Elgato Key Light is not covered.** It has no known fault.
 
-## On `CLAUDE.md`'s "entity IDs, not device IDs" rule
+## Integration watchdogs
 
-This design uses `label_devices()`, `device_entities()` and `device_id()`, all of
-which resolve **dynamically at render time**. That is the same category as the
-rule's explicit exception for Jinja `device_id(...)` calls. No device ID is
-hardcoded anywhere — the automation contains no IDs at all, which is precisely
-the property the rule exists to protect.
+A watchdog reloads a config entry that has wedged. Watchdogs are reactive, not scheduled, and
+they carry no label, because the unit of recovery is an integration, not a device.
 
-## Known gaps
-
-- **No telemetry behind the cadences.** The ESPHome [`debug` component](https://esphome.io/components/debug/)
-  would expose free heap, largest contiguous block, fragmentation % and loop time,
-  which is the evidence-based way to decide *when* a device needs restarting. It
-  requires device YAML edits and reflashing, which this repo does not manage. Until
-  then the cadences are guesses, and there is no signal telling us whether daily is
-  overkill or insufficient.
-- **No symptom-driven restart.** A watchdog on `assist_satellite` stuck in
-  `responding`, or on a device unavailable for N minutes, would catch a hang the
-  same day rather than at the next sweep. Worth adding if the schedule alone does
-  not settle the audio.
-- **Upstream may fix this.** ESPHome has been [rewriting the audio stack through 2026](https://esphome.io/changelog/2026.6.0/)
-  (zero-copy ring buffers, fewer per-chunk allocations). `automation.update_esphome_devices`
-  keeps the fleet current, so re-evaluate whether this automation is still needed
-  after major ESPHome releases.
-- **Not covered:** Tom's Office - Elgato Key Light (no known fault). The Kitchen
-  Display is now handled by a bespoke automation rather than a label — see
-  [Related automations](#related-automations).
-- **Nursery - WiiM Sound cannot be restarted from HA.** It now has **no restart
-  button at all**: the speaker moved to the dedicated **`wiim`** integration,
-  which exposes only a `media_player` — no `restart`, no `sync_time`. So it
-  cannot join this scheme even in principle, and the reason is no longer a bug
-  to wait out. (It was previously on `linkplay`, whose restart button was
-  present but permanently broken — see below.)
-
-  > The speaker was for a while adopted by **both** `linkplay` *and* `wiim`,
-  > giving one physical device two native `media_player` entities plus the
-  > Music Assistant proxy. The `linkplay` entry was removed, keeping `wiim`:
-  > it adds `NEXT_TRACK`, `PREVIOUS_TRACK` and `SEEK` and loses only
-  > `SELECT_SOUND_MODE`, and the restart button it gave up never worked anyway.
-  > `linkplay` still owns the two Arylic LP10s, which restart correctly — its
-  > config entries are **per device**, so removing one does not touch the
-  > others. zeroconf re-discovers the WiiM within seconds of removal, so the
-  > re-discovery flow is parked as an **ignored** `linkplay` entry
-  > (`source: ignore`, loads nothing) rather than left to nag. Deleting that
-  > ignored entry is what would bring the duplicate back.
-
-  Historically, on `linkplay`, the restart button failed every time with
-  `LinkPlayRequestException: Didn't receive expected OK from https://192.168.2.10`
-  (`linkplay/bridge.py` `reboot()` → `LinkPlayCommand.REBOOT`), and the device
-  never rebooted — its `media_player` did not even blip `unavailable`, unlike the
-  two Arylic LP10s on the same integration, which restart correctly.
-
-  **Root cause, confirmed directly against the device:**
-
-  ```console
-  $ curl -sk "https://192.168.2.10/httpapi.asp?command=reboot"
-  unknown command
-  ```
-
-  The speaker (`project: WiiM_Sound`, firmware `Linkplay.5.2.813247`) simply does
-  not implement the `reboot` httpapi command. `python-linkplay` sends `reboot` and
-  raises because the response is `unknown command` rather than `OK`. Nothing on the
-  HA side can fix it.
-
-  **Upstream:** [Velleman/python-linkplay#121 "Alternate Reboot function"](https://github.com/Velleman/python-linkplay/issues/121)
-  — open since 2025-08-02, same symptom reported on GGMM E5 and Edifier S1000W.
-  No fix PR; `consts.py` still defines only `REBOOT = "reboot"`. Nothing matching
-  is filed against `home-assistant/core`; the bug lives in the library, not the
-  integration.
-
-  **A workaround exists but is not implemented upstream.** Commenters found the
-  undocumented command `StartRebootTime:1` reboots these devices, and asked for it
-  as a fallback when `reboot` errors. Until the library adopts it, the same effect
-  is available locally via a `rest_command` + `shell_command`-free HTTP call:
-
-  ```console
-  curl -sk "https://192.168.2.10/httpapi.asp?command=StartRebootTime:1"
-  ```
-
-  That HTTP call still works and is now the **only** way to reboot this speaker
-  from HA, since `wiim` exposes no restart entity to fix. It does not fit the
-  `device_class: restart` derivation this scheme relies on, so it would need a
-  bespoke `rest_command` automation rather than a label — and a `python-linkplay`
-  fix would no longer reach this device anyway, now that it is off `linkplay`.
-
-## Notes
-
-- Deliberate reboots do **not** trip ESPHome's [`safe_mode`](https://esphome.io/components/safe_mode/) —
-  its failure counter resets after `boot_is_good_after: 1min`, so a schedule is safe.
-- Two of the three Voice PE restart buttons shipped `disabled_by: integration`
-  (`button.basement_voice_assistant_restart`,
-  `button.rear_guest_room_voice_assistant_restart`). They were enabled, which
-  required a config-entry reload before the entities appeared in the state
-  machine. A newly adopted Voice PE will need the same treatment.
-
----
-
-# Integration Watchdogs
-
-The software counterpart of the restart sweep above: a watchdog bounces a **config
-entry** that has wedged, rather than a device that has degraded. These are
-**reactive, not scheduled**, and they carry no label — the unit of recovery is an
-integration, not a device, so there is nothing for `label_devices()` to return.
-
-## Netatmo — `automation.netatmo_watchdog`
-
-### The failure
-
-Every Netatmo sensor goes `unavailable` at the 04:00 restart and stays that way
-for **days**. It is not flapping, and it is not the hardware: the long-term
-statistics gaps are identical across all five modules — the weather station base,
-the outdoor module and the three indoor modules — which rules out radio, battery
-and WiFi.
-
-| Outage start (UTC) | Recovered | Duration |
-|---|---|---|
-| 2026-09-05 03:00 | 09-05 20:00 | 16 h |
-| 2026-09-07 03:00 | 09-08 03:00 | 23 h |
-| 2026-09-09 03:00 | 09-11 03:00 | 47 h |
-| 2026-09-12 03:00 | **09-19 05:12** | **169 h** |
-
-Every outage begins at exactly 03:00 UTC = 04:00 BST =
-`automation.restart_home_assistant_at_4am_every_day`. Every recovery coincides
-with a *later* restart or a manual reload — **never** spontaneously. There are no
-gaps at all between 2026-06-21 (the start of the 90-day statistics window
-queried) and 2026-09-05.
-
-> The onset is *consistent with* this instance moving onto 2026.8.x —
-> `UNAVAILABLE_AFTER_ERRORS` and the publisher `available` flag do not exist in
-> the netatmo coordinator before 2026.8.0 — but **the upgrade date was not
-> confirmed**. The core log retains only ~4 hours, so there is no direct evidence
-> either way; treat it as a plausible trigger, not an established one.
-
-### Root cause
-
-Confirmed against the 2026.8.3 source, and **still present in 2026.9.3**:
-
-1. `NetatmoDataHandler.async_setup()` fetches the account topology **exactly
-   once**: `await self.subscribe(ACCOUNT, ACCOUNT, None)`.
-2. `subscribe()` calls `async_fetch_data()`, which **swallows `pyatmo.ApiError`
-   and logs it at `DEBUG`** — so the failure is invisible and does not raise.
-3. `async_dispatch()` then creates every entity by iterating
-   `for home in self.account.homes.values()`; the weather modules are dispatched
-   from `setup_modules()`, *inside* that loop.
-4. If step 1 failed, `account.homes` is empty, the loop body never runs, and
-   **no entities are dispatched at all**. The registry entries restore as
-   `unavailable` stubs with nothing behind them.
-5. `async_dispatch()` is called from exactly one place — inside `async_setup()`.
-   So polling can never repair this. **Only a reload or a restart can.**
-
-Throughout, the config entry reports `state: loaded`, `reason: null`,
-`issues: []`, and `config_entry_setup` finishes in ~4 s. Nothing appears in the
-log, because the one call that matters logs at `DEBUG`.
-
-> **The only visible fingerprint** is a *different* call, made seconds later
-> against the same sick backend, which happens to log at ERROR:
->
-> ```
-> ERROR homeassistant.components.netatmo.webhook
-> Error during webhook registration - 503 - Service Unavailable -
-> Service temporarily unavailable (27) when accessing 'https://api.netatmo.com/api/addwebhook'
-> ```
->
-> Per `pyatmo/const.py`, 429 + code 11 is concurrency and 403 + code 26 is
-> throttling; **503 + code 27 is Netatmo's own backend being unhealthy**, raised
-> as a plain `ApiError`. It is not a quota this end can fix. Note the webhook
-> error is caught and logged but *not* re-raised, so it never fails setup — it is
-> a symptom, not the cause.
->
-> Corroborating: during a stranded window the log carries `not ready yet;
-> Retrying in N seconds` lines for `roomba`, `norman_shutters` and
-> `music_assistant`, and **none for `netatmo`** — it was never in `setup_retry`,
-> it was "loaded" and empty.
-
-### What the automation does
-
-Every 15 minutes, if all five watched sensors have been `unavailable` for
-≥ 15 minutes, it calls `homeassistant.reload_config_entry` and re-checks two
-minutes later. If that reload did not bring them back it writes a persistent
-notification; a separate trigger dismisses it on recovery.
+Both watchdogs share the following design:
 
 | Decision | Why |
 |---|---|
-| `time_pattern` every 15 min, **not** a `state` trigger with a `for:` | The **retry** matters as much as the detection. A reload only helps if the API answers *that* time, and a one-shot trigger fires once and never again — the entities never change state while stranded. |
-| All five sensors must be down | An unreachable module makes its own entities `unavailable` too (`NetatmoModuleEntity.available` checks `device.reachable`), so watching one would reload the whole integration because one battery went flat. |
-| 15-minute dwell | Keeps it from firing during the 04:00 restart itself. |
-| A **missing** entity counts as *not* stuck | The observed failure leaves entities present-but-unavailable. An entity that has vanished entirely means this list is wrong, and looping on a reload would not fix that. |
-| Targets `sensor.toms_office_netatmo_pressure`, not `entry_id` | Entity IDs, not IDs that churn — see [CLAUDE.md](CLAUDE.md). The registry keeps `config_entry_id` even on an unavailable restored stub, so it still resolves when nothing was dispatched. Pressure is exposed only by the weather station base. |
-| `speak: false` on the notification | A diagnostic — recorded, not announced (see [notifications.md](notifications.md)). `script.annouce` derives its `notification_id` from `Netatmo \| slugify`, so repeated failed reloads overwrite one notification instead of stacking. |
-| Recovery watches only the base station | All five come back together; watching all five would queue five identical dismiss runs. |
-| `mode: queued, max: 10` | The reload branch holds a run open for 2 min while triggers are 15 min apart, so nothing stacks. Queued (rather than `single`) only means a recovery landing mid-reload is not dropped. |
+| `time_pattern` every 15 minutes, not a `state` trigger with `for:` | The retry matters as much as the detection. A reload only helps if the cloud API answers that time, and the entities don't change state while stranded, so a one-shot trigger fires once. |
+| Every watched entity must be `unavailable` for 15 minutes | The dwell keeps the watchdog quiet during the 04:00 restart. Requiring every entity separates an entry-level failure from one device dropping out. |
+| The reload targets an entity, not an `entry_id` | The [entity ID rule](CLAUDE.md#entity-ids-not-device-ids). The registry keeps `config_entry_id` on an unavailable restored stub, so the target resolves when nothing was set up. |
+| A failed reload announces with `speak: false` | A diagnostic is recorded, not announced (see [_Which callers speak_](notifications.md#which-callers-speak)). The title is fixed, so repeated failures overwrite one notification. |
+| A separate trigger dismisses the notification on recovery, and watches one entity | The entities come back together, so watching them all would queue identical dismiss runs. |
+| `mode: queued, max: 10` | The reload branch holds a run open for two minutes while triggers are 15 minutes apart, so nothing stacks, and a recovery that lands mid-reload is not dropped. |
 
-Cost while Netatmo is down: ~4 reloads/hour ≈ 13 API calls/hour, against the
-`CLOUD_LIMIT` of 150/hour the integration applies to HA Cloud account linking
-(this entry is `auth_implementation: "cloud"`; a personal Netatmo developer app
-would get `DEV_LIMIT`, 400/hour, and poll ~3.5× faster).
+Don't add a watchdog by reflex. `roomba`, `norman_shutters` and `music_assistant` go through
+`not ready yet` retries every night and recover without help. Hive and Netatmo need one because
+they fail in ways that Home Assistant does not retry.
 
-### Verifying the watchdog
+### Netatmo
 
-The two templates are the fragile part — render them against the live instance
-rather than reading them. Both take the same `watched` prelude:
+After a restart, every Netatmo sensor can come back `unavailable` and stay that way until the
+next reload or restart, while the config entry reports `loaded` with no error.
+
+The cause is in the integration, confirmed against the 2026.8.3 source and present in 2026.9.3:
+
+1. `NetatmoDataHandler.async_setup()` fetches the account topology once.
+2. The fetch swallows `pyatmo.ApiError` and logs it at `DEBUG`, so a failure does not raise.
+3. `async_dispatch()` creates entities by iterating `account.homes`. If the fetch failed, that is empty, and no entities are dispatched.
+4. `async_dispatch()` is called only from `async_setup()`, so polling cannot repair it.
+
+The only visible sign is a different call a few seconds later, which logs at `ERROR`:
+`Error during webhook registration - 503 - Service Unavailable`. A 503 with code 27 is Netatmo's
+backend being unhealthy, not a quota.
+
+`automation.netatmo_watchdog` watches the temperature sensors of the indoor and outdoor modules
+and `sensor.toms_office_netatmo_pressure` on the base station. When they are all stranded, it
+calls `homeassistant.reload_config_entry`, and it checks again two minutes later. If the reload
+did not bring them back, it writes a persistent notification.
+
+- **Every module must be down.** An unreachable module makes its own entities `unavailable`, so watching one sensor would reload the integration for a flat battery.
+- **A missing entity counts as not stuck.** The failure leaves entities present and `unavailable`. An entity that has vanished means the watch list is wrong, and a reload loop would not fix that.
+- **The reload targets `sensor.toms_office_netatmo_pressure`.** Only the base station exposes pressure.
+
+While Netatmo is down, the watchdog costs about four reloads and 13 API calls an hour, against
+the limit of 150 an hour that applies to an entry linked through Home Assistant Cloud.
+
+To verify the templates, render them against the live instance. Both take the same `watched`
+prelude:
 
 ```bash
 W="{% set watched = ['sensor.toms_office_netatmo_pressure','sensor.kitchen_netatmo_temperature','sensor.master_bedroom_netatmo_temperature','sensor.nursery_netatmo_temperature','sensor.garage_netatmo_temperature'] %}"
@@ -444,195 +215,77 @@ render() {
     "$HASS_SERVER/api/template"; echo
 }
 
-# "stuck" — expect False while Netatmo is healthy
+# "stuck": expect False while Netatmo is healthy
 render "$W{% set ns = namespace(stuck = true) %}{% for e in watched %}{% if states[e] is none or states(e) not in ['unavailable','unknown'] or (now() - states[e].last_changed).total_seconds() < 900 %}{% set ns.stuck = false %}{% endif %}{% endfor %}{{ ns.stuck }}"
 
-# "every watched sensor is back" — expect True while Netatmo is healthy
+# "every watched sensor is back": expect True while Netatmo is healthy
 render "$W{{ (watched | reject('is_state', ['unavailable','unknown']) | list | count) == (watched | count) }}"
 ```
 
-To exercise the **positive** path without waiting for an outage, swap `watched`
-for five entities that are already long-`unavailable` (any stale Fully Kiosk or
-camera entity will do) and confirm `stuck` renders `True`. This is the check that
-matters: a template that silently renders `False` forever looks exactly like a
-watchdog that is working.
+To exercise the positive path without an outage, swap `watched` for entities that are already
+long `unavailable` and confirm that `stuck` renders `True`. A template that renders `False`
+whatever happens looks the same as a working watchdog.
 
-`automation.trigger` is a safe smoke test — a manual trigger carries no
-`trigger.id`, so both `choose` branches evaluate `false` and nothing is reloaded.
-Confirm with `ha_get_automation_traces("automation.netatmo_watchdog")` that
-`action/0` resolved `choice: null` with no error.
+`automation.trigger` is a safe smoke test. A manual trigger carries no `trigger.id`, so both
+`choose` branches evaluate `false` and nothing is reloaded. Confirm in the trace that `action/0`
+resolved `choice: null`.
 
-### Known gaps and follow-ups
+The following gaps remain:
 
-- **This treats a symptom.** The real fix is upstream: `async_setup()` should
-  raise `ConfigEntryNotReady` when the initial topology fetch fails, so HA retries
-  on its own instead of loading an empty entry. Worth filing.
-- **2026.9.3 does not fix it** — `async_dispatch()` is still setup-only and
-  nothing raises. It *does* promote the first fetch error to `INFO`
-  (`"Error while fetching %s data"`) with a matching recovery line, so the failure
-  stops being invisible. Worth upgrading for that alone; re-read this section
-  afterwards and check whether the watchdog is still earning its place.
-- Safe from [home-assistant/core#181448](https://github.com/home-assistant/core/issues/181448)
-  (2026.9.0 silently drops every entity when a Netatmo `Home` device is disabled):
-  this instance has no `Home` device and all five Netatmo devices are enabled.
-  Re-check before upgrading if that ever changes.
-- **If the nightly restart moves, re-measure.** The whole failure rides on one API
-  call landing at 03:00 UTC, so shifting
-  `automation.restart_home_assistant_at_4am_every_day` is a cheap untested
-  experiment — but see [Timing](#timing--why-0430) for what else is boxed into
-  that window.
-- **Not generalised.** `roomba`, `norman_shutters` and `music_assistant` all churn
-  through `not ready yet` retries nightly, but those retry correctly on their own;
-  they do not need a watchdog and should not get one by reflex.
+- **The fix belongs upstream.** `async_setup()` needs to raise `ConfigEntryNotReady` when the topology fetch fails, so that Home Assistant retries.
+- **2026.9.3 logs the first fetch error at `INFO`** (`Error while fetching %s data`) with a matching recovery line, which makes the failure visible. After upgrading, check whether the watchdog still earns its place.
+- **[core#181448](https://github.com/home-assistant/core/issues/181448) does not apply.** 2026.9.0 drops every entity when a Netatmo `Home` device is disabled. This instance has no `Home` device. Check again before an upgrade if that changes.
+- **If the nightly restart moves, measure again.** The failure rides on one API call landing at 04:00.
 
-## Hive — `automation.hive_watchdog`
+### Hive
 
-### The failure
+If Hive's setup hits a transient error at startup, the config entry lands in `SETUP_ERROR`,
+which Home Assistant does not retry. The entry stays down until a reload, with no heating or hot
+water control. Hive's services are not registered either, so `automation.morning_hot_water` fails
+on its first action with `Action hive.boost_hot_water not found`.
 
-On **2026-09-20** the house had no hot water or heating for six hours. The
-04:00 restart hit a 5-second read timeout to `sso.hivehome.com` during Hive's
-setup, and the entry landed in `SETUP_ERROR` — which Home Assistant **never
-retries**, unlike `SETUP_RETRY`. Nothing recovered it until a manual reload at
-09:59.
+The following upstream defects combine:
 
-Because the entry never loaded, Hive's *services* were never registered, so
-`automation.morning_hot_water` fired on time at 07:00 and died on its first
-action:
+1. **`getLoginInfo` returns `None` on a timeout.** `requests.ReadTimeout` subclasses `OSError`, which the library catches and logs, and `async_init` then raises `AttributeError`. [Pyhive #145](https://github.com/Pyhass/Pyhive/pull/145) fixes it but is unreleased, and core pins `pyhive-integration==1.0.9`.
+2. **Core catches an exception that cannot be raised.** `async_setup_entry` handles `HiveReauthRequired` and a server-side `HTTPException` class, so every other failure becomes `SETUP_ERROR`. This is [core#182752](https://github.com/home-assistant/core/issues/182752).
+3. **Every startup forces a fresh sign-in.** In [Pyhive #123](https://github.com/Pyhass/Pyhive/issues/123), `tokenCreated` defaults to `datetime.min`, so stored tokens read as expired, and a restart calls the sign-in endpoint with a five-second timeout.
 
-```
-07:00:01 ERROR [automation.morning_hot_water] Morning Hot Water: Error executing
-script. Service not found for call_service at pos 1: Action hive.boost_hot_water not found
-```
+With #145 released, the crash becomes `HiveUnknownConfiguration`, which is still uncaught and
+still not retried. The watchdog stays necessary.
 
-The trace shows a single 2 ms run — `state: stopped`, `execution: error`. The
-failure was otherwise **silent**: `automation.notify_on_automation_failure` did
-not fire (`last_triggered` was still 2026-08-16), so the first signal was a cold
-shower.
+`automation.hive_watchdog` watches `water_heater.hallway_thermostat`,
+`climate.hallway_thermostat` and `binary_sensor.basement_hive_hub_status`. When every one of them is
+stranded and is a restored stub, it calls `homeassistant.reload_config_entry` and checks again
+two minutes later. A third branch handles "unavailable and not stubs" by announcing without
+reloading. Recovery after the 04:00 restart lands at about 04:30, ahead of the morning boost.
 
-### Root cause
+The following details carry the design:
 
-Three defects stacked, none of them local:
+- **Every watched entity must have `restored: true`.** A loaded entry whose hub is offline also makes every entity `unavailable`, without the `restored` attribute. Reloading a loaded entry wedges it: `async_unload_entry` unloads the full platform list, this house has no Hive lights, unloading `light` raises, and the entry lands in `FAILED_UNLOAD`, which only a Home Assistant restart clears. This is [core#182753](https://github.com/home-assistant/core/issues/182753). A plain reload of the integration from the UI triggers it too.
+- **The reload step has `continue_on_error: true`.** `restored: true` does not prove that the entry was not loaded, because an entry in `FAILED_UNLOAD` leaves restored stubs too. `reload_config_entry` raises on such an entry. Without the flag, the run stops at the reload, and the delay and the announcement do not run.
 
-1. **`getLoginInfo` returns `None` on timeout.** `requests.ReadTimeout` subclasses
-   `OSError`, which the library catches, logs, and then falls off the end of the
-   function — so `async_init` does `None.get("UPID")` → `AttributeError`.
-   Fixed in [Pyhive PR #145](https://github.com/Pyhass/Pyhive/pull/145) but
-   **unreleased**; core pins `pyhive-integration==1.0.9`.
-2. **Core catches an exception that can never be raised.** `async_setup_entry`
-   handles only `HiveReauthRequired` and `aiohttp.web_exceptions.HTTPException`
-   — a *server-side* class, and the failing call is synchronous `requests` in an
-   executor anyway. So there is no transient-failure path at all, and anything
-   else becomes a non-retried `SETUP_ERROR`. Filed as
-   [core#182752](https://github.com/home-assistant/core/issues/182752).
-3. **Every startup forces a fresh SSO round-trip.**
-   [Pyhive #123](https://github.com/Pyhass/Pyhive/issues/123) — `tokenCreated`
-   defaults to `datetime.min`, so stored tokens always read as expired. That is
-   why a restart touches that endpoint at all, against a 5-second timeout, while
-   a dozen other integrations compete for the network.
+The guard stops the watchdog causing a wedge. It does not recover a wedge that exists.
+[core#176594](https://github.com/home-assistant/core/pull/176594) makes the unload failure
+non-fatal from 2026.10, after which the guard is defensive rather than required.
 
-Once #145 ships the crash merely becomes a tidier `HiveUnknownConfiguration` —
-still uncaught, still `SETUP_ERROR`, still never retried. The watchdog is not
-made redundant by the library fix.
+Every watched entity must be a stub, because one entity can be a stub while its entry is loaded.
 
-### What the automation does
-
-Every 15 minutes, if all three watched entities have been `unavailable` for
-≥ 15 minutes **and are restored stubs**, it calls
-`homeassistant.reload_config_entry` and re-checks two minutes later. A third
-branch handles "unavailable but *not* stubs" by announcing and deliberately not
-reloading.
-
-| Decision | Why |
-|---|---|
-| `time_pattern` every 15 min, **not** a `state` trigger with a `for:` | Same reasoning as Netatmo: the retry matters as much as the detection, and the entities never change state while stranded. Recovery lands ~04:30, well before the 07:00 boost. |
-| Watches `water_heater` + `climate` + `binary_sensor.basement_hive_hub_status` | All three must be down. Unlike Netatmo's five independent modules these fail together, so the AND is about distinguishing an entry-level failure from one device dropping out. |
-| **`restored: true` required on all three** | Stops the watchdog *causing* a wedge — see the warning below. It does **not** prove the entry was never loaded. |
-| **`continue_on_error: true` on the reload** | `reload_config_entry` *raises* on an entry already in `FAILED_UNLOAD`. Without this the run dies at that step, so the delay and the announcement never execute and the watchdog retries silently forever. |
-| Targets `water_heater.hallway_thermostat`, not `entry_id` | Entity IDs, not IDs that churn — see [CLAUDE.md](CLAUDE.md). The registry keeps `config_entry_id` even on an unavailable restored stub, so it resolves when no platform was ever set up. |
-| `speak: false` on both notifications | A diagnostic — recorded, not announced (see [notifications.md](notifications.md)). Both branches use the title `Hive`, so repeated failures overwrite one notification instead of stacking. |
-| Recovery watches only the water heater | All Hive entities come back together from the single config entry. |
-| `mode: queued, max: 10` | Matches the Netatmo watchdog; the reload branch holds a run open for 2 min while triggers are 15 min apart. |
-
-> ⚠️ **The `restored: true` guard is load-bearing — do not remove it to
-> "simplify".** There are two ways every Hive entity can be `unavailable`, and
-> they need *opposite* handling:
->
-> - **Entry in `SETUP_ERROR`** — the entities are entity-registry placeholders,
->   which HA marks `restored: true`. Reloading is safe *and* is the fix, because
->   HA skips the unload step for an entry that was never loaded.
-> - **Entry `loaded`, hub merely offline** (Hive cloud outage, hub unplugged —
->   `HiveEntity` sets `_attr_available` from `deviceData["online"]`). No
->   `restored` attribute. Here a reload calls `async_unload_entry`, which unloads
->   the **full `PLATFORMS` list** even though `async_setup_entry` only ever
->   forwards the platforms that have devices. This house has **no Hive lights**,
->   so unloading `light` raises `ValueError: Config entry was never loaded!`, the
->   unload fails, and the entry lands in **`FAILED_UNLOAD`** — which HA flatly
->   refuses to reload (`Entry cannot be reloaded`), leaving no heating or hot
->   water **until a full HA restart**.
->
-> That second path was hit for real while testing this automation, and is filed
-> as [core#182753](https://github.com/home-assistant/core/issues/182753). It is not
-> exotic: a **plain reload of the integration from the HA UI triggers it**, which is
-> exactly how the entry was wedged again on the evening of 2026-09-20.
->
-> ⚠️ **`restored: true` does not mean "never loaded" — a correction.** An entry in
-> `FAILED_UNLOAD` leaves restored stubs too, because its platforms were *partially*
-> unloaded. So the guard prevents the watchdog from causing a wedge, but does **not**
-> recognise one that already exists. Once wedged, every reload raises
-> `cannot be unloaded because it is in the non recoverable state`, and only a restart
-> clears it. That is what `continue_on_error: true` on the reload step is for — it
-> lets the run reach the announcement instead of dying at the reload. Without it the
-> watchdog failed silently every 15 minutes for six hours.
-> [#176594](https://github.com/home-assistant/core/pull/176594) makes it
-> non-fatal from 2026.10 (it is in no 2026.9.x), after which this guard demotes
-> from load-bearing to defensive — still correct, since reloading a
-> loaded-but-offline entry would not help anyway.
-
-All three entities must be stubs, not just one: `fan.master_bedroom_dyson_fan`
-was observed carrying `restored: true` while its own `dyson_local` entry was
-`loaded`, proving a single entity can be a stub without its entry having failed.
-A partial Hive device list therefore cannot be mistaken for a failed setup.
-
-### Verifying the watchdog
-
-The conditions are native, so a wrong entity ID fails **silently** — the
-automation simply never acts. Test the guard in isolation rather than reading
-the YAML: create a throwaway automation with the same condition and a
-`system_log.write` action, force the state, and read the log.
+To verify the guard, test it in isolation, because a wrong entity ID in a native condition fails
+silently. Create a throwaway automation with the same condition and a `system_log.write` action,
+force the state, and read the log:
 
 ```bash
-# healthy entity -> no match; forced stub -> match
 ./scripts/ha-api /api/states/water_heater.hallway_thermostat -X POST \
   -d '{"state":"unavailable","attributes":{"restored":true}}'
 ```
 
-Then read the real automation's trace (`ha_get_automation_traces`) — it lists
-each entity of a multi-entity `state` condition separately, which is how you
-confirm the AND actually matched.
+Then read the watchdog's trace with `ha_get_automation_traces`, which lists each entity of a
+multi-entity `state` condition separately.
 
-> **`restored` is live-only.** The recorder strips it (along with
-> `supported_features`) from stored attributes, so the guard reads correctly at
-> runtime but the attribute never appears in `/api/history`. Don't look there and
-> conclude it was absent.
+- **`restored` is live-only.** The recorder strips it from stored attributes, so it does not appear in `/api/history`.
+- **Don't test the reload branch against a healthy, loaded Hive entry.** That is the path that wedges it.
 
-> ⚠️ **Never test the reload branch against a healthy, `loaded` Hive entry** —
-> that is exactly the path that wedges it into `FAILED_UNLOAD` and costs a
-> restart.
+The following gaps remain:
 
-### Known gaps and follow-ups
-
-- **`homeassistant.components.hive: debug` is still set** in `configuration.yaml`'s
-  `logger:` block, from diagnosing this. It is noisy and no longer needed now that the
-  cause is understood — drop it once the upstream issues settle.
-- ~~`automation.morning_hot_water` has no catch-up.~~ **Fixed 2026-09-20** — it now
-  retries on `hive_recovered` (the water heater leaving `unavailable`, which is what
-  this watchdog's reload produces) and on HA start, both gated on the boost window.
-  See [wake-routines.md](wake-routines.md#why-morning_hot_water-needs-catch-up-triggers).
-- ~~`automation.notify_on_automation_failure` did not fire for this outage.~~
-  **Fixed 2026-09-20** — it was dead code: `system_log` does not fire
-  `system_log_event` unless `fire_event: true` is set, and it was not. Unrelated to
-  Hive; see [notifications.md](notifications.md#automationnotify_on_automation_failure-needs-system_log-fire_event-true).
-  The config change takes effect at the next restart.
-- **Not generalised.** Hive and Netatmo both fail in ways HA never retries;
-  integrations that retry correctly on their own should not get a watchdog by
-  reflex.
+- **`homeassistant.components.hive: debug` is set** in the `logger:` block of `configuration.yaml`. It is noisy. Remove it after the upstream issues settle.
+- **`automation.morning_hot_water` depends on the reload.** Its catch-up triggers are in [_Catch-up triggers_](wake-routines.md#catch-up-triggers).
