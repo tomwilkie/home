@@ -1,125 +1,137 @@
 ---
 name: rename-entities
 description: >
-  Rename devices & entities in a Home Assistant area to comply with naming-conventions.md.
+  Rename devices and entities in a Home Assistant area to comply with naming-conventions.md.
 
   TRIGGER THIS SKILL WHEN:
-  - User runs /rename-entities (optional <Area Display Name> or <Device Name>)`
+  - User runs /rename-entities (optional <Area Display Name> or <Device Name>)
   - User asks to rename, fix, or standardise entity IDs for a specific device or area.
 ---
 
 # rename-entities
 
-Rename devices & entities in a Home Assistant area to comply with `naming-conventions.md`.
+Rename the devices and entities in a Home Assistant area so that they comply with
+[naming-conventions.md](../../../naming-conventions.md).
 
-**Usage:** `/rename-entities (optional <Area Display Name> or <Device Name>)`
+Usage: `/rename-entities [AREA_DISPLAY_NAME | DEVICE_NAME]`
+
+Don't use SSH at any point. Renames go through the `mcp__claude_ai_ha-mcp__*` tools. The one
+step that touches files is the dashboard fix, which edits the YAML in this repo and pushes it
+with `hass-cli`.
 
 ## Main agent
 
-1. If the user asked to rename entities for a specific device, look up the device by calling `ha_get_device` and searching by name to resolve the `device_id`, then spawn a per-device subagent followed by a reference-fix subagent. Use the `area_id` field from `ha_get_device` result — no extra call needed.
-2. If the user asked to rename entities in a specific area, run the instructions for the per-area renaming.
-3. If the user doesn't specify, call `ha_config_list_areas` to get all areas, then process the per-area renaming for earch area, sequenitally.
+Choose the path from what the user asked for:
 
-## Per-area renaming
+- **A device:** list devices with `ha_get_device` and match the name, which gives the `device_id` and the `area_id`. Spawn a per-device subagent, then a reference-fix subagent.
+- **An area:** follow [_Rename an area_](#rename-an-area).
+- **Neither:** call `ha_list_floors_areas` to list the areas, then rename each area in turn.
 
-Given an area name or id, you must:
+## Rename an area
 
-1. Derive the `area_id` slug from the display name per the rules in `naming-conventions.md` (if needed).
-2. Call `ha_get_device(area_id="<area_id>", detail_level="summary")` to get all devices. Paginate if `has_more: true`.
-3. Spawn per-device subagents to do the renaming, in parallel. Pass the device name, device_id, area display name, and area_id to each. Do NOT look up entities in the main agent — delegate all entity work to subagents.
-4. Collect the rename maps returned by each subagent (list of `{old_entity_id, new_entity_id}` pairs).
-5. If any renames occurred, spawn a **single reference-fix subagent** (see below) passing the full rename map.
-6. Print a summary table at the end; include all the devices you checked and any changes that were made.
+1. If you have a display name, derive the `area_id` slug by the rules in `naming-conventions.md`.
+2. Call `ha_get_device(area_id="AREA_ID", detail_level="summary")` to list the devices. Page with `offset` while `has_more` is true.
+3. Spawn one per-device subagent for each device, in parallel. Pass each one the device name, `device_id`, area display name and `area_id`. Don't look up entities in the main agent.
+4. Collect the rename map that each subagent returns: a list of `{old_entity_id, new_entity_id}` pairs.
+5. If any rename happened, spawn one reference-fix subagent with the full rename map.
+6. Print a summary table of every device you checked and every change made.
 
 ## Per-device subagent
 
-Each subagent receives the device name, device_id, area display name, and area_id. Do NOT use the Haiku model — use the default (Sonnet). It must:
+Each subagent receives the device name, `device_id`, area display name and `area_id`. Use the
+default model, not Haiku. The subagent does the following:
 
-0. **First:** call `ToolSearch` with query `select:mcp__claude_ai_ha-mcp__ha_get_device,mcp__claude_ai_ha-mcp__ha_set_entity` to load the MCP tool schemas. Do NOT use bash, SSH, hass-cli, or write any files — all HA interaction must go through `mcp__claude_ai_ha-mcp__*` tools.
-1. Check the device name follows the right pattern.
-2. Call `mcp__claude_ai_ha-mcp__ha_get_device(device_id="...")` to get all entities.
-3. For each entity, check:
-   - **Entity ID**: does it start with `{domain}.{area_id}_`? If not, rename it with `mcp__claude_ai_ha-mcp__ha_set_entity`. Do NOT search for or fix references at this point — just rename.
-   - **Display name**: does it embed the area or device name? If so, fix it per `naming-conventions.md`.
-4. Return a structured list of all renames made: `[{old: "sensor.foo", new: "sensor.toms_office_bar"}, ...]`. Report what was already compliant too.
+1. Calls `ToolSearch` with the query `select:mcp__claude_ai_ha-mcp__ha_get_device,mcp__claude_ai_ha-mcp__ha_set_entity` to load the tool schemas. It uses only these MCP tools: no shell commands, no `hass-cli` and no file writes.
+2. Checks that the device name follows the convention.
+3. Calls `ha_get_device(device_id="DEVICE_ID")` to list the entities.
+4. Checks each entity:
+   - **Entity ID:** if it does not start with `{domain}.{area_id}_`, rename it with `ha_set_entity(entity_id, new_entity_id=...)`. Don't search for or fix references at this point.
+   - **Display name:** if it embeds the area or device name, fix it as `naming-conventions.md` describes.
+5. Returns the list of renames, for example `[{old: "sensor.foo", new: "sensor.toms_office_bar"}]`, and reports what already complied.
 
-**`device_tracker.*` entities — conditional:**
-Network-scanning integrations (UniFi, iRobot, ESPHome Presence Lite, etc.) create a tracker for every client they see. Apply this rule per entity:
-- Device **has an area assigned** → rename per convention (it's a HA-managed device that happens to also be tracked)
-- Device **has no area** → leave as-is (bare network client with no HA counterpart)
+A `device_tracker` entity follows a conditional rule, because network-scanning integrations
+(UniFi, iRobot, ESPHome) create a tracker for every client they see:
+
+- If the device has an area, rename the tracker by the convention.
+- If the device has no area, leave the tracker as it is.
 
 ## Reference-fix subagent
 
-Runs once per area, after all the per-device subagents complete, only if at least one rename occurred. Receives the full rename map (all old→new entity ID pairs across all devices).
+The reference-fix subagent runs once per area, after every per-device subagent has finished,
+and only if a rename happened. It receives the full rename map.
 
 For each renamed entity:
-1. Call `ha_deep_search` with the **old** entity ID to find references in automations, scripts, dashboards, and group helpers.
-2. Update any references found to use the new entity ID.
-3. Be careful with `ha_deep_search` false positives — short substrings can match unrelated IDs. Always verify before updating.
 
-Report a summary of all references updated.
+1. Call `ha_search(query="OLD_ENTITY_ID", search_types=["automation","script","scene","helper","dashboard"])` with the exact old entity ID.
+2. Verify each match. The search matches substrings, so a short ID can match an unrelated one: `nas_` matches `rachanas_`.
+3. Update each real reference to the new entity ID, using the following sections.
+4. Check the adaptive lighting `lights` lists, which no search covers, as [_Audit `lights` after a light rename_](../../../lighting-automation.md#audit-lights-after-a-light-rename) describes.
 
-### Changing IDs — Reference Checks
+Report a summary of the references updated.
 
-After renaming any area ID, entity ID, or automation entity ID, check for references in:
+### Dashboards
 
-> **Note:** `ha_deep_search` uses substring matching. Short queries (e.g. `nas_`) can produce false positives by matching unrelated entity IDs (e.g. `rachanas_` contains `nas_`). Always verify matches manually before updating references.
+The dashboards are file-managed, and this repo is their source of truth. Don't edit them with
+`ha_config_set_dashboard`. For each dashboard, follow [_Workflow_](../../../dashboards.md#workflow):
+pull any remote changes, replace the old entity ID in `dashboards/*.yaml`, review the diff and
+push with `hass-cli`.
 
-### 1. Dashboards
+Search the YAML for the old entity ID string rather than relying on a card search, which can
+miss a reference inside a template or a condition. References appear in the following places:
 
-Use `ha_config_get_dashboard` on every dashboard (list them first with `ha_config_get_dashboard(list_only=True)`). References to IDs appear in:
-
-- `entity` fields on tile, button, and other cards
+- `entity` fields on tile, button and other cards
 - `tap_action.target.entity_id` and `tap_action.perform_action` data
 - `filter.include[].area` on `auto-entities` cards
-- Jinja templates inside `icon_color`, `primary`, `secondary` strings (e.g. `area_entities('area_id')`, `area_id_filter: "area_id"`)
-- `visibility` conditions comparing against sensor states that return area IDs
-- Entity lists inside `entities` cards (can be plain strings or `{entity: ...}` objects)
+- Jinja templates inside `icon_color`, `primary` and `secondary` strings, for example `area_entities('area_id')`
+- `visibility` conditions that compare against sensor states that return area IDs
+- Entity lists inside `entities` cards, as plain strings or `{entity: ...}` objects
 - `badges` arrays on heading cards
-- `footer.entity` on entities cards
+- `footer.entity` on `entities` cards
 
-> **Warning:** `ha_config_get_dashboard(entity_id=...)` search mode only finds entities in top-level `entity` and `entities` card fields. It **does not** find references in `visibility` conditions, `badges`, `footer.entity`, or nested structures. Always fetch the **full dashboard config** and grep for the old entity ID string to catch everything.
+### Automations
 
-### 2. Automations
+Use the search to find the automations. Don't guess. Then call `ha_config_get_automation` on
+each match and check the following:
 
-Do **not** rely on manually guessing which automations reference a renamed entity — use `ha_deep_search` with the old entity ID first to get an exhaustive list. Then use `ha_config_get_automation` on each match and check:
+- `trigger`: state triggers on the entity, or `event_data.entity_id`
+- `condition`: state or template conditions that reference the entity
+- `action`: service calls that target the entity, for example `automation.turn_on` or `light.turn_on` with `area_id`
+- Blueprint `input` fields, for example `area_id: "old_area_id"`
 
-- `trigger` — state triggers on the entity, or `event_data.entity_id`
-- `condition` — state or template conditions referencing the entity
-- `action` — service calls targeting the entity (e.g. `automation.turn_on`, `automation.trigger`, `light.turn_on` with `area_id`)
-- Blueprint `input` fields (e.g. `area_id: "old_area_id"`)
+An automation that mirrors an entity is the one that manual inspection misses, because it
+observes the renamed device without controlling it. "Synchronise Alarm Time", triggered by the
+bedside clock's alarm time, is an example.
 
-> **Warning:** Automations that synchronise or mirror an entity (e.g. a "Synchronise Alarm Time" automation triggered by `time.clock_alarm_time`) are easily missed because they don't control the device being renamed — they just observe it. `ha_deep_search` will surface them; manual inspection will not.
+### Group helpers
 
-### 3. Group helpers
+Call `ha_get_integration(domain="group")` to list every group config entry, and check every
+group whose domain matches the renamed entity's domain. Light groups, cover groups and media
+player groups can all hold a stale ID. The following groups are the common ones:
 
-Use `ha_get_integration(domain="group")` to list **all** group config entries, then check every group whose domain matches the renamed entity's domain. Do not limit checks to occupancy groups — media_player groups, light groups, and others can all contain stale entity IDs.
+- `binary_sensor.{area_id}_occupancy`, the room occupancy group
+- `binary_sensor.house_occupancy_raw`, which aggregates the room occupancy groups
+- `media_player.notification_players`, the notification speakers
 
-For each candidate group, read its current members via `ha_get_state(entity_id)` and inspect the `entity_id` attribute. If any member IDs are stale, update via `ha_set_config_entry_helper` with the corrected `entities` list.
+Read a group's members from the `entity_id` attribute of `ha_get_state(GROUP_ENTITY_ID)`. To
+update a group, pass its `entry_id` as the `helper_id`:
 
-Common groups to check (not exhaustive):
-- `binary_sensor.{area_id}_occupancy` — room-level occupancy group
-- `binary_sensor.house_occupancy_raw` — aggregates all room occupancy groups
-- `media_player.notification_players` — all notification speaker targets
-- Any light group, cover group, or other domain group that may include the renamed entity
+```
+ha_config_set_helper(helper_type="group", helper_id="ENTRY_ID", config={"entities": [...]})
+```
 
-To update: `ha_get_integration(domain="group")` to find the `entry_id`, then `ha_set_config_entry_helper("group", entry_id=..., config={"group_type": "<type>", "entities": [...], "hide_members": false})`.
+### Rename outside the area flow
 
-### 4. Update order
+To rename one ID by hand, such as an area ID or an automation ID, use the following order:
 
-1. Identify all references first (dashboards + automations + group helpers)
-2. Rename the ID (`ha_rename_entity` for entities/automations, delete+recreate for areas)
-3. Update all references immediately after — dashboards via `ha_config_set_dashboard` with `python_transform`, automations via `ha_config_set_automation`, group helpers via `ha_set_config_entry_helper`
+1. Find every reference: dashboards, automations and group helpers.
+2. Rename the ID. Use `ha_set_entity(entity_id, new_entity_id=...)` for an entity or automation. Delete and re-create an area.
+3. Update every reference straight away: dashboards through the repo YAML, automations with `ha_config_set_automation`, and group helpers with `ha_config_set_helper`.
 
----
+## Integration quirks
 
-## Gotchas learned from practice
-
-- Do NOT use SSH at any point for this skill.
-- **Z-Wave (zwave_js)**: integration bakes the device name into `original_name` (e.g. `"Tom's Office Spotlight: Electric Consumption [W]"`). Fix with `ha_set_entity(entity_id, name="Electric Consumption [W]")`.
-- **ESPHome with hardware-suffix IDs** (e.g. `binary_sensor.everything_presence_lite_ee60e8_occupancy`): all non-tracker entities need renaming. Can be 70+ entities — subagent handles this fine.
-- **Nest Protect**: generates IDs in the form `{domain}.nest_protect_{area_id}_{measurement}_N` — rename to `{domain}.{area_id}_nest_protect_{measurement}`.
-- **UniFi networking gear** (access points, switches): entity IDs like `sensor.u5g_max_clients` or `sensor.link_speed_37` need renaming; only `device_tracker.*` is exempt.
-- **Music Assistant virtual devices**: `original_name` is often null, causing display name to fall back to the full device name. Set a concise custom name.
-- **`ha_deep_search` false positives**: short substrings can match unrelated IDs. Always verify matches before updating references.
-- **ESPHome sub-devices share entities with parent**: When an ESPHome device has a Bluetooth proxy sub-device (e.g. "Everything Presence Lite" + "Everything Presence Lite (Bluetooth)"), `ha_get_device` on the sub-device returns the **same** entity list as the parent. Do NOT rename entities that already comply with the parent device's slug — they belong to the parent. A sub-device whose entities are already correctly prefixed with `{area_id}_{parent_slug}_` should be treated as fully compliant and left alone.
+- **Z-Wave (`zwave_js`)** puts the device name into `original_name`, for example `Tom's Office Spotlight: Electric Consumption [W]`. Set a bare override with `ha_set_entity(entity_id, name="Electric Consumption [W]")`.
+- **ESPHome with hardware-suffix IDs,** for example `binary_sensor.everything_presence_lite_ee60e8_occupancy`: every entity except the tracker needs a rename. One device can have more than 70 entities, which a subagent handles.
+- **ESPHome sub-devices share entities with the parent.** For a Bluetooth proxy sub-device, such as "Everything Presence Lite (Bluetooth)", `ha_get_device` returns the parent's entity list. If those entities already carry the `{area_id}_{parent_slug}_` prefix, treat the sub-device as compliant and leave it alone.
+- **Nest Protect** generates IDs as `{domain}.nest_protect_{area_id}_{measurement}_N`. Rename them to `{domain}.{area_id}_nest_protect_{measurement}`.
+- **UniFi networking gear** (access points, switches) has entity IDs such as `sensor.u5g_max_clients` and `sensor.link_speed_37`, which need a rename. Only `device_tracker` entities are exempt.
+- **Music Assistant virtual devices** often have a null `original_name`, so the display name falls back to the full device name. Set a concise custom name.
