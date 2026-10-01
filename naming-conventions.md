@@ -1,174 +1,100 @@
-# Home Assistant Naming Conventions
+# Home Assistant naming conventions
 
-## Entity IDs must be area-first
-
-Entity IDs follow `{domain}.{area_id}_{device_slug}_{measurement}`. The area comes **first** — this applies to all entities including those auto-created by integrations (adaptive lighting, template helpers, etc.). When an integration creates entities with the wrong order (e.g. `switch.adaptive_lighting_living_room`), rename them with `ha_set_entity(new_entity_id=...)` immediately.
-
-## Display names must not include the area or device
-
-Integration `original_name` values often embed the area (e.g. "Adaptive Lighting: Living Room"). After renaming an entity ID, check the display name and override it with `ha_set_entity(name="...")` to strip the area prefix. Correct names: `Adaptive Lighting`, `Adapt Brightness`, `Sleep Mode`. Incorrect: `Adaptive Lighting: Living Room`.
-
-## Dashboard cards need explicit name overrides
-
-When an entity's display name is intentionally generic (e.g. "Adaptive Lighting" for every room's switch), use the object form in entities cards to show the room name in the UI:
-```yaml
-entities:
-  - entity: switch.living_room_adaptive_lighting
-    name: Living Room
-```
-This keeps the entity name convention-compliant while remaining readable in the dashboard.
-
-## After any rename, update all consumers
-
-Renaming an entity ID does **not** propagate automatically. Always update:
-1. Dashboard cards (use `ha_config_get_dashboard(entity_id=...)` to find them)
-2. Automations that reference the old entity ID
-3. Template helpers whose `state` template references the old entity ID
-4. Scripts
-5. Groups — use `ha_get_state("group.entity_id")` or `ha_get_state("media_player.group_entity")` to inspect member lists, then `ha_config_set_helper(helper_type="group", ...)` to update. Use `ha_deep_search(query="old_entity_id")` to find any group or script that references the old ID.
+Areas, devices, entities, automations and labels follow the conventions in this document. Entity
+IDs are area-first, and display names are bare, so that Home Assistant composes
+`{Area} - {Device} {Entity}` for dashboards and Grafana.
 
 ## Areas
 
-### Area IDs
+Area IDs are slugified from the display name: lower case, spaces to underscores, and apostrophes
+dropped.
 
-Area IDs are slugified from the display name using these rules:
-
-- Spaces → underscores (`_`)
-- Apostrophes → **dropped** (not replaced with `_`)
-- Everything lowercase
-
-Examples:
-
-| Display Name | area_id |
+| Display name | `area_id` |
 |---|---|
 | Basement | `basement` |
 | Tom's Office | `toms_office` |
-| Nursery | `nursery` |
 | Front Guest Room | `front_guest_room` |
 
-> **Note:** HA auto-generates area IDs differently (apostrophes become `_s_`). When creating a new area whose name contains an apostrophe, create it first with a plain name (e.g. "Toms Office") to get the correct slug, then update the display name to the correct value (e.g. "Tom's Office").
-
----
+Home Assistant generates area IDs differently: an apostrophe becomes `_s_`. To create an area
+whose name contains an apostrophe, create it with a plain name ("Toms Office") to get the slug,
+then change the display name ("Tom's Office").
 
 ## Devices
 
-### Naming format
+Name a device `{Area Display Name} - {Device Specific Name}`: the area display name as written,
+including apostrophes, then a space, a hyphen and a space, then the name that identifies the
+device within the area.
 
-```
-{Area Display Name} - {Device Specific Name}
-```
-
-- The area display name comes first, exactly as written (including apostrophes)
-- A ` - ` separator (space-dash-space) separates area from device
-- The device-specific name identifies the device within the area
-
-Examples:
-
-| Area | Device | Full Name |
+| Area | Device | Full name |
 |---|---|---|
 | Kitchen | Netatmo | `Kitchen - Netatmo` |
 | Tom's Office | Roomba | `Tom's Office - Roomba` |
-| Nursery | Motion Sensor | `Nursery - Motion Sensor` |
 | Master Bedroom | Lamp Tom's | `Master Bedroom - Lamp Tom's` |
-| Front Guest Room | Nest Protect | `Front Guest Room - Nest Protect` |
 
-### Sub-location qualifiers
+To distinguish devices of the same kind in one area, append a qualifier in parentheses:
+`Hallway - Nest Protect (Outside Main Bath)`, `Hallway - Nest Protect (Ground Floor)`. Home
+Assistant drops parentheses when it slugifies, so the entity ID stays clean:
+`binary_sensor.hallway_nest_protect_outside_main_bath_smoke_status`.
 
-When a device needs a qualifier to distinguish it from others in the same area (e.g. a Nest Protect positioned outside a specific room within the hallway), append the qualifier in parentheses after the device name:
-
-```
-{Area Display Name} - {Device Specific Name} ({Sub-location})
-```
-
-Examples:
-
-| Full Name |
-|---|
-| `Hallway - Nest Protect (Outside Main Bath)` |
-| `Hallway - Nest Protect (Outside Tom's Office)` |
-| `Hallway - Nest Protect (Ground Floor)` |
-
-Parentheses are dropped during HA slugification, so entity IDs remain clean — `binary_sensor.hallway_nest_protect_outside_main_bath_smoke_status` not `…_outside_main_bath_…`.
-
-### Scope
-
-- Devices **with** an assigned area must follow this convention, regardless of type (including networking gear, infrastructure devices, etc.)
-- Devices **without** an area (system/infrastructure devices such as HA Core, HACS, networking gear) are excluded
-
----
+The convention applies to every device with an assigned area, whatever its type. Devices without
+an area, such as Home Assistant Core and HACS, are out of scope.
 
 ## Entities
 
 ### Entity ID format
 
-```
-{domain}.{area_id}_{device_slug}_{measurement}
-```
-
-- `domain` — the HA domain (e.g. `sensor`, `binary_sensor`, `light`, `switch`)
-- `area_id` — the area's slug (see Area IDs above)
-- `device_slug` — a short identifier for the device within the area
-- `measurement` — what the entity measures or controls (e.g. `temperature`, `pressure`, `occupancy`)
-
-Examples:
+Entity IDs follow `{domain}.{area_id}_{device_slug}_{measurement}`:
 
 | Entity ID | Area | Device | Measurement |
 |---|---|---|---|
 | `sensor.kitchen_netatmo_pressure` | `kitchen` | netatmo | pressure |
 | `sensor.toms_office_motion_sensor_temperature` | `toms_office` | motion_sensor | temperature |
 | `binary_sensor.nursery_motion_sensor_occupancy` | `nursery` | motion_sensor | occupancy |
-| `light.front_guest_room_lamp_desk` | `front_guest_room` | lamp | desk |
 
-### Key rules
+- **The area comes first for every entity,** including the ones that integrations create, such as adaptive lighting switches and template helpers. When an integration creates an entity with the area elsewhere (`switch.adaptive_lighting_living_room`), rename it with `ha_set_entity(new_entity_id=...)`.
+- **Entities on a device without an area are out of scope.**
+- **A `device_tracker` entity from a network-scanning integration** follows the convention only if its device has an area. Leave a bare network client as it is.
 
-- Entities on devices without an area assignment are excluded from this convention
-- `device_tracker.*` entities from network-scanning integrations (e.g. UniFi, etc.) follow a conditional rule: if the entity's device has an area assigned in HA, rename it per this convention; if the device has no area (bare network client with no HA counterpart), leave it as-is.
+### Display names
 
-### Display names (friendly names)
-
-Two different things are easily confused here, and conflating them silently breaks
-dashboards:
+The entity name and the `friendly_name` are different things:
 
 | | What it is | Where it lives |
 |---|---|---|
-| **Entity name** | What the entity measures or controls, on its own | entity registry `name` (user override) / `original_name` (integration default) |
-| **`friendly_name`** | What HA actually displays and exports | **computed at runtime**, never stored |
+| Entity name | What the entity measures or controls | Entity registry `name` (user override) or `original_name` (integration default) |
+| `friendly_name` | What Home Assistant displays and exports | Computed at runtime |
 
-For a modern entity (`has_entity_name: true`) attached to a device, HA composes:
+For an entity with `has_entity_name: true` on a device, Home Assistant composes
+`friendly_name = "{device name} {entity name}"`. Because devices are named `{Area} - {Device}`,
+the composition produces `Kitchen - Netatmo Temperature`, which is also the Grafana
+`friendly_name` label.
 
-```
-friendly_name = "{device name} {entity name}"
-```
+The entity name must therefore be bare: `Temperature`, `Battery Level`, `Smoke Status`, not
+`Nursery Motion Sensor Temperature`.
 
-Since devices are named `{Area} - {Device}`, that composition is what produces the
-useful `Kitchen - Netatmo Temperature` seen in dashboards and in the Grafana
-`friendly_name` label (see [@observability.md](observability.md)).
+### Don't override a name that is already bare
 
-**The entity name must therefore be bare** — the area and device are supplied by the
-composition, not by the entity:
+A registry `name` override replaces the whole composed name. Home Assistant uses the string
+verbatim and drops the `{Area} - {Device}` prefix:
 
-- **Correct:** `Temperature`, `Battery Level`, `Smoke Status`, `Motion detection`
-- **Incorrect:** `Nursery Motion Sensor Temperature`, `Nest Protect (Baby's Room) Smoke Status`
-
-#### ⚠️ A custom `name` override replaces the *whole* composed name
-
-Setting the registry `name` (renaming an entity in the UI, or `ha_set_entity(name=…)`)
-makes HA use that string **verbatim** and **drop the `{Area} - {Device}` prefix
-entirely**. HA offers no way to override only the entity portion.
-
-| entity | registry `name` | resulting `friendly_name` |
+| Entity | Registry `name` | `friendly_name` |
 |---|---|---|
-| `sensor.kitchen_netatmo_humidity` | *(null)* | `Kitchen - Netatmo Humidity` ✅ |
-| `sensor.garage_netatmo_humidity` | `Humidity` | `Humidity` ❌ |
+| `sensor.kitchen_netatmo_humidity` | none | `Kitchen - Netatmo Humidity` |
+| `sensor.garage_netatmo_humidity` | `Humidity` | `Humidity` |
 
-So: **never set a `name` override on a `has_entity_name: true` entity unless the
-integration's `original_name` is genuinely wrong.** Such an entity is almost always
-*already* compliant — the integration supplies a bare `original_name` — and an
-override that merely restates it is a no-op that only serves to strip the prefix. A
-sweep in July 2026 found 54 such redundant overrides (`name == original_name`);
-all were cleared, restoring the composed names.
+Set a `name` override on a `has_entity_name: true` entity only when the integration's
+`original_name` is wrong: it embeds an area or old device name (`Adaptive Lighting: Living Room`
+becomes `Adaptive Lighting`), or it is unreadable (`Electric Consumption [W]` becomes `Power`).
+The override costs the prefix, so compensate with an explicit `name:` on the dashboard card:
 
-**Audit for them:**
+```yaml
+entities:
+  - entity: switch.living_room_adaptive_lighting
+    name: Living Room
+```
+
+An override that restates `original_name` only strips the prefix. To find overrides, run the
+following, and clear every row where `name` equals `original_name`:
 
 ```bash
 ssh root@homeassistant.local -C 'jq -r ".data.entities[]
@@ -176,127 +102,81 @@ ssh root@homeassistant.local -C 'jq -r ".data.entities[]
   | [.entity_id, .name, (.original_name // \"-\")] | @tsv" /config/.storage/core.entity_registry'
 ```
 
-Any row where `name == original_name` is redundant. Rows where they differ are a
-judgement call: the override buys a tidier entity name at the cost of the area/device
-prefix — only worth it when `original_name` is genuinely bad (e.g. `Electric Consumption [W]` → `Power`).
-
-**Clear an override** (reverts to the integration default and restores the prefix):
+To clear an override, use `ha_set_entity(entity_id, name="")` for one entity, or the WebSocket
+call in a loop for many:
 
 ```bash
 hass-cli raw ws config/entity_registry/update \
   --json='{"entity_id":"sensor.foo","name":null}'
 ```
 
-`ha_set_entity(entity_id, name="")` does the same thing for one-offs; the WebSocket
-call above is what to loop over for a bulk sweep.
+### Legacy entities
 
-#### Legacy entities (`has_entity_name: false`)
+An older integration with `has_entity_name: false` opts out of composition. The `friendly_name`
+is the override if one is set, and otherwise whatever the integration builds. Hive prepends the
+device name itself.
 
-Older integrations opt out of composition: `friendly_name` is the entity name
-verbatim if an override is set, and otherwise whatever the integration builds —
-which for some (Hive) means the integration prepends the device name *itself*.
+When such an integration's own name repeats a word in the device name, neither entity-side
+option works: an override strips the area, and clearing it leaves a stutter. Rename the device
+so that it does not repeat the word. The Hive device is named `Hallway - Hive`, not
+`Hallway - Thermostat`, so that `climate.hallway_thermostat` displays as
+`Hallway - Hive Thermostat`.
 
-That means neither entity-side lever works when the integration's own name already
-repeats a word in the device name: an override strips the area (leaving a useless
-`Current Temperature`), and clearing it leaves a stutter. **The fix is to rename the
-device so it doesn't duplicate the word the integration already supplies.** The Hive
-device was renamed `Hallway - Thermostat` → **`Hallway - Hive`** for exactly this
-reason:
+- **The Hive entity IDs keep the `thermostat` device slug** (`climate.hallway_thermostat`). A device slug in an entity ID can lag a device rename that was made to fix name composition, because renaming the IDs would break every consumer for no functional gain.
+- **`climate.hallway_thermostat` and `water_heater.hallway_thermostat` share a display name.** The one Hive device hosts the heating and the hot water entities (`*.basement_hotwater_*`), and Hive gives both an `original_name` of `Thermostat`. An override would strip the prefix.
 
-| entity | before | after |
-|---|---|---|
-| `climate.hallway_thermostat` | `Hallway - Thermostat Thermostat` | `Hallway - Hive Thermostat` |
-| `sensor.hallway_thermostat_current_temperature` | `Hallway - Thermostat Thermostat Current Temperature` | `Hallway - Hive Thermostat Current Temperature` |
+Entities with no device, such as the `min_max` helper `sensor.house_temperature`, get no
+composition and are out of scope.
 
-> **Accepted drift:** the entity IDs still carry the old `thermostat` device slug
-> (`climate.hallway_thermostat`, not `climate.hallway_hive_thermostat`). Renaming
-> them would break every dashboard and automation that references them, for no
-> functional gain — the device slug in an entity ID is allowed to lag a device
-> rename done purely to fix name composition.
+### After you rename a device
 
-> **Known wart:** this one Hive device also hosts the hot-water entities
-> (`*.basement_hotwater_*`), and Hive gives both `climate.hallway_thermostat` and
-> `water_heater.hallway_thermostat` an `original_name` of `Thermostat` — so they
-> share the display name `Hallway - Hive Thermostat`. Pre-existing; unfixable
-> without an override that would strip the prefix again.
+1. If an entity has a `name` override that references the old device or area name, clear it, so that the name composes again.
+2. If the integration's `original_name` embeds the old device name (`Nest Protect (Baby's Room) Smoke Status`), set a bare override with `ha_set_entity(entity_id, name="Smoke Status")`.
+3. For a Zigbee device, sync the friendly name in zigbee2mqtt, as described in [zigbee2mqtt-sync.md](zigbee2mqtt-sync.md).
 
-Entities with no device at all (e.g. `min_max` helpers like
-`sensor.house_temperature`) get no composition either and are out of scope for this
-convention.
+## After you rename an entity
 
-#### After renaming a device
+An entity ID rename does not reach the things that reference it. To find references, run
+`ha_search(query="old.entity_id")` with the exact old ID, then update each of the following:
 
-1. If the entity has a user-set custom name (`name` is not null) that references the old device/area name — **clear it** (above) so it reverts to the integration default and re-composes correctly.
-2. Only if the integration's own `original_name` embeds the old device name (e.g. `"Nest Protect (Baby's Room) Smoke Status"`) — **set a custom override** with `ha_set_entity(entity_id, name="Smoke Status")`. Accept that this loses the `{Area} - {Device}` prefix; use an explicit `name:` in dashboard cards to compensate.
-
----
+1. Dashboard cards. `ha_config_get_dashboard(entity_id=...)` finds them.
+2. Automations
+3. Template helpers whose `state` template references the old ID
+4. Scripts
+5. Groups. Read the member list with `ha_get_state("group.entity_id")` or `ha_get_state("media_player.group_entity")`, and update it with `ha_config_set_helper(helper_type="group", ...)`.
+6. Config-entry options. The entity registry does not rewrite them, and `ha_search` does not read them. The adaptive lighting `lights` list is the known case: see [_Audit `lights` after a light rename_](lighting-automation.md#audit-lights-after-a-light-rename).
 
 ## Automations
 
-### Entity ID format
+An automation's entity ID is its alias, slugified by the area ID rules: lower case, spaces and
+` - ` separators to underscores, apostrophes and other special characters dropped.
 
-Automation entity IDs are slugified from the alias (display name) using the same rules as [area IDs](#area-ids):
-
-- Lowercase, spaces → underscores
-- Apostrophes → dropped (not `_s_`)
-- ` - ` separators → `_`
-- Special characters (parentheses, etc.) → dropped
-
-```
-automation.{slugified_alias}
-```
-
-Examples:
-
-| Alias | entity_id |
+| Alias | `entity_id` |
 |---|---|
 | "Basement Lights" | `automation.basement_lights` |
 | "Tom's Office Lights" | `automation.toms_office_lights` |
-| "Nursery Lights" | `automation.nursery_lights` |
 | "Living Room - Manual" | `automation.living_room_manual` |
 | "Notify on Tumble Drier finished" | `automation.notify_on_tumble_drier_finished` |
 
-> **Note:** HA auto-generates automation entity IDs from the alias when first created, using its own slugification (which maps apostrophes to `_s_`). When renaming an automation's alias after creation, the entity_id is **not** automatically updated — use `ha_rename_entity` to fix it manually.
-
----
+Home Assistant generates the entity ID from the alias at creation, with its own slugification,
+which maps an apostrophe to `_s_`. Renaming the alias later does not update the entity ID. In
+both cases, fix the ID with `ha_set_entity(new_entity_id=...)`.
 
 ## Labels
 
-### Naming format
+A label's display name is kebab-case (`room-light`, `restart-daily`), and Home Assistant
+slugifies it to a snake_case `label_id` (`room_light`, `restart_daily`).
 
-| | Format | Example |
-|---|---|---|
-| Display name | kebab-case | `room-light`, `restart-daily` |
-| `label_id` | snake_case (HA slugifies the display name) | `room_light`, `restart_daily` |
+Give every label a `description` that says what applying it does. A label is an interface to an
+automation, and the description is the only place the UI shows that contract. Say in the
+description whether the label goes on the device or the entity:
 
-Give every label a `description` explaining what applying it *does* — a label is
-an interface to an automation, and the description is the only place that contract
-is visible in the UI.
+- **Label the entity** when the automation acts on that entity and a sibling entity would be wrong to touch. `room-light` marks individual light entities.
+- **Label the device** when the automation needs to find related entities on the same device, such as a restart button and the media player that says whether the device is busy. `restart-daily` in [maintenance.md](maintenance.md) works this way.
 
-### Label the device or the entity?
+A device label passed to `target: {label_id: …}` expands to every matching entity on that
+device. When you label devices, the automation must iterate them in a template and select the
+intended entity, typically by `device_class`.
 
-Decide by what the consuming automation needs, and state the choice in the label's
-description so it is not applied to the wrong thing:
-
-- **Label the entity** when the automation acts on that entity directly, and any
-  sibling entity would be wrong or harmful to touch. Example: `room-light` marks
-  individual light entities.
-- **Label the device** when the automation needs to *find* related entities on the
-  same device — for instance a restart button plus the media player that says
-  whether the device is busy. Example: `restart-daily` (see
-  [@maintenance.md](maintenance.md)).
-
-> ⚠️ **A device label passed to `target: {label_id: …}` expands to every matching
-> entity on that device.** For `button.press` on an Everything Presence Lite that
-> includes `factory_reset_mmwave_sensor`. When labelling devices, the automation
-> must iterate them in a template and *select* the intended entity — typically by
-> `device_class` — never target the label directly.
->
-> Note the converse asymmetry: `label_entities()` returns only entities labelled
-> **directly**; labels on a device do **not** roll down to its entities.
-
----
-
-## Zigbee2MQTT sync
-
-After renaming HA devices, sync the friendly names in zigbee2mqtt to match. See [@zigbee2mqtt-sync.md](zigbee2mqtt-sync.md) for the step-by-step procedure.
+The converse does not hold: `label_entities()` returns only entities that are labelled directly.
+A label on a device does not roll down to its entities.
