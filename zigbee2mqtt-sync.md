@@ -1,17 +1,14 @@
-# Zigbee2MQTT Sync
+# Zigbee2MQTT sync
 
-Device names in zigbee2mqtt (friendly names) must be kept in sync with the HA device names after any rename.
+After you rename a Home Assistant device, rename the device in zigbee2mqtt (z2m) to match. The
+z2m friendly name must equal the Home Assistant device name.
 
-## Prerequisites
+The steps need the `mosquitto` CLI tools (`brew install mosquitto`). The MQTT broker is
+`homeassistant.local` on port `1883`, with the credentials `homeconnect` / `homeconnect`.
 
-`mosquitto` CLI tools must be installed (`brew install mosquitto`). MQTT broker:
+## 1. List the z2m devices
 
-- Host: `homeassistant.local`, port `1883`
-- Credentials: `homeconnect` / `homeconnect`
-
-## Step 1 — get z2m device list
-
-Pull the current z2m devices and their friendly names:
+The following command prints each z2m device's IEEE address and friendly name:
 
 ```bash
 /opt/homebrew/bin/mosquitto_sub -h homeassistant.local -p 1883 -u homeconnect -P homeconnect \
@@ -19,9 +16,10 @@ Pull the current z2m devices and their friendly names:
   | jq -r '.[] | select(.type != "Coordinator") | [.ieee_address, .friendly_name] | @tsv'
 ```
 
-## Step 2 — get HA MQTT device names
+## 2. List the Home Assistant device names
 
-SSH into HA and extract the IEEE address → display name mapping for all MQTT devices:
+Home Assistant identifies a z2m device as `zigbee2mqtt_<ieee_address>`. The following command
+strips the prefix and prints each IEEE address with its display name:
 
 ```bash
 ssh root@homeassistant.local -C \
@@ -29,13 +27,10 @@ ssh root@homeassistant.local -C \
   /config/.storage/core.device_registry"
 ```
 
-The identifier format for z2m devices in HA is `zigbee2mqtt_<ieee_address>`, so stripping the prefix gives the IEEE address for matching.
+## 3. Rename the z2m devices
 
-## Step 3 — rename z2m devices to match HA
-
-Use the `zigbee2mqtt/bridge/request/device/rename` topic. The `homeassistant_rename: false` flag prevents z2m from also trying to rename the HA device (which is already correct).
-
-Run renames in parallel using a shell function:
+Publish to `zigbee2mqtt/bridge/request/device/rename` with `homeassistant_rename: false`, which
+stops z2m renaming the Home Assistant device as well. Run the renames in parallel:
 
 ```bash
 pub() {
@@ -46,25 +41,25 @@ pub() {
 }
 
 pub "0x001788010ea0b4e4" "Living Room - Tom's Lamp" &
-pub "0xaabbccddeeff0011" "Kitchen - Radiator" &
 # ... one line per device
 wait
 ```
 
-> **Note:** Avoid naming the shell function `rename` — it conflicts with the zsh builtin and the mosquitto_pub call will silently not run.
+Don't name the shell function `rename`. It conflicts with the zsh builtin, and the
+`mosquitto_pub` call does not run.
 
-## Step 4 — clear stale descriptions
+## 4. Clear stale descriptions
 
-z2m devices have a user-settable `description` field that can hold stale names from before a rename. After renaming, check for and clear any non-empty descriptions:
+A z2m device has a `description` field that can hold a name from before a rename. The following
+command lists the devices with a description:
 
 ```bash
-# List devices with non-empty descriptions
 /opt/homebrew/bin/mosquitto_sub -h homeassistant.local -p 1883 -u homeconnect -P homeconnect \
   -t 'zigbee2mqtt/bridge/devices' -C 1 -W 10 \
   | jq -r '.[] | select(.description != null and .description != "") | [.friendly_name, .description] | @tsv'
 ```
 
-Clear descriptions in parallel using `zigbee2mqtt/bridge/request/device/options`:
+To clear one, publish to `zigbee2mqtt/bridge/request/device/options`:
 
 ```bash
 pub() {
@@ -75,7 +70,6 @@ pub() {
 }
 
 pub "Living Room - Lamp Rear" &
-pub "Kitchen - Radiator" &
-# ... one line per device with a stale description
+# ... one line per device
 wait
 ```
