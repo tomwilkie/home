@@ -131,36 +131,67 @@ triggers:
     id: darkness_fell
     enabled: !input use_sun
 
-condition:
-  # Both triggers mean "an occupied room should be lit".  On the `occupied`
-  # path that is true by construction; on `darkness_fell` it is the whole
-  # point.  It also closes a race on the `occupied` path: if the group flickers
-  # back to off before the run starts, we no longer turn the lights on and then
-  # wait forever for an off edge that has already passed.
-  - condition: state
-    entity_id: !input motion_entity
-    state: "on"
-
-  - condition: or
-    enabled: !input use_brightness
-    conditions:
-      # Either some lights in the group are on...
-      - condition: template
-        value_template: "{{ lights_on }}"
-      # ...or the room is dark.
-      - condition: template
-        value_template: "{{ current_brightness < brightness_trigger }}"
-  - condition: or
+  # The room gets light around someone still in it.  The occupancy group may
+  # not go off for hours (a TV playing holds it on), so without this the lights
+  # stay on all morning.  Disabled when use_sun is false: there is no window to
+  # close.
+  - trigger: sun
+    event: sunrise
+    offset: !input sunrise_offset
+    id: daylight
     enabled: !input use_sun
+
+condition:
+  - condition: or
     conditions:
-      - condition: sun
-        after: sunset
-        after_offset: !input sunset_offset
-      - condition: sun
-        before: sunrise
-        before_offset: !input sunrise_offset
+      # Daylight turns the lights off whoever is in the room, so it skips the
+      # checks below.
+      - condition: trigger
+        id: daylight
+
+      - condition: and
+        conditions:
+          # `occupied` and `darkness_fell` both mean "an occupied room should
+          # be lit".  On the `occupied` path that is true by construction; on
+          # `darkness_fell` it is the whole point.  It also closes a race on
+          # the `occupied` path: if the group flickers back to off before the
+          # run starts, we no longer turn the lights on and then wait forever
+          # for an off edge that has already passed.
+          - condition: state
+            entity_id: !input motion_entity
+            state: "on"
+
+          - condition: or
+            enabled: !input use_brightness
+            conditions:
+              # Either some lights in the group are on...
+              - condition: template
+                value_template: "{{ lights_on }}"
+              # ...or the room is dark.
+              - condition: template
+                value_template: "{{ current_brightness < brightness_trigger }}"
+          - condition: or
+            enabled: !input use_sun
+            conditions:
+              - condition: sun
+                after: sunset
+                after_offset: !input sunset_offset
+              - condition: sun
+                before: sunrise
+                before_offset: !input sunrise_offset
 
 actions:
+  # The night window has closed.  mode: restart has already cancelled any run
+  # waiting for the room to empty, so turn the lights off and stop.
+  - if:
+      - condition: trigger
+        id: daylight
+    then:
+      - action: light.turn_off
+        target:
+          entity_id: "{{ light_entities }}"
+      - stop: Night window closed
+
   - action: system_log.write
     data_template:
       level: info

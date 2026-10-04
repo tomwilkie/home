@@ -182,7 +182,7 @@ and takes the following inputs:
 | `area_id` | Area whose lights to control | required | required |
 | `label_filter` | Only control lights with this label | none | `room_light` |
 | `no_motion_wait` | Seconds to leave lights on after last motion | 120 | 1800 |
-| `use_sun` | Only control lights at night, and trigger when the night window opens | false | per room |
+| `use_sun` | Only control lights at night, turn them on when the night window opens and off when it closes | false | per room |
 | `sunrise_offset` | Offset from sunrise (positive is after) | 00:00:00 | 01:00:00 if `use_sun` |
 | `sunset_offset` | Offset from sunset (positive is after) | 00:00:00 | -01:00:00 if `use_sun` |
 | `use_brightness` | Only turn on lights when the room is dark | false | false |
@@ -200,16 +200,19 @@ The blueprint has the following triggers:
 |---|---|---|
 | `occupied` | The occupancy group goes `off` to `on` | nothing |
 | `darkness_fell` | `sunset + sunset_offset` | `enabled: !input use_sun` |
+| `daylight` | `sunrise + sunrise_offset` | `enabled: !input use_sun` |
 
-One condition, that the occupancy group is `on`, sits ahead of the brightness and sun conditions
-and covers both triggers.
+`occupied` and `darkness_fell` share one condition, that the occupancy group is `on`, which sits
+ahead of the brightness and sun conditions. `daylight` bypasses all of them: it turns the
+`room-light` lights off and stops.
 
 - **`darkness_fell` turns the lights on for a room that is already occupied when the window opens.** With `use_sun` as a condition alone, the only way in is an `off` to `on` occupancy edge. Someone who sits down before the window opens produces no further edge, so the lights stay off all evening. Living Room is the worst case, because `binary_sensor.living_room_tv_playing` holds occupancy `on` for hours.
-- **Two native triggers, not one template trigger.** This is the same choice as the Master Bedroom automation.
-- **`mode: restart` is safe.** Home Assistant evaluates conditions before it stops the previous run, so a `darkness_fell` firing into an empty room does nothing and cannot cancel a pending turn-off. The occupancy condition also closes a race on the `occupied` trigger, where the group flickers back to `off` before the run starts.
+- **`daylight` turns the lights off for a room that is still occupied when the window closes.** The turn-off otherwise waits for the occupancy group to stay `off` for `no_motion_wait`, and a playing TV can hold it `on` all morning. It turns off any `room-light` that is on at that moment, including one switched on by hand on a dark morning. It fires once a day, so a light switched on later stays on until the room empties.
+- **Native triggers, not one template trigger.** This is the same choice as the Master Bedroom automation.
+- **`mode: restart` is safe.** Home Assistant evaluates conditions before it stops the previous run, so a `darkness_fell` firing into an empty room does nothing and cannot cancel a pending turn-off. `daylight` always passes, and cancelling the pending turn-off is what it wants. The occupancy condition also closes a race on the `occupied` trigger, where the group flickers back to `off` before the run starts.
 
 ### Known gaps
 
 - **`unavailable` to `on` is not a trigger.** The occupancy groups go `unavailable` at every 04:00 restart and on sensor dropouts. A bare `to: "on"` trigger would catch those and switch the lights on at 04:00 in an occupied dark room, so the narrow `from: "off"` stays.
 - **`use_brightness` has the same gap as `use_sun` had:** a room that darkens around someone already in it. No room sets it, so the blueprint has no lux-threshold trigger.
-- **The window closing turns nothing off.** At `sunrise + sunrise_offset` the lights stay as they are, and go off on the `no_motion_wait` timeout.
+- **Rooms without `use_sun` have no daylight turn-off.** In Basement and Tom's Office the lights go off only on the `no_motion_wait` timeout.

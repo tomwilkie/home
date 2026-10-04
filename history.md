@@ -193,6 +193,14 @@ and `last_triggered` still read 07:36 with every stored trace `failed_conditions
 (Living Room, Nursery, Rear Guest Room) at once. Basement and Tom's Office render the trigger
 `enabled: false`.
 
+### 2026-10-04: Living Room lights stayed on all morning
+
+The lights came on at 07:04, inside the night window. From 07:53 the Apple TV reported `playing`
+(NOW, Sky Sports F1), the presence sensor held `on` and motion kept firing, so the occupancy
+group never went `off` and the turn-off never ran. The window closed at about 08:05 with nothing
+watching it, and the lights stayed on until they were turned off by hand at 11:05. The
+`daylight` trigger was added to the blueprint as the counterpart of `darkness_fell`.
+
 ## Maintenance
 
 ### 2026-08-02: commissioning run of the restart sweep
