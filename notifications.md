@@ -78,9 +78,9 @@ reach it.
 The automation matches any logger that contains `automation.` or `script.`, which includes
 itself and the script it announces through. Its exclusion list breaks that loop: `script.annouce`
 and `automation.notify_on_automation_failure` must stay in it, or an error while announcing
-triggers another announcement. The `.automation_script_fail_detector` and
-`script.email_notification` entries come from the original blueprint and match nothing in this
-instance.
+triggers another announcement. The `.automation_script_fail_detector` entry comes from the
+original blueprint and matches nothing in this instance. Don't list entity IDs that don't exist,
+because Spook raises a repair for each one.
 
 ## Notification players
 
