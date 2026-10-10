@@ -12,6 +12,7 @@ Each of the following documents covers one area:
 - @lighting-automation.md covers how the lighting automation is configured.
 - @naming-conventions.md covers how to name automations, devices and entities. Consult it before you create or rename an entity, helper, automation or device.
 - @notifications.md covers the announce scripts and the front door, washing machine, tumble dryer and vacuum notifications.
+- @heating.md covers the house thermostat, the heating relay that drives the Hive thermostat, and the preset automation.
 - @wake-routines.md covers the wake-time helper and its consumers (bedside alarm, morning hot water, wake up routine), and the calendar-driven early-flight hot water routine.
 - @maintenance.md covers the label-driven scheduled restarts of devices that degrade with uptime, and the integration watchdogs that reload a config entry that has wedged (Hive, Netatmo).
 - @dashboards.md covers the GitOps workflow for dashboards and the purpose of each dashboard.
