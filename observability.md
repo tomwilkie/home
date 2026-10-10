@@ -43,7 +43,7 @@ The following table lists the scrape jobs:
 | Docker containers | `integrations/docker` | Per-container resource usage from cAdvisor |
 | Home Assistant | `integrations/homeassistant` | All entity states from `/api/prometheus` |
 | zigbee2mqtt | `integrations/zigbee2mqtt` | Link quality, message and join counters, adapter queue and retries, from the z2m exporter on `localhost:9142` |
-| Unpoller | `integrations/unpoller` | UniFi device metrics. Alloy finds the add-on through Docker service discovery, because add-on DNS is unreachable from the host network. Unpoller 5.0.2 has no `umbb` device support, so the U5G Max has no cellular signal history. |
+| Unpoller | `integrations/unpoller` | UniFi device metrics. Alloy finds the add-on through Docker service discovery, because add-on DNS is unreachable from the host network. Includes the U5G Max's cellular metrics (`type="umbb"`, `unpoller_device_mbb_*`) from 2026-10-03. See [_Unpoller add-on_](#unpoller-add-on). |
 
 ### Match add-on containers on the slug
 
@@ -56,6 +56,24 @@ Match the stable parts instead. The unpoller scrape keeps `/.+_unpoller`, and th
 pipeline strips any `[a-z]+_(core|local|<8 hex>)_` prefix. `hassio_*` and compose containers
 have no `<repo>` segment, so they pass through unchanged. The [_Exporter down_](#exporter-down)
 alert is the backstop, because it fires on a job that has vanished.
+
+### Unpoller add-on
+
+The UnPoller add-on comes from
+[tomwilkie/home-assistant-addons](https://github.com/tomwilkie/home-assistant-addons), a copy
+of [bluemaex's add-on](https://github.com/bluemaex/home-assistant-addons/tree/main/unpoller)
+that bumps unpoller to v5.5.0, the first release with U5G Max (`umbb`) support. bluemaex's
+Renovate holds major bumps for approval, so that add-on stayed on unpoller v3.5.0. The bump is
+proposed upstream as
+[bluemaex/home-assistant-addons#612](https://github.com/bluemaex/home-assistant-addons/pull/612).
+
+- **Installed slug `39e0dbb4_unpoller`.** It has no prebuilt image, so the Supervisor builds it locally from the Dockerfile. To move to a newer unpoller, bump the tag in the Dockerfile and the add-on `version`, then update the add-on.
+- **bluemaex's `71dadad1_unpoller` is stopped with `boot: manual`.** Both publish host port 9130, so only one can run. Switch back by stopping one and starting the other; both read `/config/addons/unpoller/up.conf`.
+
+The UniFi-Poller dashboards in the Grafana `Unifi` folder are imported from
+[unpoller/dashboards](https://github.com/unpoller/dashboards/tree/master/v2.0.0), with
+`${DS_PROMETHEUS}` replaced by `grafanacloud-prom`. They are not file-managed in this repo.
+`UniFi-Poller: UMBB Insights - Prometheus` (`unpoller-umbb`) covers the U5G Max.
 
 ## Logs
 
