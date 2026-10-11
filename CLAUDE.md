@@ -31,6 +31,9 @@ The following rules are specific to this repo and win where they disagree with t
 - **State the current design as rules, each with a short reason.** Put the story of how a rule
   was discovered in `history.md` under a dated entry, and keep one or two sentences of "why" in
   the main document.
+- **Dated status goes in `history.md`.** An investigation in progress, a measurement, a plan or
+  a "status as of" belongs there under a dated entry, even while it is live. The main document
+  keeps the rule or alert it motivated and a link to the entry.
 - **Rewrite in place when a decision changes.** Don't append a correction that contradicts
   earlier text, don't keep "this used to say" notes, and delete checklist items when they are
   done.

@@ -415,13 +415,8 @@ To read the reset history further back than Loki's 30 days, copy the U5G's own l
 `/var/log/uiwwand-signal.log*` records serving-cell changes and signal samples, for about the
 last five days.
 
-#### Investigation status (2026-10-01)
-
-- **Onset.** No modem resets from 2026-07-02 to 2026-08-04. The first was on 2026-08-05, four days after the U5G upgraded from 7.4.1 to 7.5.3, which left the modem firmware (`SWIX65C_02.17.08.00`) unchanged. There were 75 resets from then to 2026-09-25.
-- **Pattern.** 36 of the 75 fell between 08:00 and 10:00, nearly all on weekdays (Fri 23, Thu 19, Sat 4, Sun 1). Load-balanced, the rate was 1.49 a day, with a reset on 61% of weekdays. As backup only, from 2026-09-20, it fell to 0.42 a day and 22% of weekdays, but four of the five resets as backup came with the link idle.
-- **Ruled out.** Signal (SINR 12 to 17 dB, transmit power about 15 dBm), heat (43 °C), PoE (the U5G is not powered by the AP's passthrough port) and cell switching (about 260 a day, peaking at 13:00 to 16:00, not in the morning).
-- **Change.** On 2026-10-01 the U5G went to Early Access 8.0.2 by manual firmware URL, which updated the modem to `SWIX65C_03.04.10.01`. After the update, SINR on the same n78 cell reads 0 to 3.5 dB, with RSRP and RSRQ unchanged, which may be a reporting change. A 30-ping test over `wwan0` showed no loss and a 42 ms average.
-- **Plan.** Keep the U5G as backup for a week. If no resets occur, return it to load balancing for at least two weeks, the condition that produced most resets. Compare the 07:52 speed test over `gre1` (`unpoller_device_speedtest_download{port="if!gre1"}`, 314 Mbps before the upgrade) to tell a SINR reporting change from a real loss. If the radio is worse or the resets continue, roll back to 7.5.3, which is cached on the UDM.
+The investigation into the resets, with the onset, the pattern and the firmware change, is in
+[_U5G Max modem resets_](history.md#2026-10-01-u5g-max-modem-resets) in `history.md`.
 
 ### IOT DNAT redirect tripwire
 
