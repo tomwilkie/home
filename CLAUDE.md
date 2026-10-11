@@ -6,22 +6,35 @@ through the MCP server rather than through files here. The dashboards, the light
 the Grafana Alloy config, and the Grafana dashboards and alerts are the exceptions: this repo is
 their source of truth.
 
-Each of the following documents covers one area:
+# Documents
 
-- @access-home-assistant.md covers the ways to talk to Home Assistant, UniFi and Grafana.
-- @lighting-automation.md covers how the lighting automation is configured.
-- @naming-conventions.md covers how to name automations, devices and entities. Consult it before you create or rename an entity, helper, automation or device.
-- @notifications.md covers the announce scripts and the front door, washing machine, tumble dryer and vacuum notifications.
-- @heating.md covers the house thermostat, the heating relay that drives the Hive thermostat, and the preset automation.
-- @wake-routines.md covers the wake-time helper and its consumers (bedside alarm, morning hot water, wake up routine), and the calendar-driven early-flight hot water routine.
-- @maintenance.md covers the label-driven scheduled restarts of devices that degrade with uptime, and the integration watchdogs that reload a config entry that has wedged (Hive, Netatmo).
-- @dashboards.md covers the GitOps workflow for dashboards and the purpose of each dashboard.
-- @observability.md covers how Grafana Alloy ships metrics and logs to Grafana Cloud.
-- @network-security.md covers how the UniFi gateway isolates the IOT and Camera VLANs, and how to audit the isolation.
+@access-home-assistant.md is loaded with this file. It covers how to reach Home Assistant (the
+`ha_*` MCP tools, `hass-cli`, the REST API via `scripts/ha-api`, SSH to the host and the
+`.storage` registries), the UniFi gateway (the `unifi-network` and `unifi-protect` MCP plugins,
+`scripts/unifi-ssh`) and Grafana Cloud (`gcx`), with each tool's quirks.
 
-`history.md` holds incident narratives, outage timelines, test-run results and superseded
-designs. It is deliberately not imported here. Read it only when you need to know how a rule
-came about.
+None of the following documents is loaded for you. Each is the rules for one area, and you must
+read it with the Read tool before you touch that area: the rules are not derivable from the
+live config, and most of them exist because something broke without them. When a task spans
+areas, read every matching document. The table says what each one covers and when to read it.
+
+| Document | What it covers | Read it when |
+|---|---|---|
+| [naming-conventions.md](naming-conventions.md) | Area, device, entity, automation and label naming: `{Area} - {Device}` device names, area-first entity IDs, bare entity names so that `friendly_name` composes, when a `name` override is wrong, what to update after a rename (dashboards, automations, groups, config-entry options, zigbee2mqtt). | You create, rename or relabel any entity, helper, automation, device, area or label, or you see a `friendly_name` that looks wrong. |
+| [lighting-automation.md](lighting-automation.md) | The occupancy-group plus `motion_lights` blueprint plus `room-light` label plus adaptive-lighting pattern that every room follows. The standard adaptive-lighting settings. Which rooms are exceptions and why. How to edit and deploy the blueprint, with and without SSH. The blueprint's triggers, the sun-window edge cases and the known gaps. | Lights come on or go off at the wrong time, a room's lighting needs changing, a light is added, renamed or removed, or the blueprint is edited. |
+| [heating.md](heating.md) | `climate.house_thermostat`, a `generic_thermostat` in `configuration.yaml`; the template `switch.heating_relay` that drives the Hive thermostat's setpoint; `automation.set_thermostat_state`, which picks the preset from presence and the comfort schedule, and why it acts on transitions only. | The heating is on or off when it should not be, a setpoint or schedule changes, or the Hive thermostat is involved. |
+| [wake-routines.md](wake-routines.md) | `input_datetime.wake_up_time` and everything that reads or writes it: the 17:00 reset, the bedside-clock mirror, `automation.morning_hot_water` and its catch-up triggers, `automation.wake_up_routine`. The bedroom sleep sound. The calendar-driven `automation.early_flight_hot_water`. | Anything about mornings: the alarm, hot water, shutters, the vacuums starting, the white noise, or a flight. Also read it for a hot-water outage, together with maintenance.md. |
+| [notifications.md](notifications.md) | `script.annouce` and `script.cancel_announce`, which callers speak and which stay silent, the `media_player.notification_players` group and its per-player toggles, why the speech step is split by `MEDIA_ANNOUNCE` support, the Kitchen Display watchdog. The `input_select` state-machine pattern for the tumble dryer, front door and washing machine, and the vacuum bin-full alert. | A notification was missed, duplicated or spoken when it should not have been, a speaker is added or swapped, an appliance or doorbell automation changes, or you add a new announcement. |
+| [maintenance.md](maintenance.md) | The label-driven 04:30 restart sweep (`restart-daily`, `restart-weekly`, `restart-monthly` on devices, not entities), the 04:00 to 06:00 timing of the other maintenance automations, and how to verify the sweep. The Netatmo and Hive watchdogs: why each exists, the guard that stops the Hive one wedging the entry, and how to test them. | A device or integration is `unavailable`, something is wrong "every morning", a device needs a scheduled restart, an integration keeps failing after the nightly restart, or any automation runs between 04:00 and 06:00. |
+| [dashboards.md](dashboards.md) | The `hass-cli` pull, edit, push workflow for the three dashboards in `dashboards/`; what each view holds; the card-mod recipes for the Auto lights cards and the bin-full tiles; how to repair a re-created Music Assistant player; the `background: false` rule on the kitchen camera cards; how to check a render. | You edit any dashboard YAML, a card looks wrong or is missing, or a dashboard references an entity that no longer exists. |
+| [observability.md](observability.md) | Grafana Alloy on the HAOS host: the metric scrape jobs, the log pipelines (Docker, journal, UniFi syslog with its `log_type` split, AdGuard query log), how to query Home Assistant's own logs in Loki, deployment with `make`, the file-managed Grafana dashboards and their workflow, and the Grafana alert rules (exporter down, U5G modem reset, DNAT tripwire). | You need logs older than four hours, a metric or dashboard is missing or wrong, an alert fired, the Alloy config or a Grafana dashboard or alert changes, or an add-on container is renamed. |
+| [network-security.md](network-security.md) | The VLANs and the Home Assistant reservation; the Zone-Based Firewall policies that isolate IOT and Cameras while allowing Home Assistant; same-VLAN isolation on WLANs and switch ports; the mDNS reflector; DNS and NTP forcing through DHCP, an iptables DNAT redirect and backstop blocks; the per-device internet block by MAC; how to audit it all. | A device cannot be reached or discovered, a device moves VLAN or joins the IOT or Cameras network, a firewall or DNS change is needed, the DNAT tripwire alert fires, or you audit the isolation. |
+| [zigbee2mqtt-sync.md](zigbee2mqtt-sync.md) | How to make zigbee2mqtt friendly names match Home Assistant device names with the `mosquitto` CLI. | You rename a Zigbee device. |
+| [history.md](history.md) | Incident narratives, outage timelines, root-cause analyses, test-run results, measurements and superseded designs, under dated entries per area. | You need to know how a rule came about, you are investigating an incident that looks like an earlier one, or you are recording an investigation, a measurement or a "status as of". |
+
+The project skills in `.claude/skills/` are `ha-api` (call the REST API through
+`scripts/ha-api`), `ha-health-check` (audit the live instance) and `rename-entities` (bring an
+area's names into line with naming-conventions.md).
 
 # Documentation style
 
@@ -41,6 +54,8 @@ The following rules are specific to this repo and win where they disagree with t
   six presence sensors" is out of date as soon as the fleet changes. Name the group, or list the
   members where the list itself is the record.
 - **Say each thing in one document** and link to it from the others.
+- **Keep the index in this file current.** When you add a document, add a row with what it
+  covers and when to read it. When a document gains or loses a topic, update its row.
 
 # Git workflow
 
@@ -92,7 +107,7 @@ You can commit the following:
 
 Don't commit any of the following:
 
-- The home street address or postcode in any form: in entity IDs, display names, headings or prose. Use `home` or `My Home` instead, for example `weather.home` and `zone.home`.
+- The home street address or postcode in any form: in entity IDs, display names, headings or prose. Use `home` or `My Home` instead, for example `weather.home` and `zone.home`. The UniFi site name is the street address, so don't echo UniFi site settings into files or commit messages.
 - Public IP addresses or external URLs that could identify the home network or expose services
 - API keys, long-lived access tokens, bearer tokens, or any credential that grants access to an external service (Grafana Cloud, GitHub, cloud integrations)
 - Webhook IDs that are live and secret. Placeholder values such as `<your-webhook-id>` are fine.
