@@ -2,6 +2,7 @@
   "enabledPlugins": {
     "home-assistant-skills@home-assistant-skills": true,
     "unifi-protect@unifi-plugins": true,
-    "unifi-network@unifi-plugins": true
+    "unifi-network@unifi-plugins": true,
+    "docs-style@tomwilkie-skills": true
   }
 }
