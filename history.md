@@ -266,6 +266,21 @@ confirmed. During a stranded window the log carried `not ready yet` lines for `r
 `norman_shutters` and `music_assistant` and none for `netatmo`, and `config_entry_setup`
 finished in about four seconds.
 
+The cause is in the integration, confirmed against the 2026.8.3 source and present in 2026.9.3:
+
+1. `NetatmoDataHandler.async_setup()` fetches the account topology once.
+2. The fetch swallows `pyatmo.ApiError` and logs it at `DEBUG`, so a failure does not raise.
+3. `async_dispatch()` creates entities by iterating `account.homes`. If the fetch failed, that is empty, and no entities are dispatched.
+4. `async_dispatch()` is called only from `async_setup()`, so polling cannot repair it.
+
+The only visible sign was a different call a few seconds later, which logged at `ERROR`:
+`Error during webhook registration - 503 - Service Unavailable`. A 503 with code 27 is Netatmo's
+backend being unhealthy, not a quota. The fix belongs upstream: `async_setup()` needs to raise
+`ConfigEntryNotReady` when the topology fetch fails.
+
+- **2026.9.3 logs the first fetch error at `INFO`** (`Error while fetching %s data`) with a matching recovery line, which makes the failure visible.
+- **[core#181448](https://github.com/home-assistant/core/issues/181448) does not apply.** 2026.9.0 drops every entity when a Netatmo `Home` device is disabled. This instance has no `Home` device. Check again before an upgrade if that changes.
+
 ### 2026-09-20: Hive outage
 
 The house had no hot water or heating for six hours. The 04:00 restart hit a five-second read
@@ -277,11 +292,21 @@ manual reload at 09:59. `automation.morning_hot_water` fired at 07:00 and failed
 script. Service not found for call_service at pos 1: Action hive.boost_hot_water not found
 ```
 
+The following upstream defects combined:
+
+1. **`getLoginInfo` returns `None` on a timeout.** `requests.ReadTimeout` subclasses `OSError`, which the library catches and logs, and `async_init` then raises `AttributeError`. [Pyhive #145](https://github.com/Pyhass/Pyhive/pull/145) fixes it but was unreleased, and core pinned `pyhive-integration==1.0.9`. With #145 released, the crash becomes `HiveUnknownConfiguration`, which is still uncaught and still not retried.
+2. **Core catches an exception that cannot be raised.** `async_setup_entry` handles `HiveReauthRequired` and a server-side `HTTPException` class, so every other failure becomes `SETUP_ERROR`. This is [core#182752](https://github.com/home-assistant/core/issues/182752).
+3. **Every startup forces a fresh sign-in.** In [Pyhive #123](https://github.com/Pyhass/Pyhive/issues/123), `tokenCreated` defaults to `datetime.min`, so stored tokens read as expired, and a restart calls the sign-in endpoint with a five-second timeout.
+
 While the watchdog was being tested, a reload of the loaded entry wedged it in `FAILED_UNLOAD`,
-and a plain reload from the UI wedged it again that evening. The first version of the watchdog
-had no `continue_on_error` on the reload, so it failed silently every 15 minutes for six hours.
-`fan.master_bedroom_dyson_fan` was seen with `restored: true` while its `dyson_local` entry was
-loaded, which is why every watched entity must be a stub.
+and a plain reload from the UI wedged it again that evening. `async_unload_entry` unloads the
+full platform list, this house has no Hive lights, unloading `light` raises, and the entry lands
+in `FAILED_UNLOAD` ([core#182753](https://github.com/home-assistant/core/issues/182753)).
+[core#176594](https://github.com/home-assistant/core/pull/176594) makes the unload failure
+non-fatal from 2026.10. The first version of the watchdog had no `continue_on_error` on the
+reload, so it failed silently every 15 minutes for six hours. `fan.master_bedroom_dyson_fan` was
+seen with `restored: true` while its `dyson_local` entry was loaded, which is why every watched
+entity must be a stub.
 
 `automation.morning_hot_water` gained its `hive_recovered` and `ha_start` catch-up triggers the
 same day.

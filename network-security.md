@@ -32,9 +32,9 @@ The Home Assistant host is `192.168.0.12`, wired, on the Default network, with M
 allow-exception target of the IOT and Camera rules, the target of the DNS and NTP redirects, and
 the target of the front-door webhook in [notifications.md](notifications.md).
 
-Home Assistant is on the main network, not on IOT, so the per-network **Network Isolation**
-checkbox is the wrong tool: it would also cut IOT off from Home Assistant. The design needs
-explicit firewall policies that block IOT to the main network and allow IOT to `192.168.0.12`.
+Because Home Assistant is on the main network, the per-network **Network Isolation** checkbox is
+the wrong tool: it would also cut IOT off from Home Assistant. The design needs explicit
+firewall policies that block IOT to the main network and allow IOT to `192.168.0.12`.
 
 ### Move a device to another VLAN
 
@@ -45,49 +45,49 @@ explicit firewall policies that block IOT to the main network and allow IOT to `
 ## Firewall policies
 
 The design uses the Zone-Based Firewall (ZBF) because it separates the Gateway zone (DHCP and DNS
-on the UDM) from the Internal zone. Blocking IOT to Internal therefore does not break DHCP or
-DNS, which a flat `block 192.168.0.0/16` rule would.
+on the UDM) from the Internal zone, so blocking IOT to Internal does not break DHCP or DNS as a
+flat `block 192.168.0.0/16` rule would. IOT and Cameras each have a dedicated zone, so a device
+that joins either network is denied by default rather than by an enumerated block:
 
-IOT and Cameras each have a dedicated zone, so a device that joins either network is denied by
-default rather than by an enumerated block. The main network and Home Assistant stay in
-Internal:
+| Zone | Member network |
+|---|---|
+| Internal | Default, including Home Assistant |
+| External | Internet |
+| IOT | IOT |
+| Cameras | Cameras |
 
-| Zone | Zone ID | Member network |
-|---|---|---|
-| Internal | `6a3114d4631d350c25c14067` | Default, including Home Assistant |
-| External | `6a3114d4631d350c25c14068` | Internet |
-| IOT | `6a3115f9631d350c25c14179` | IOT |
-| Cameras | `6a31160b631d350c25c141a3` | Cameras |
+Zones, policies and groups are referenced by name here, not by ID. The IDs change whenever a
+policy is re-created, so look them up with `unifi_list_firewall_zones`,
+`unifi_list_firewall_policies` and `unifi_list_firewall_groups`.
 
-With dedicated zones, the UniFi predefined matrix allows IOT to External and allows IOT and
-Cameras to Gateway (DHCP, DNS and the NVR). It blocks IOT and Cameras to Internal, and it also
-blocks Internal to IOT and Internal to Cameras, which would stop Home Assistant controlling
-devices and pulling streams. The following custom policies add the Home Assistant exceptions,
-restore trusted inbound traffic, block camera internet access, and add logging for the audit.
-Within each zone pair they are listed in evaluation order:
+The UniFi predefined matrix allows IOT to External and allows IOT and Cameras to Gateway (DHCP,
+DNS and the NVR). It blocks IOT and Cameras to Internal, and also blocks Internal to IOT and
+Internal to Cameras, which would stop Home Assistant controlling devices and pulling streams. The
+following custom policies add the Home Assistant exceptions, block camera internet access and
+add logging for the audit. Within each zone pair they are listed in evaluation order:
 
-| Zone pair | Policy | Action | Logged | Policy ID | Purpose |
-|---|---|---|---|---|---|
-| IOT to Internal | `IOT to Home Assistant` | ALLOW to `192.168.0.12` | no | `6a311707631d350c25c14233` | Device-initiated traffic: MQTT, Wyoming voice, webhooks, DNS, NTP |
-| IOT to Internal | `Block IOT to LAN` | BLOCK, `NEW` and `INVALID` states | yes | `6a311721631d350c25c1423c` | Containment |
-| Internal to IOT | `LAN to IOT` | ALLOW | no | `6a311704631d350c25c14230` | The LAN initiates to IOT (ESPHome, Cast, printing) |
-| Cameras to Internal | `Cameras to Home Assistant` | ALLOW to `192.168.0.12` | no | `6a31170a631d350c25c14239` | Camera-initiated traffic to Home Assistant |
-| Cameras to Internal | `Block Cameras to LAN` | BLOCK, `NEW` and `INVALID` states | yes | `6a311724631d350c25c1423f` | Containment |
-| Cameras to External | `Block Cameras to Internet` | BLOCK | yes | `6a311725631d350c25c14242` | Protect updates cameras through the NVR |
-| Internal to Cameras | `Home Assistant to Cameras` | ALLOW from `192.168.0.12` | no | `6a311709631d350c25c14236` | Home Assistant pulls camera streams (RTSP) |
-| IOT to External | `Block IOT DNS to Internet` | BLOCK tcp and udp, port group `DNS Ports` | yes | `6a3502392753ee32cc1f26e8` | Plain DNS and DNS over TLS to any resolver |
-| IOT to External | `Block IOT to Public DNS Providers` | BLOCK all ports, address group `Public DNS Resolvers` | yes | `6a35023a2753ee32cc1f26eb` | DNS over HTTPS and anything else to the known public resolvers |
-| IOT to External | `Block IOT NTP to Internet` | BLOCK udp, port group `NTP Ports` | yes | `6a36760b2753ee32cc2397f4` | Public NTP |
-| IOT to External | `Block IOT No-Internet Devices` | BLOCK, source matched on client MAC | yes | `6a37a57e2753ee32cc2733cc` | [Per-device internet block](#per-device-internet-block) |
-| IOT to External | `Log IOT to Internet (ALLOW)` | ALLOW | yes | `6a37a5b62753ee32cc273453` | Logs every IOT internet connection |
+| Zone pair | Policy | Action | Logged | Purpose |
+|---|---|---|---|---|
+| IOT to Internal | `IOT to Home Assistant` | ALLOW to `192.168.0.12` | no | Device-initiated traffic: MQTT, Wyoming voice, webhooks, DNS, NTP |
+| IOT to Internal | `Block IOT to LAN` | BLOCK, `NEW` and `INVALID` states | yes | Containment |
+| Internal to IOT | `LAN to IOT` | ALLOW | no | The LAN initiates to IOT (ESPHome, Cast, printing) |
+| Cameras to Internal | `Cameras to Home Assistant` | ALLOW to `192.168.0.12` | no | Camera-initiated traffic to Home Assistant |
+| Cameras to Internal | `Block Cameras to LAN` | BLOCK, `NEW` and `INVALID` states | yes | Containment |
+| Cameras to External | `Block Cameras to Internet` | BLOCK | yes | Protect updates cameras through the NVR |
+| Internal to Cameras | `Home Assistant to Cameras` | ALLOW from `192.168.0.12` | no | Home Assistant pulls camera streams (RTSP) |
+| IOT to External | `Block IOT DNS to Internet` | BLOCK tcp and udp, port group `DNS Ports` | yes | Plain DNS and DNS over TLS to any resolver |
+| IOT to External | `Block IOT to Public DNS Providers` | BLOCK all ports, address group `Public DNS Resolvers` | yes | DNS over HTTPS and anything else to the known public resolvers |
+| IOT to External | `Block IOT NTP to Internet` | BLOCK udp, port group `NTP Ports` | yes | Public NTP |
+| IOT to External | `Block IOT No-Internet Devices` | BLOCK, source matched on client MAC | yes | [Per-device internet block](#per-device-internet-block) |
+| IOT to External | `Log IOT to Internet (ALLOW)` | ALLOW | yes | Logs every IOT internet connection |
 
 The policies reference the following firewall groups:
 
-| Group | Type | Group ID | Members |
-|---|---|---|---|
-| `Public DNS Resolvers` | address group | `6a3502122753ee32cc1f2645` | 8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1, 9.9.9.9, 149.112.112.112, 208.67.222.222, 208.67.220.220, 94.140.14.14, 94.140.15.15, 4.2.2.1, 4.2.2.2, 4.4.4.4, 64.6.64.6, 64.6.65.6 |
-| `DNS Ports` | port group | `6a3502132753ee32cc1f2648` | 53, 853 |
-| `NTP Ports` | port group | `6a3675fb2753ee32cc2397cb` | 123 |
+| Group | Type | Members |
+|---|---|---|
+| `Public DNS Resolvers` | address group | 8.8.8.8, 8.8.4.4, 1.1.1.1, 1.0.0.1, 9.9.9.9, 149.112.112.112, 208.67.222.222, 208.67.220.220, 94.140.14.14, 94.140.15.15, 4.2.2.1, 4.2.2.2, 4.4.4.4, 64.6.64.6, 64.6.65.6 |
+| `DNS Ports` | port group | 53, 853 |
+| `NTP Ports` | port group | 123 |
 
 ### Log every BLOCK policy
 
@@ -100,11 +100,10 @@ policy with logging enabled, and the [audit](#audit-the-isolation), the Loki pip
 `Block IOT to LAN` and `Block Cameras to LAN` must use `connection_state_type: CUSTOM` with
 `connection_states: ["NEW","INVALID"]`, not `ALL`.
 
-A containment block exists to stop a device initiating into the LAN. UniFi creates the block
-with `ALL`, which also drops the `ESTABLISHED` and `RELATED` return traffic of connections that
-a LAN device started. That breaks Internal to IOT for every main-LAN host except Home Assistant,
-which survives only because its own allow sits above the block. The symptom is that AirPrint,
-Cast or an ESPHome web UI fails from any device other than Home Assistant.
+UniFi creates a block with `ALL`, which also drops the `ESTABLISHED` and `RELATED` return traffic
+of connections that a LAN device started. That breaks Internal to IOT for every main-LAN host
+except Home Assistant, whose own allow sits above the block. The symptom is that AirPrint, Cast
+or an ESPHome web UI fails from any device other than Home Assistant.
 
 To tell a forward drop from a return drop, read the UDM's connection tracker with
 `ssh root@192.168.0.1 "conntrack -L -d IOT_IP"`. A flow stuck in `SYN_RECV` with a high
@@ -116,12 +115,11 @@ Within a zone pair the first matching rule wins, and the lowest `index` is evalu
 evaluates the whole custom band (index 10000 to 29999) before the predefined band (30000 and
 later).
 
-In the IOT to External pair, the blocks must stay above `Log IOT to Internet (ALLOW)`. The ALLOW
+In the IOT to External pair, the blocks must stay above `Log IOT to Internet (ALLOW)`, which
 matches all IOT internet traffic, so any rule placed after it never matches.
 
 A created custom rule lands last in its zone pair. To place a rule above the ALLOW, create the
-rule, then delete and re-create the ALLOW so that the ALLOW lands last again. Re-creating the
-ALLOW changes its policy ID, so update the policy table afterwards. The reorder tool did not
+rule, then delete and re-create the ALLOW so that it lands last again. The reorder tool did not
 work when these rules were built, as described in
 [_Firewall tools_](access-home-assistant.md#firewall-tools).
 
@@ -142,15 +140,15 @@ traffic is switched at layer 2 and does not reach the gateway. Two settings cove
 | Back-garden camera (G5 Turret Ultra) | Cameras | `Basement Switch` | 3 |
 
 Isolation breaks peer-to-peer features on that VLAN, such as multi-room audio grouping and local
-device-to-device discovery. We accept that in exchange for containment. Port isolation works per
-switch, so it does not block same-VLAN traffic between devices on different switches.
+device-to-device discovery, which we accept in exchange for containment. Port isolation works
+per switch, so it does not block same-VLAN traffic between devices on different switches.
 
 ## Cross-VLAN discovery
 
 Home Assistant is on a different VLAN from IOT, so multicast discovery (HomeKit, Cast, ESPHome,
 Matter) needs the mDNS reflector: global Multicast DNS plus `mdns_enabled: true` on the IOT
-network. Without it, devices that are already added keep working, and discovery of added devices
-breaks. The reflector runs on the gateway, so the IOT to Internal block does not affect it.
+network. Without it, devices that are already added keep working and discovery breaks. The
+reflector runs on the gateway, so the IOT to Internal block does not affect it.
 
 ## DNS and NTP forcing
 
@@ -183,10 +181,12 @@ chrony runs as the Home Assistant add-on `a0d7b954_chrony` on `192.168.0.12:123`
 
 ### Blocks
 
-`Block IOT DNS to Internet` and `Block IOT NTP to Internet` stay at about zero hits while the
-redirect is in place, because a redirected packet's destination is already `192.168.0.12` when
-the firewall evaluates it. `Block IOT to Public DNS Providers` catches DNS over HTTPS (DoH) on
-port 443 to the listed resolvers, which the redirect cannot rewrite.
+DNAT happens in `nat PREROUTING`, ahead of the ZBF forward chains, so a redirected packet's
+destination is already `192.168.0.12` when the firewall evaluates it and it matches
+`IOT to Home Assistant`. `Block IOT DNS to Internet` and `Block IOT NTP to Internet` therefore
+stay at about zero hits while the redirect is in place. `Block IOT to Public DNS Providers`
+catches DNS over HTTPS (DoH) on port 443 to the listed resolvers, which the redirect cannot
+rewrite.
 
 To check that the blocks fire, query `{log_type="firewall", rule=~"Block IOT.*"}` in Loki.
 
@@ -208,7 +208,6 @@ iptables -t nat -I PREROUTING -i br2 -p tcp --dport 53  ! -d 192.168.0.12 -j DNA
 
 - **No source NAT is needed.** The target is on a different subnet, so replies route back through the UDM and the connection tracker reverses the DNAT. `rp_filter` is loose (`2`), so the return path is not dropped. Keeping the real source address preserves per-device visibility in the chrony and AdGuard logs.
 - **Flush the connection tracker after inserting a rule.** Live UDP flows bypass a freshly inserted PREROUTING rule until they expire. `apply.sh` runs `conntrack -D -p udp --dport PORT` for the ports it changes.
-- **The redirect runs before the firewall.** DNAT happens in `nat PREROUTING`, ahead of the ZBF forward chains, so a redirected packet matches `IOT to Home Assistant` and not the port 53 and port 123 blocks.
 
 ### Persistence
 
@@ -227,20 +226,17 @@ so `start` does nothing after the first run.
 
 ### Drift detection
 
-A Grafana alert fires if the redirect is removed. Without the redirect, the port 53 and port 123
-blocks start logging, a recording rule turns those lines into a metric, and the alert watches
-the metric. The rules are in
-[_IOT DNAT redirect tripwire_](observability.md#iot-dnat-redirect-tripwire). The remediation is
-to run `apply.sh`.
+If the redirect is removed, the port 53 and port 123 blocks start logging and the Grafana alert
+in [_IOT DNAT redirect tripwire_](observability.md#iot-dnat-redirect-tripwire) fires. The
+remediation is to run `apply.sh`.
 
 ## IOT internet destinations
 
-`Log IOT to Internet (ALLOW)` logs every IOT internet connection, so the gateway emits one
-kernel firewall log line per connection. With the **firewall** category enabled in the UDM's
-remote logging, those lines reach Loki over the syslog pipeline described in
-[_UniFi firewall and DNS logs_](observability.md#unifi-firewall-and-dns-logs).
-
-To list a device's destinations, query:
+`Log IOT to Internet (ALLOW)` makes the gateway emit one kernel firewall log line per IOT
+internet connection. With the **firewall** category enabled in the UDM's remote logging, those
+lines reach Loki over the syslog pipeline described in
+[_UniFi firewall and DNS logs_](observability.md#unifi-firewall-and-dns-logs). To list a
+device's destinations, query:
 
 ```
 {log_type="firewall", rule="Log IOT to Internet (ALLOW)"} |= "SRC=192.168.2.67"
@@ -257,10 +253,10 @@ or phone home. The rule blocks WAN only: traffic to Home Assistant is untouched,
 NTP redirects are LAN-local, so a blocked device keeps working time and resolution.
 
 The rule is a custom ZBF policy that matches the source on client MAC
-(`matching_target: CLIENT`, `matching_target_type: SPECIFIC`). A MAC is stable, so the rule
-needs no address group and no DHCP reservations. A custom rule is required because an
-Object-Oriented Network (OON) policy generates predefined rules, which sit in the predefined band
-and can never outrank the custom catch-all ALLOW.
+(`matching_target: CLIENT`, `matching_target_type: SPECIFIC`), so it needs no address group and
+no DHCP reservations. A custom rule is required because an Object-Oriented Network (OON) policy
+generates predefined rules, which sit in the predefined band and can never outrank the custom
+catch-all ALLOW.
 
 The rule's `source.client_macs` lists the following devices, each verified to have a local Home
 Assistant path. The addresses are DHCP leases, not reservations:
@@ -292,7 +288,7 @@ The following devices are deliberately left out of the rule:
 - **Cloud-dependent devices:** Nest Protect, Hive, Deebot, Netatmo, the Kitchen Display, the Prusa cameras and the alarm module.
 
 To change membership, edit the rule's `source.client_macs` in the UniFi UI (**Firewall**,
-**Policies**, **Block IOT No-Internet Devices**) or through the firewall tools. Then flush the
+**Policies**, **Block IOT No-Internet Devices**) or through the firewall tools, then flush the
 connection tracker for the affected address with `ssh root@192.168.0.1 conntrack -D -s IOT_IP`,
 so that live flows are re-evaluated.
 

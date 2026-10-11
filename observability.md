@@ -1,36 +1,17 @@
 # Observability
 
 [Grafana Alloy](https://grafana.com/docs/alloy/latest/) ships Home Assistant metrics and logs to
-Grafana Cloud. It runs as a plain Docker container on the Home Assistant OS (HAOS) host.
+Grafana Cloud. It runs as a plain Docker container on the Home Assistant OS (HAOS) host, with
+`network_mode: host` so that it reaches Home Assistant on `localhost:8123`.
 
 ## Why Alloy is not an add-on
 
 Add-ons run inside the Supervisor's managed Docker environment, which does not let a container
-mount the host's `/proc` or `/sys`. Node exporter metrics (CPU, memory, disk and network at the
-host level) need those mounts. The restriction is deliberate, as the
+mount the host's `/proc` or `/sys`, and node exporter metrics need those mounts. The restriction
+is deliberate, as the
 [community thread](https://community.home-assistant.io/t/mount-hosts-proc-sys-into-add-on-container/848705/3)
-and [discussion #3203](https://github.com/orgs/home-assistant/discussions/3203) explain. Alloy
-therefore runs as a standalone container under Docker Compose, outside the Supervisor.
-
-## Architecture
-
-Alloy collects from the following sources and ships everything to Grafana Cloud Prometheus and
-Loki:
-
-```
-HAOS host
-└── Grafana Alloy (Docker, host network)
-    ├── scrapes /proc, /sys          → node metrics
-    ├── scrapes Docker socket        → container metrics (cAdvisor) + container logs
-    ├── reads /var/log/journal       → systemd journal logs
-    ├── scrapes localhost:8123       → Home Assistant metrics
-    ├── scrapes localhost:9142       → zigbee2mqtt metrics
-    ├── discovers unpoller add-on    → UniFi network metrics
-    ├── receives UDM syslog on :514  → UniFi events (raw UDP, split by log_type)
-    └── tails AdGuard querylog.json  → IOT DNS query log
-```
-
-Alloy runs with `network_mode: host` so that it reaches Home Assistant on `localhost:8123`.
+and [discussion #3203](https://github.com/orgs/home-assistant/discussions/3203) explain, so
+Alloy runs under Docker Compose outside the Supervisor.
 
 ## Metrics
 
@@ -43,19 +24,17 @@ The following table lists the scrape jobs:
 | Docker containers | `integrations/docker` | Per-container resource usage from cAdvisor |
 | Home Assistant | `integrations/homeassistant` | All entity states from `/api/prometheus` |
 | zigbee2mqtt | `integrations/zigbee2mqtt` | Link quality, message and join counters, adapter queue and retries, from the z2m exporter on `localhost:9142` |
-| Unpoller | `integrations/unpoller` | UniFi device metrics. Alloy finds the add-on through Docker service discovery, because add-on DNS is unreachable from the host network. Includes the U5G Max's cellular metrics (`type="umbb"`, `unpoller_device_mbb_*`) from 2026-10-03. See [_Unpoller add-on_](#unpoller-add-on). |
+| Unpoller | `integrations/unpoller` | UniFi device metrics, found through Docker service discovery because add-on DNS is unreachable from the host network. Includes the U5G Max's cellular metrics (`type="umbb"`, `unpoller_device_mbb_*`) from 2026-10-03. See [_Unpoller add-on_](#unpoller-add-on). |
 
 ### Match add-on containers on the slug
 
-Don't key discovery or relabelling on the Supervisor's container-name prefix. Add-on containers
-are named `<kind>_<repo>_<slug>`, where `<repo>` is `core`, `local` or an eight-character
-repository hash, and the Supervisor renamed `<kind>` from `addon` to `app`. A rule that matched
-`addon_` then matched nothing, and the unpoller job disappeared with no error and no `up == 0`.
-
-Match the stable parts instead. The unpoller scrape keeps `/.+_unpoller`, and the Docker log
-pipeline strips any `[a-z]+_(core|local|<8 hex>)_` prefix. `hassio_*` and compose containers
-have no `<repo>` segment, so they pass through unchanged. The [_Exporter down_](#exporter-down)
-alert is the backstop, because it fires on a job that has vanished.
+Add-on containers are named `<kind>_<repo>_<slug>`, where `<repo>` is `core`, `local` or an
+eight-character repository hash, and the Supervisor has renamed `<kind>` before (`addon` to
+`app`). Match the stable parts, not the prefix: the unpoller scrape keeps `/.+_unpoller`, and
+the Docker log pipeline strips any `[a-z]+_(core|local|<8 hex>)_` prefix. `hassio_*` and compose
+containers have no `<repo>` segment, so they pass through unchanged. A prefix match fails
+silently, with no error and no `up == 0`, and the [_Exporter down_](#exporter-down) alert is the
+backstop because it fires on a job that has vanished.
 
 ### Unpoller add-on
 
@@ -63,16 +42,16 @@ The UnPoller add-on comes from
 [tomwilkie/home-assistant-addons](https://github.com/tomwilkie/home-assistant-addons), a copy
 of [bluemaex's add-on](https://github.com/bluemaex/home-assistant-addons/tree/main/unpoller)
 that bumps unpoller to v5.5.0, the first release with U5G Max (`umbb`) support. bluemaex's
-Renovate holds major bumps for approval, so that add-on stayed on unpoller v3.5.0. The bump is
-proposed upstream as
+Renovate holds major bumps for approval, so that add-on stayed on v3.5.0. The bump is proposed
+upstream as
 [bluemaex/home-assistant-addons#612](https://github.com/bluemaex/home-assistant-addons/pull/612).
 
-- **Installed slug `39e0dbb4_unpoller`.** It has no prebuilt image, so the Supervisor builds it locally from the Dockerfile. To move to a newer unpoller, bump the tag in the Dockerfile and the add-on `version`, then update the add-on.
-- **bluemaex's `71dadad1_unpoller` is stopped with `boot: manual`.** Both publish host port 9130, so only one can run. Switch back by stopping one and starting the other; both read `/config/addons/unpoller/up.conf`.
+- **Installed slug `39e0dbb4_unpoller`.** It has no prebuilt image, so the Supervisor builds it from the Dockerfile. To move to a newer unpoller, bump the tag in the Dockerfile and the add-on `version`, then update the add-on.
+- **bluemaex's `71dadad1_unpoller` is stopped with `boot: manual`.** Both publish host port 9130, so only one can run, and both read `/config/addons/unpoller/up.conf`.
 
 The UniFi-Poller dashboards in the Grafana `Unifi` folder are imported from
 [unpoller/dashboards](https://github.com/unpoller/dashboards/tree/master/v2.0.0), with
-`${DS_PROMETHEUS}` replaced by `grafanacloud-prom`. They are not file-managed in this repo.
+`${DS_PROMETHEUS}` replaced by `grafanacloud-prom`, and are not file-managed in this repo.
 `UniFi-Poller: UMBB Insights - Prometheus` (`unpoller-umbb`) covers the U5G Max.
 
 ## Logs
@@ -90,17 +69,17 @@ otherwise picks the raw container name for Docker and the per-event CEF `name` l
 | UniFi syslog | `unifi` | `integrations/unifi` | `udm` | `log_type`, plus the labels in [_UniFi syslog_](#unifi-syslog) |
 | AdGuard Home query log | `adguard` | `integrations/adguard` | hostname | |
 
-The AdGuard add-on's container stdout also arrives through the Docker pipeline as
-`service_name=adguard` with `job=integrations/docker`. That stream is AdGuard's operational log,
-not the query log. To tell them apart, select on `job`.
+The AdGuard add-on's container stdout also arrives as `service_name=adguard` with
+`job=integrations/docker`. That is AdGuard's operational log, not the query log, so select on
+`job`.
 
-Loki keeps logs for 30 days, and a query range longer than about 30 days is rejected.
+Loki keeps logs for 30 days and rejects a longer query range.
 
 ### Home Assistant's own logs
 
-Home Assistant Core's container log arrives through the Docker pipeline as
-`service_name="homeassistant"`. Loki is the only copy older than about four hours: `ha core
-logs`, the `error_log` API and the MCP `ha_get_logs` tool all read a rolling in-memory buffer.
+Home Assistant Core's container log arrives as `service_name="homeassistant"`. Loki is the only
+copy older than about four hours: `ha core logs`, the `error_log` API and the MCP `ha_get_logs`
+tool all read a rolling in-memory buffer.
 
 ```sh
 gcx logs query '{job="integrations/docker", service_name="homeassistant"}' \
@@ -108,28 +87,27 @@ gcx logs query '{job="integrations/docker", service_name="homeassistant"}' \
   --limit 5000 --jq '[.data.result[].values[].line] | .[]'
 ```
 
-- **`--from` and `--to` are UTC, and the timestamps inside each line are local.** In British Summer Time a window aimed at the 04:00 restart by its log timestamps returns 05:00 instead. Convert first, then check the first line that comes back.
+- **`--from` and `--to` are UTC, and the timestamps inside each line are local.** In British Summer Time a window aimed at the 04:00 restart by its log timestamps returns 05:00 instead.
 - **The result shape is `.data.result[].values[].line`**, an object per entry, not the `[ts, line]` tuple of the raw Loki HTTP API.
-- **A multi-line traceback arrives as separate log lines**, so a line filter that matches the exception does not match the `Traceback` line or the frames. Pull the whole window and read around the match.
+- **A multi-line traceback arrives as separate log lines**, so a line filter that matches the exception misses the `Traceback` line and the frames. Pull the whole window and read around the match.
 
 ### UniFi syslog
 
-The UDM's remote logging does not emit RFC-compliant syslog. It sends Common Event Format (CEF)
-over UDP, with no `<PRI>` prefix and with the site name in the hostname position:
+The UDM's remote logging sends Common Event Format (CEF) over UDP, with no `<PRI>` prefix and
+with the site name in the hostname position:
 
 ```
 Jun 17 12:42:00 <site name> CEF:0|Ubiquiti|UniFi Protect|7.1.83|2159|motion|3|UNIFIcategory=detection ... msg="..."
 ```
 
-The strict RFC 3164 and RFC 5424 parsers reject this, so `loki.source.syslog "unifi"` listens
-with `syslog_format = "raw"`, which passes each datagram through unparsed. `raw` is an
-experimental Alloy feature, so `docker-compose.yml` starts the container with
-`--stability.level=experimental`. The listener binds `0.0.0.0:514`, reachable on the LAN at the
-Home Assistant host address `192.168.0.12`.
+The RFC 3164 and RFC 5424 parsers reject this, so `loki.source.syslog "unifi"` listens with
+`syslog_format = "raw"`, which passes each datagram through unparsed. `raw` is experimental, so
+`docker-compose.yml` starts Alloy with `--stability.level=experimental`. The listener binds
+`0.0.0.0:514`, reachable on the LAN at `192.168.0.12`.
 
-One UDP stream carries four unrelated kinds of line. `loki.process "unifi"` classifies each line
-by content into a `log_type` label, using `stage.match` blocks whose selector is a `|=` line
-filter. Without the split, sporadic camera events are buried under firewall flow logs:
+One UDP stream carries four unrelated kinds of line, and without a split the sporadic camera
+events are buried under firewall flow logs. `loki.process "unifi"` sets a `log_type` label from
+`stage.match` blocks with `|=` line filters:
 
 | `log_type` | Matches lines containing | Extra labels |
 |---|---|---|
@@ -138,15 +116,15 @@ filter. Without the split, sporadic camera events are buried under firewall flow
 | `cef` | `CEF:` | `product`, `name`, `severity` from the CEF header |
 | `system` | anything else (UniFi OS daemons such as `mcad`, `earlyoom`, `wevent`) | none |
 
-Only bounded fields become labels. High-cardinality fields (source and destination addresses,
-ports, DNS domains) stay in the log body, and you query them with `|=` or `|~`.
+Only bounded fields become labels. Addresses, ports and DNS domains stay in the log body, and you
+query them with `|=` or `|~`.
 
 The site name in the hostname position is the home address. Alloy does not strip it, because the
 logs go to a private Grafana Cloud stack. If that changes, add a `stage.regex` that keeps only
 the part from `CEF:` onwards, plus a `stage.output`.
 
 Configure the UDM side in the UniFi UI, not through the MCP server, because the site-settings
-payload echoes the home address. Enable remote logging, set **Server Address** to `192.168.0.12`
+payload echoes the home address: enable remote logging, set **Server Address** to `192.168.0.12`
 and **Port** to `514` (UDP), and select the categories. No firewall rule is needed, because the
 ZBF predefined matrix allows gateway to Internal traffic.
 
@@ -165,11 +143,10 @@ IN=br2 OUT=eth8 SRC=192.168.2.67 DST=34.159.33.52 PROTO=TCP SPT=... DPT=443 ...
 
 To narrow to one device, add a line filter:
 `{log_type="firewall", rule="Log IOT to Internet (ALLOW)"} |= "SRC=192.168.2.67"`. The policies
-are described in [network-security.md](network-security.md).
+are in [network-security.md](network-security.md).
 
-**CoreDNS lines** (`log_type=dns`) are JSON, and cover only the queries that the UDM's ad
-blocking stopped (`"type":"dnsAdBlock"`), not full resolution. IOT resolution goes through
-AdGuard Home instead.
+**CoreDNS lines** (`log_type=dns`) are JSON and cover only the queries that the UDM's ad blocking
+stopped (`"type":"dnsAdBlock"`). IOT resolution goes through AdGuard Home instead.
 
 ### Verify syslog ingestion
 
@@ -181,30 +158,29 @@ tcpdump -ni any udp port 514 -A
 curl -s localhost:12345/metrics | grep -E 'loki_source_syslog_entries_total|loki_write_(dropped|sent)_entries_total'
 ```
 
-Firewall lines are high-volume. CEF events arrive a few per minute, so a short quiet capture is
-normal for CEF alone.
+Firewall lines are high-volume, and CEF events arrive a few per minute, so a short quiet capture
+is normal for CEF alone.
 
 ### AdGuard Home query log
 
 AdGuard Home is the IOT resolver, as described in
 [_DNS and NTP forcing_](network-security.md#dns-and-ntp-forcing). Alloy ships its query log to
 Loki so that DNS lookups can be queried with LogQL next to the firewall log. AdGuard keeps its
-own copy for 90 days, and Loki keeps 30.
+own copy for 90 days.
 
 AdGuard has no log export, so Alloy reads the file:
 
-- **Mount:** the add-on's data directory is bind-mounted read-only into Alloy at `/adguard`, from host path `/mnt/data/supervisor/apps/data/a0d7b954_adguard/adguard/data`. The mount is the directory, not the file, so the tail survives rotation, which re-creates `querylog.json` with a different inode.
+- **Mount:** the add-on's data directory, `/mnt/data/supervisor/apps/data/a0d7b954_adguard/adguard/data`, is bind-mounted read-only at `/adguard`. Mounting the directory rather than the file means the tail survives rotation, which re-creates `querylog.json` with a different inode.
 - **Tail:** `local.file_match` and `loki.source.file` tail only `querylog.json`, not the rotated `querylog.json.1`, so a rotation does not re-send a whole file.
-- **Timestamp:** each line is one JSON object and becomes the log body. `stage.json` and `stage.timestamp` set the Loki timestamp from AdGuard's `T` field, so a catch-up after Alloy downtime keeps the real query times.
+- **Timestamp:** each line is one JSON object and becomes the log body. `stage.json` and `stage.timestamp` take the Loki timestamp from AdGuard's `T` field, so a catch-up after Alloy downtime keeps the real query times.
 
-A line has the following shape:
+A line has the following shape, and the domain (`QH`) and client (`IP`) are parsed at query
+time:
 
 ```
 {"T":"…","QH":"connect.prusa3d.com","QT":"AAAA","IP":"192.168.2.67",
  "Upstream":"https://dns10.quad9.net:443/dns-query","Result":{},"Cached":true,…}
 ```
-
-The domain (`QH`) and client (`IP`) stay in the body, so parse them at query time:
 
 ```
 {job="integrations/adguard"} | json | IP="192.168.2.67"
@@ -215,14 +191,13 @@ destination addresses in the firewall log.
 
 #### Flush every query to disk
 
-`size_memory: 0` is set in `AdGuardHome.yaml`. AdGuard buffers the most recent `size_memory`
-queries in memory and writes `querylog.json` only when the buffer fills, with no timer. At the
-default of 1000 the file, and so Loki, updated in roughly hourly batches. AdGuard treats `0` as a
-buffer of one, so it writes after every query and Alloy ships each line within seconds. The cost
-is one small file append per DNS query.
+`size_memory: 0` is set in `AdGuardHome.yaml`. AdGuard writes `querylog.json` only when its
+in-memory buffer of `size_memory` queries fills, with no timer, so at the default of 1000 Loki
+received the log in roughly hourly batches. `0` means a buffer of one, so Alloy ships each line
+within seconds, at the cost of one small file append per DNS query.
 
-The setting is not in the AdGuard UI or API. AdGuard owns and rewrites `AdGuardHome.yaml`, so to
-change it, stop the add-on (slug `a0d7b954_adguard`), edit
+The setting is not in the AdGuard UI or API, and AdGuard rewrites `AdGuardHome.yaml`. To change
+it, stop the add-on (slug `a0d7b954_adguard`), edit
 `/mnt/data/supervisor/apps/data/a0d7b954_adguard/adguard/AdGuardHome.yaml`, then start the
 add-on.
 
@@ -252,9 +227,8 @@ SSH as `root@homeassistant.local`:
 | `make ps` | Show container status |
 | `make shell` | Open a shell inside the Alloy container |
 
-`make push` writes the config to `/homeassistant/alloy/config.alloy`, which the Supervisor sees
-as `/mnt/data/supervisor/homeassistant/alloy/config.alloy`. Alloy's persistent state is the
-Docker volume `alloy-data`.
+`/homeassistant/alloy/config.alloy` is `/mnt/data/supervisor/homeassistant/alloy/config.alloy`
+to the Supervisor. Alloy's persistent state is the Docker volume `alloy-data`.
 
 ## Grafana dashboards
 
@@ -272,19 +246,17 @@ edit the file here and upload it to Grafana.
 | `home-temperature-by-area.json` | `home-temperature-by-area` | One row per area, each with a time series of that area's temperature entities |
 
 The zigbee2mqtt dashboards are tagged `zigbee2mqtt-integration` and link to each other. The
-overview's device table links to `/d/zigbee2mqtt-device?var-device=<ieee_address>`. It uses the
-IEEE address and not the friendly name, so the link survives a device rename.
+overview's device table links to `/d/zigbee2mqtt-device?var-device=<ieee_address>` by IEEE
+address, not friendly name, so the link survives a device rename.
 
 ### Workflow
 
-1. Diff the local file against Grafana, and fetch the live version first if they differ:
+1. Diff the local file against Grafana, and fetch the live version first if they differ. Fetch with `jq .` and not `jq -S`, to keep the original key order and small diffs:
 
    ```bash
    diff <(jq -S . observability/dashboards/SLUG.json) <(gcx api /api/dashboards/uid/UID | jq -S .)
    gcx api /api/dashboards/uid/UID | jq . > observability/dashboards/SLUG.json
    ```
-
-   Fetch with `jq .` and not `jq -S`, to keep the original key order and small diffs.
 
 2. Edit `observability/dashboards/SLUG.json`.
 3. Upload it. The stored file has `dashboard` and `meta` keys, and the upload endpoint wants `dashboard` and `overwrite`:
@@ -294,7 +266,7 @@ IEEE address and not the friendly name, so the link survives a device rename.
      | gcx api /api/dashboards/db -d @-
    ```
 
-4. Snapshot the changed panels and look at them, as described in [_Verify a dashboard visually_](#verify-a-dashboard-visually).
+4. Snapshot the changed panels, as described in [_Verify a dashboard visually_](#verify-a-dashboard-visually).
 5. Commit.
 
 ### Verify a dashboard visually
@@ -309,7 +281,7 @@ gcx dashboards snapshot UID --panel PANEL_ID --var area=toms_office \
 ```
 
 - **A single-panel snapshot is the real check.** Pass `--panel` and a `--var` override, because a repeating panel renders empty at the dashboard level.
-- **Each call overwrites `<uid>-panel-<id>.png`.** Rename the file between renders when you compare two.
+- **Each call overwrites `<uid>-panel-<id>.png`,** so rename the file between renders when you compare two.
 - **Don't commit or share a full-dashboard snapshot.** It renders the datasource picker, which shows the stack slug, and the slug contains the street name. A single-panel snapshot does not show the picker.
 
 ### How `home-temperature-by-area` derives the area
@@ -330,7 +302,7 @@ The queries exclude the following series:
 |---|---|---|
 | Lines and band | `target_temperature` | A setpoint, not a reading |
 | Lines and band | `boiler_monitor_temperature_[0-9]` | Boiler pipe probes |
-| Lines and band | `device_temperature`, `internal_temperature`, `battery_temperature`, `door_temperature` | The temperature a device reports about itself, which reads 26 to 57 °C in a 22 to 28 °C room and compresses the axis |
+| Lines and band | `device_temperature`, `internal_temperature`, `battery_temperature`, `door_temperature` | A device's self-heat, which reads far above room temperature and compresses the axis |
 | Band only | `outside` | The aircon outdoor probe, a real reading that distorts the room range |
 
 The Norman shutter-motor temperatures stay in, because they track room temperature and give
@@ -343,7 +315,7 @@ Alert and recording rules are Grafana-managed and provisioned through
 `/api/v1/provisioning/alert-rules`. Rules with a JSON file in `observability/alerts/` are
 file-managed, and this section records the intent of the rest. Reference datasources by the
 generic UIDs `grafanacloud-logs` and `grafanacloud-prom`, not by the datasource names, which
-embed the stack slug.
+embed the stack slug. `X-Disable-Provenance` keeps a provisioned rule editable in the UI:
 
 ```bash
 gcx alert rules list
@@ -351,11 +323,9 @@ gcx api /api/v1/provisioning/alert-rules
 gcx api /api/v1/provisioning/alert-rules -X POST -H "X-Disable-Provenance: true" -d @rule.json
 ```
 
-`X-Disable-Provenance` keeps the rule editable in the UI.
-
-The stack uses a recording rule, then a metric, then an alert: a Grafana-managed recording rule
-runs a LogQL metric query and writes the result to Prometheus, and an alert thresholds the
-metric. `zigbee2mqtt_errors:rate15m` is an example.
+A log-derived alert is a recording rule, then a metric, then an alert: the recording rule runs a
+LogQL metric query and writes the result to Prometheus, and the alert thresholds the metric.
+`zigbee2mqtt_errors:rate15m` is an example.
 
 ### Exporter down
 
@@ -370,7 +340,7 @@ or label_replace(vector(0), "job", "integrations/unpoller", "", "")
 # … one line per expected job
 ```
 
-- **`up == 0` alone is not enough.** It catches a target that is discovered and failing. A target that was never discovered has no `up` series. Each `label_replace(vector(0), …)` line supplies a `0` for an expected job, and `or` keeps it only when the job has no real series.
+- **`up == 0` alone is not enough.** A target that was never discovered has no `up` series. Each `label_replace(vector(0), …)` line supplies a `0` for an expected job, and `or` keeps it only when the job has no real series.
 - **`min`, not `sum`,** so one failing target in a multi-target job still fires.
 - **To add an exporter, add its line** and send the JSON again. The expected jobs are `alloy`, `docker`, `homeassistant`, `node_exporter`, `zigbee2mqtt` and `unpoller`.
 - **If Alloy stops, every instance fires together.** That is intended.
@@ -402,11 +372,11 @@ sum(count_over_time({job="integrations/unifi"}
   [10m])) or vector(0)
 ```
 
-The U5G Max's cellular modem (a Sierra Wireless EM9291) hangs and reboots itself, typically on
-weekday mornings, and keeps no crash dump. The rule exists to count those resets while firmware
-fixes are tried, so it matches two independent signatures:
+The U5G Max's cellular modem (a Sierra Wireless EM9291) hangs and reboots itself and keeps no
+crash dump. The rule counts those resets while firmware fixes are tried, from two independent
+signatures:
 
-- **The U5G's own log lines.** `schedule syserr_worker` is the kernel seeing the modem reset, and `Modem disconnect detected` is the U5G's modem daemon losing it. Both lines carry the `U5G-Max-<version>` hostname, so the match survives a firmware upgrade unless the messages change. It survived 7.5.3 to 8.0.2: the flash on 2026-10-01 fired the rule from `U5G-Max-8.0.2+19972` lines.
+- **The U5G's own log lines.** `schedule syserr_worker` is the kernel seeing the modem reset, and `Modem disconnect detected` is the U5G's modem daemon losing it. Both carry the `U5G-Max-<version>` hostname, so the match survived the 7.5.3 to 8.0.2 upgrade and survives the next unless the messages change.
 - **The UDM's failover monitor marking the 5G WAN (`gre1`) down.** It does not depend on the U5G's firmware or logging, and it also catches 5G outages that are not modem resets.
 
 To read the reset history further back than Loki's 30 days, copy the U5G's own logs with
@@ -415,15 +385,14 @@ To read the reset history further back than Loki's 30 days, copy the U5G's own l
 `/var/log/uiwwand-signal.log*` records serving-cell changes and signal samples, for about the
 last five days.
 
-The investigation into the resets, with the onset, the pattern and the firmware change, is in
+The investigation into the resets is in
 [_U5G Max modem resets_](history.md#2026-10-01-u5g-max-modem-resets) in `history.md`.
 
 ### IOT DNAT redirect tripwire
 
 The tripwire detects the removal of the UDM's DNS and NTP redirects described in
 [_DNAT redirect_](network-security.md#dnat-redirect). Without the redirect, IOT port 53 and port
-123 traffic escapes towards the internet and hits the logged BLOCK rules, which otherwise stay
-at zero.
+123 traffic hits the logged BLOCK rules, which otherwise stay at zero.
 
 | Rule (folder `Unifi`) | Type | Definition |
 |---|---|---|
