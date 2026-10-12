@@ -340,3 +340,27 @@ the one-hour boost, while `water_heater.hallway_thermostat` stayed `off` and
 
 `automation.trigger` with `skip_condition: false` started a real boost, because the wake time
 had been moved to 07:45 and the test ran inside the window.
+
+### 2026-10-12: onward flight overwrote the early boost
+
+Two flights sat on the calendar for the same morning: "Flight to Paris (DL 8307)" from London
+LHR at 06:15, and "Flight to San Francisco (DL 8726)" from Paris CDG at 09:20. At 18:15 the
+`schedule` trigger ran for the Paris flight, passed the filter and set
+`input_datetime.flight_hot_water_time` to 02:15. At 21:20 it ran for the San Francisco flight,
+also passed the filter and overwrote the helper with 05:20. Because `script.annouce` uses the
+slugified title as the `notification_id`, the second notification replaced the first, so only
+the San Francisco flight was visible. The 02:15 boost never ran, and Tom boosted the water by
+hand at 02:45.
+
+Two faults combined:
+
+- The airport check was `regex_search(...) is not none`. Home Assistant's `regex_search` returns
+  `True` or `False`, never `None`, so the comparison was always true and the check had never
+  excluded anything. A live render confirmed it: `'Paris CDG' | regex_search('LHR|LGW|STN|LTN|LCY')`
+  gives `False`, and `False is not none` gives `True`.
+- The automation kept one helper and wrote it on every passing run. The `schedule` trigger
+  fires 12 hours before each event, so the later flight's run always came last.
+
+The fix dropped `is not none`, added an earliest-wins condition and put the event summary in
+the notification title. The rules are in
+[_Filter_](wake-routines.md#filter) and [_Notification_](wake-routines.md#notification).

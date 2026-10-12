@@ -112,6 +112,17 @@ requires all of the following:
 - A shower time earlier than the normal wake time
 - A computed boost time in the future
 
+A second template condition makes the earliest flight win: the branch writes the helper only
+when the stored boost time has passed or the new boost time is earlier. The `schedule` trigger
+fires 12 hours before each event, so on a day with two flights the later flight's run comes
+last and would otherwise overwrite the earlier boost with a later one.
+
+Use the result of `regex_search` as the boolean it is. In Home Assistant the filter returns
+`True` or `False`, never a match object, so `regex_search(...) is not none` is always true and
+the airport check disappears. That is how an onward flight from Paris CDG replaced a 06:15
+Heathrow departure's boost, as recorded in
+[_2026-10-12: onward flight overwrote the early boost_](history.md#2026-10-12-onward-flight-overwrote-the-early-boost).
+
 The automation acts only when the flight forces a shower earlier than the normal wake time, so
 that an afternoon departure does not schedule a midday boost:
 
@@ -137,8 +148,10 @@ trip on the Settings dashboard rather than in the automation.
 ### Notification
 
 The `schedule` branch calls `script.annouce` with `speak: false`, which leaves a persistent
-notification the evening before ("BA 770 departs 07:05. Hot water on at 03:05, shower from
-04:05.") and says nothing over the speakers.
+notification the evening before ("Flight to Stockholm (BA 770) departs 07:05. Hot water on at
+03:05, shower from 04:05.") and says nothing over the speakers. The title carries the event
+summary, because `script.annouce` slugifies the title into the `notification_id`, and a fixed
+title would let a second flight on the same day replace the first flight's notification.
 
 `automation.morning_hot_water` still boosts at its usual time on a flight morning. That is
 deliberate, because the house is still occupied.
