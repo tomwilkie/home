@@ -11,7 +11,7 @@ notify for the front door, the washing machine, the tumble dryer and the vacuums
 optional `important`, `persistent` and `speak` fields. It takes the following actions:
 
 1. If Tom's office speaker is playing, it lowers the volume for the duration of the announcement.
-2. Unless `speak: false`, it speaks the message through ChimeTTS on the selected notification players. Speech runs only between 06:00 and 23:00, unless `important: true`.
+2. Unless `speak: false`, it speaks the message through ChimeTTS on the selected notification players. Speech runs only between 07:00 and 22:00, unless `important: true`.
 3. Unless `persistent: false`, it creates a persistent notification in the Home Assistant UI. The `notification_id` is `title | slugify`, so a later call can dismiss it.
 
 `speak: false` makes the call UI-only. It suppresses the ChimeTTS step and the volume duck and
