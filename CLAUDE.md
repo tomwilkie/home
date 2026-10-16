@@ -101,7 +101,6 @@ You can commit the following:
 - MAC addresses, private IP addresses (192.168.x.x, 10.x.x.x), Zigbee IEEE addresses
 - Local hostnames, for example `homeassistant.local`
 - Internal Home Assistant device IDs and entity IDs, even those derived from hardware identifiers
-- MQTT credentials for the local broker if they are already embedded in documentation examples
 
 ## Never commit
 
@@ -110,5 +109,6 @@ Don't commit any of the following:
 - The home street address or postcode in any form: in entity IDs, display names, headings or prose. Use `home` or `My Home` instead, for example `weather.home` and `zone.home`. The UniFi site name is the street address, so don't echo UniFi site settings into files or commit messages.
 - Public IP addresses or external URLs that could identify the home network or expose services
 - API keys, long-lived access tokens, bearer tokens, or any credential that grants access to an external service (Grafana Cloud, GitHub, cloud integrations)
+- Passwords for the local MQTT broker. Documentation reads them from 1Password, as in [zigbee2mqtt-sync.md](zigbee2mqtt-sync.md).
 - Webhook IDs that are live and secret. Placeholder values such as `<your-webhook-id>` are fine.
 - Full surnames of non-household third parties
