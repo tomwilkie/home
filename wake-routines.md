@@ -59,7 +59,7 @@ Check `wake_up_time` first, because a manual override moves the window.
 
 `automation.turn_bedroom_lights_on_before_sunset`, described in
 [_Master Bedroom_](lighting-automation.md#master-bedroom), plays `library://track/129` ("Baby
-Sleep Heartbeat") on `media_player.master_bedroom_homepod_mini_ma_player` at volume 0.48 with
+Sleep Heartbeat") on `media_player.nursery_homepod_mini_ma_player` at volume 0.48 with
 `repeat: one`. The wake routine's "Fade out the white noise" branch stops it with
 `media_player.media_stop` and `repeat_set: off`. The two automations must stay in step.
 

@@ -372,8 +372,8 @@ views:
                             input_boolean.living_room_arylic_lp10_ma_player_notifications
                         name: Living Room (Arylic)
                      -  entity: 
-                            input_boolean.master_bedroom_homepod_mini_ma_player_notifications
-                        name: Master Bedroom (HomePod)
+                            input_boolean.nursery_homepod_mini_ma_player_notifications
+                        name: Nursery (HomePod)
       header:
           card:
               type: markdown

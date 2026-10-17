@@ -92,8 +92,8 @@ The rooms appear in the following order:
 | Basement | `basement` | Media player (`media_player.basement_home_cinema`), Lights, Auto lights, Roomba, washing machine state, tumble dryer state |
 | Kitchen | `kitchen` | Vacuum (`vacuum.kitchen_vacuum`), Kitchen Display media player |
 | Living Room | `living_room` | Apple TV media player, Arylic LP10 media player, Lights, Auto lights, Roomba |
-| Master Bedroom | `master_bedroom` | HomePod Mini media player, Dyson fan, aircon, shutters, Lights, electric blanket |
-| Nursery | `nursery` | WiiM Sound media player, Lights, Auto lights |
+| Master Bedroom | `master_bedroom` | Dyson fan, aircon, shutters, Lights, electric blanket |
+| Nursery | `nursery` | WiiM Sound and HomePod Mini media players, Lights, Auto lights |
 | Tom's Office | `toms_office` | Arylic LP10 media player, Lights, Auto lights, Roomba, aircon |
 | Master Bathroom | `master_bathroom` | Velux cover |
 | Rear Guest Room | `rear_guest_room` | Lights, Auto lights |
