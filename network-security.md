@@ -294,7 +294,7 @@ Assistant path. The addresses are DHCP leases, not reservations:
 | Master Bedroom - Aircon | .27 | `10:68:38:47:4c:7f` | daikin (local) |
 | Living Room - Arylic LP10 | .237 | `00:22:6c:23:38:56` | linkplay |
 | Tom's Office - Arylic LP10 | .245 | `00:22:6c:67:19:56` | linkplay |
-| Nursery - WiiM Sound | .10 | `40:fd:f3:66:ac:e4` | wiim |
+| Master Bedroom - WiiM Sound | .10 | `40:fd:f3:66:ac:e4` | wiim |
 | Basement - Dryer | .68 | `94:27:70:e6:c1:3d` | mqtt (hcpy local bridge) |
 
 The block has the following effects:

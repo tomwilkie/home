@@ -448,6 +448,18 @@ views:
                         entity: binary_sensor.master_bedroom_occupancy
                         tap_action:
                             action: more-info
+               -  type: custom:mushroom-media-player-card
+                  entity: media_player.master_bedroom_wiim_sound_speaker_ma_player
+                  use_media_info: true
+                  media_controls:
+                     -  play_pause_stop
+                  volume_controls:
+                     -  volume_buttons
+                  tap_action:
+                      action: more-info
+                  grid_options:
+                      columns: 6
+                      rows: 2
                -  type: custom:mushroom-template-card
                   primary: Lights
                   secondary: ''
@@ -573,18 +585,6 @@ views:
                         color: state
                         tap_action:
                             action: more-info
-               -  type: custom:mushroom-media-player-card
-                  entity: media_player.nursery_wiim_sound_speaker_ma_player
-                  use_media_info: true
-                  media_controls:
-                     -  play_pause_stop
-                  volume_controls:
-                     -  volume_buttons
-                  tap_action:
-                      action: more-info
-                  grid_options:
-                      columns: 6
-                      rows: 2
                -  type: custom:mushroom-media-player-card
                   entity: media_player.nursery_homepod_mini_ma_player
                   use_media_info: true
