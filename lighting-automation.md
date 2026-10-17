@@ -98,11 +98,20 @@ the flow, so the stored stale list is what the flow validates.
 - **No adaptive lighting.** A light that is on/off only stays out of the adaptive lighting instance. It still gets the `room-light` label and the occupancy automation.
 - **No smart lights.** An area with occupancy sensors and no smart lights has no automation, no adaptive lighting instance and no `room-light` entities. The occupancy sensor serves other purposes, such as heating or security.
 
+### Nursery
+
+The Nursery follows the standard pattern by day. At night
+[`automation.nursery_sleep_routine`](wake-routines.md#nursery-sleep-routine) owns the lighting:
+it turns `automation.nursery_lights` off at bedtime, holds `light.nursery_hue_go` at the adaptive
+lighting sleep level and turns the automation back on at wake. `light.nursery_rocket_lamp` is an
+on/off light, so it stays out of the adaptive lighting instance, which would otherwise switch it
+on when sleep mode turns on.
+
 ### Master Bedroom
 
 The following bespoke automations control the Master Bedroom:
 
-- `turn_bedroom_lights_on_before_sunset` turns the lights on at 20:00 or sunset, whichever is earlier, plays the [sleep sound](wake-routines.md#bedroom-sleep-sound) and closes the shutters.
+- `turn_bedroom_lights_on_before_sunset` turns the lights on at 20:00 or sunset, whichever is earlier, and closes the shutters.
 - `toggle_bedroom_lights` handles the wall switch.
 - `turn_off_lights_in_master_bedroom` turns the lights off after 20 minutes with no presence, before sunset only.
 

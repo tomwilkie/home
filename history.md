@@ -373,6 +373,16 @@ slugified title as the `notification_id`, the second notification replaced the f
 the San Francisco flight was visible. The 02:15 boost never ran, and Tom boosted the water by
 hand at 02:45.
 
+### 2026-10-17: heartbeat moved to the nursery sleep routine
+
+The heartbeat track had played from `automation.turn_bedroom_lights_on_before_sunset` at 20:00
+or sunset and stopped in `automation.wake_up_routine`'s "Fade out the white noise" branch, first
+on the master bedroom HomePod and, after the HomePod moved to the Nursery, on the nursery one.
+Those steps were removed, and `automation.nursery_sleep_routine` took them over, keyed on
+`input_boolean.kiran_asleep` so that bedtime no longer followed sunset or the parents' wake
+time. The same change took `light.nursery_rocket_lamp` out of the Nursery adaptive lighting
+instance and set `select.nursery_hue_go_power_on_behavior` to `previous`.
+
 Two faults combined:
 
 - The airport check was `regex_search(...) is not none`. Home Assistant's `regex_search` returns

@@ -223,5 +223,5 @@ The diagnostic and configuration dashboard has the following views:
 | View | Path | Purpose |
 |---|---|---|
 | Debugging | default | Low batteries, unavailable entities, entities not updated in 24 hours, vacuum run times, active and recently triggered automations, adaptive lighting brightness history and switches |
-| Settings | `settings` | Comfort mode schedule, weekday and weekend wake-up times, the flight lead time and the bedroom clock alarm |
+| Settings | `settings` | Comfort mode schedule, weekday and weekend wake-up times, the flight lead time, the bedroom clock alarm, and Kiran's sleep toggle and schedule |
 | Broadcast | `broadcast` | A text box (`input_text.broadcast_message`) with a send button that calls `script.broadcast`, and the Notification Players card of per-player toggles. Both are described in [notifications.md](notifications.md). |

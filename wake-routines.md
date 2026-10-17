@@ -1,7 +1,7 @@
 # Wake routines
 
 This document covers how the morning is scheduled: one wake-time helper, the automations that
-read and write it, the bedroom sleep sound, and a separate path for mornings when a flight
+read and write it, Kiran's nursery sleep routine, and a separate path for mornings when a flight
 forces a much earlier shower.
 
 ## The wake time
@@ -14,7 +14,7 @@ or write it:
 | `automation.reset_wake_up_time` | Writes | At 17:00 daily, sets `wake_up_time` from `input_datetime.weekday_wakeup_time` (07:00) on Sunday to Thursday evenings, or `input_datetime.weekend_wakeup_time` (08:00) on Friday and Saturday evenings. A manual override therefore lasts one morning. |
 | `automation.synchronise_alarm_time` | Both | Mirrors `wake_up_time` and `time.master_bedroom_clock_alarm_time`, the ESPHome bedside clock. Setting either sets the other, and context guards on both branches stop a loop. |
 | `automation.morning_hot_water` | Reads | Calls `hive.boost_hot_water` at `wake_up_time` minus one hour. |
-| `automation.wake_up_routine` | Reads | At `wake_up_time`: runs the air purifier for one hour, runs a 30-minute light sunrise in the master bedroom, opens the shutters, stops the sleep sound, and from Monday to Thursday starts every Roomba in an unoccupied area. |
+| `automation.wake_up_routine` | Reads | At `wake_up_time`: runs the air purifier for one hour, runs a 30-minute light sunrise in the master bedroom, opens the shutters, and from Monday to Thursday starts every Roomba in an unoccupied area. |
 
 `wake_up_time` is the whole morning, not an alarm. Moving it moves the bedside alarm, opens the
 shutters and starts the vacuums, which is why the early-flight routine does not touch it.
@@ -55,13 +55,35 @@ Two guards make the retries safe:
 Inside the window, with the boost sensor `off`, the conditions pass and a real boost starts.
 Check `wake_up_time` first, because a manual override moves the window.
 
-## Bedroom sleep sound
+## Nursery sleep routine
 
-`automation.turn_bedroom_lights_on_before_sunset`, described in
-[_Master Bedroom_](lighting-automation.md#master-bedroom), plays `library://track/129` ("Baby
-Sleep Heartbeat") on `media_player.nursery_homepod_mini_ma_player` at volume 0.48 with
-`repeat: one`. The wake routine's "Fade out the white noise" branch stops it with
-`media_player.media_stop` and `repeat_set: off`. The two automations must stay in step.
+Kiran sleeps in the Nursery from 19:00 to 07:00. `input_boolean.kiran_asleep` is the sleep
+state, and the following helpers and automations read or write it:
+
+| Entity | Behaviour |
+|---|---|
+| `schedule.kiran_sleep` | On from 19:00 to 07:00 every day. |
+| `automation.kiran_sleep_schedule` | Copies the schedule's `off` to `on` and `on` to `off` edges onto the boolean. |
+| `automation.nursery_sleep_routine` | Runs the bedtime branch when the boolean turns on and the wake branch when it turns off. |
+
+The boolean, not the schedule, drives the routine, so a nap or an early night is a manual toggle.
+Both helpers are on the Settings view of the Settings dashboard.
+
+The bedtime branch does the following, in order:
+
+1. Turns off `automation.nursery_lights`, so motion cannot switch the lamps on overnight.
+2. Turns on `switch.nursery_adaptive_lighting_sleep_mode`, then turns on `light.nursery_hue_go`, which adaptive lighting intercepts and sets to its sleep brightness and colour.
+3. Turns off `light.nursery_rocket_lamp`.
+4. Plays `library://track/129` ("Baby Sleep Heartbeat") on `media_player.nursery_homepod_mini_ma_player`, sets volume 0.48 and `repeat: one`.
+
+The wake branch stops the track, sets `repeat_set: off`, turns sleep mode off and turns
+`automation.nursery_lights` back on. Between 05:00 and 09:00 it turns both lamps on for the
+morning, and the blueprint's `daylight` trigger turns them off at sunrise plus one hour. At any
+other time it is the end of a nap, and it turns both lamps off.
+
+- **Set the volume after `music_assistant.play_media`, on the Music Assistant proxy entity.** Music Assistant applies its own stored player volume about a second into playback, so a `media_player.volume_set` before the play call, or on the native `apple_tv` entity, is overwritten with no error. The step sits after the play call with a three-second delay.
+- **Don't announce to this speaker.** Its notifications toggle stays off, so house announcements never play in the nursery. Never announce through its native `apple_tv` entity either: a replace-mode announcement takes the HomePod's AirPlay output away from Music Assistant, which keeps reporting `playing` into a silent room. Only a fresh `music_assistant.play_media` rebuilds the session. See [_Choose the entity that supports announce_](notifications.md#choose-the-entity-that-supports-announce).
+- **The rocket lamp is not in the Nursery adaptive lighting instance.** It is an on/off plug, and sleep mode would switch it on.
 
 - **Set the volume after `music_assistant.play_media`, on the Music Assistant proxy entity.** Music Assistant applies its own stored player volume about a second into playback, so a `media_player.volume_set` before the play call, or on the native `apple_tv` entity, is overwritten with no error. The step sits after the play call with a three-second delay.
 - **Don't announce to this speaker through its native `apple_tv` entity.** A replace-mode announcement takes the HomePod's AirPlay output away from Music Assistant, which keeps reporting `playing` into a silent room. Only a fresh `music_assistant.play_media` rebuilds the session. The notification players group therefore uses the proxy, as described in [_Choose the entity that supports announce_](notifications.md#choose-the-entity-that-supports-announce).

@@ -107,6 +107,27 @@ views:
          -  type: grid
             cards:
                -  type: heading
+                  heading: Nursery
+                  heading_style: title
+                  icon: mdi:sleep
+               -  type: tile
+                  entity: input_boolean.kiran_asleep
+                  name: Kiran Asleep
+                  vertical: false
+                  features:
+                     -  type: toggle
+                  features_position: inline
+               -  type: tile
+                  entity: schedule.kiran_sleep
+                  name: Sleep Schedule
+                  vertical: false
+                  features_position: bottom
+                  grid_options:
+                      columns: 12
+                      rows: 1
+         -  type: grid
+            cards:
+               -  type: heading
                   heading_style: title
                   heading: Lighting
                   icon: mdi:ceiling-light
