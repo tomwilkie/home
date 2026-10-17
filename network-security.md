@@ -11,7 +11,7 @@ server described in [_UniFi MCP servers_](access-home-assistant.md#unifi-mcp-ser
 
 ## Goals
 
-- **IOT devices reach the internet and Home Assistant only.** They don't reach the main LAN, the Cameras VLAN or each other. IOT devices with a local-only integration don't reach the internet either.
+- **IOT devices reach the internet and Home Assistant only.** They don't reach the main LAN, the Cameras VLAN or each other. IOT devices with a local-only integration don't reach the internet either. The one peer-to-peer exception is the [Nursery network](#nursery-network).
 - **Cameras reach Home Assistant and the UniFi network video recorder (NVR) only.** They have no internet access and no lateral access, including to each other.
 - **The isolation is auditable.** A device that breaches these rules is visible.
 
@@ -24,6 +24,7 @@ The following table lists the networks:
 | Default (main, SSIDs `catch22` and `catch25`) | 192.168.0.0/24 | untagged | `66c254deffcde7397016bae8` | The UDM is `.1`. Home Assistant lives here. |
 | IOT (SSID `iot`) | 192.168.2.0/24 | 2 | `66c245d0eb7aca2624cf9a9e` | Has an ad-blocking DPI policy |
 | Cameras (SSID `cameras`) | 192.168.3.0/24 | 3 | `66c32a78e23e0530de545643` | UniFi Protect cameras |
+| Nursery (SSID `nursery`) | 192.168.5.0/24 | 5 | `6ad32ac06c116a998e57fdb0` | The eufy baby camera and monitor. In the IOT zone. See [_Nursery network_](#nursery-network). |
 | 5G Internet | 192.168.4.0/24 | 4 | `69a69f92b0f8eea82e18ff77` | WAN failover |
 | Remote-user VPN | 192.168.8.0/24 | none | `66ccac42e23e0530de571a6b` | |
 
@@ -53,7 +54,7 @@ that joins either network is denied by default rather than by an enumerated bloc
 |---|---|
 | Internal | Default, including Home Assistant |
 | External | Internet |
-| IOT | IOT |
+| IOT | IOT, Nursery |
 | Cameras | Cameras |
 
 Zones, policies and groups are referenced by name here, not by ID. The IDs change whenever a
@@ -62,14 +63,16 @@ policy is re-created, so look them up with `unifi_list_firewall_zones`,
 
 The UniFi predefined matrix allows IOT to External and allows IOT and Cameras to Gateway (DHCP,
 DNS and the NVR). It blocks IOT and Cameras to Internal, and also blocks Internal to IOT and
-Internal to Cameras, which would stop Home Assistant controlling devices and pulling streams. The
-following custom policies add the Home Assistant exceptions, block camera internet access and
-add logging for the audit. Within each zone pair they are listed in evaluation order:
+Internal to Cameras, which would stop Home Assistant controlling devices and pulling streams. It
+also blocks routed traffic between two networks in the same custom zone, so the IOT and Nursery
+networks cannot reach each other. The following custom policies add the Home Assistant
+exceptions, block camera internet access and add logging for the audit. Within each zone pair they are listed in evaluation order:
 
 | Zone pair | Policy | Action | Logged | Purpose |
 |---|---|---|---|---|
 | IOT to Internal | `IOT to Home Assistant` | ALLOW to `192.168.0.12` | no | Device-initiated traffic: MQTT, Wyoming voice, webhooks, DNS, NTP |
 | IOT to Internal | `Block IOT to LAN` | BLOCK, `NEW` and `INVALID` states | yes | Containment |
+| IOT to IOT | `Block IOT Inter-Network` | BLOCK, `NEW` and `INVALID` states | yes | Logged copy of the predefined intra-zone block, so IOT to Nursery attempts reach the audit |
 | Internal to IOT | `LAN to IOT` | ALLOW | no | The LAN initiates to IOT (ESPHome, Cast, printing) |
 | Cameras to Internal | `Cameras to Home Assistant` | ALLOW to `192.168.0.12` | no | Camera-initiated traffic to Home Assistant |
 | Cameras to Internal | `Block Cameras to LAN` | BLOCK, `NEW` and `INVALID` states | yes | Containment |
@@ -143,6 +146,25 @@ Isolation breaks peer-to-peer features on that VLAN, such as multi-room audio gr
 device-to-device discovery, which we accept in exchange for containment. Port isolation works
 per switch, so it does not block same-VLAN traffic between devices on different switches.
 
+### Nursery network
+
+The eufy baby camera and its monitor are the one pair of devices allowed to talk to each other.
+They sit on their own network, Nursery (VLAN 5), whose SSID `nursery` has Client Device Isolation
+off. Putting them on an unisolated SSID of the IOT VLAN was tried first and rejected: an
+unisolated wireless client on that VLAN can reach every wired IOT device, because port isolation
+only blocks traffic between isolated ports and lets traffic from the uplink through.
+
+The network is in the IOT zone, so every IOT policy applies to it unchanged, and the predefined
+intra-zone block plus `Block IOT Inter-Network` keep it off the IOT network. The two eufy devices
+can reach each other at layer 2 and nothing else on the LAN. Don't add other devices to this
+network. The WLAN is 2.4 GHz only, which matches the devices.
+
+The network has no Home Assistant devices, so it does not need the mDNS reflector. Keep
+`mdns_enabled` off on it. The field is read-only through the MCP server, so set it in the UniFi UI.
+
+The move was made on 2026-10-17, as recorded in
+[_Nursery network for the eufy baby camera_](history.md#2026-10-17-nursery-network-for-the-eufy-baby-camera).
+
 ## Cross-VLAN discovery
 
 Home Assistant is on a different VLAN from IOT, so multicast discovery (HomeKit, Cast, ESPHome,
@@ -158,7 +180,7 @@ device that ignores DHCP still gets working DNS and time.
 
 A packet meets the following layers in order:
 
-1. **DHCP.** The IOT network hands out `192.168.0.12` as its DNS server and as its NTP server (option 42). Devices that honour DHCP go straight to the local services.
+1. **DHCP.** The IOT and Nursery networks hand out `192.168.0.12` as their DNS server and as their NTP server (option 42). Devices that honour DHCP go straight to the local services.
 2. **Destination NAT (DNAT) redirect.** The gateway rewrites plain DNS (port 53) and NTP (udp port 123) from IOT to any other address so that it goes to `192.168.0.12`. This catches devices with a hardcoded resolver or time server.
 3. **Local services.** AdGuard Home answers DNS and chrony answers NTP. IOT reaches both through `IOT to Home Assistant`.
 4. **BLOCK policies.** The three DNS and NTP blocks are the fail-closed backstop for what the redirect cannot catch, and for everything if the redirect is removed.
@@ -197,8 +219,8 @@ Two gaps remain:
 
 ### DNAT redirect
 
-Three `nat PREROUTING` rules on the UDM, on interface `br2` (IOT), sit above UniFi's
-`UBIOS_PREROUTING_JUMP`:
+Three `nat PREROUTING` rules per IOT-zone interface on the UDM, `br2` (IOT) and `br5` (Nursery),
+sit above UniFi's `UBIOS_PREROUTING_JUMP`. For `br2`:
 
 ```
 iptables -t nat -I PREROUTING -i br2 -p udp --dport 123 ! -d 192.168.0.12 -j DNAT --to-destination 192.168.0.12  # NTP -> chrony
@@ -216,7 +238,7 @@ The following files restore them at boot:
 
 | Path | Purpose |
 |---|---|
-| `/persistent/iot-redirect/apply.sh` | Inserts the three DNAT rules if they are missing, then flushes the connection tracker. `/persistent` survives reboot and firmware upgrade. |
+| `/persistent/iot-redirect/apply.sh` | Inserts the three DNAT rules for each interface in its `IFACES` list if they are missing, then flushes the connection tracker. `/persistent` survives reboot and firmware upgrade. A new IOT-zone network needs its bridge interface added to `IFACES`. |
 | `/persistent/iot-redirect/install.sh` | Writes and enables the systemd unit. Run it again after a firmware upgrade, which wipes `/etc`. |
 | `/etc/systemd/system/iot-redirect.service` | A `oneshot` unit that runs `apply.sh` after `network-online.target` and `udapi-server.service`, with a 30-second sleep so that udapi builds its ruleset first. |
 
@@ -300,12 +322,13 @@ server:
 ```
 unifi_get_traffic_flows(source_network_id="66c245d0eb7aca2624cf9a9e", within_hours=168)   # IOT
 unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643", within_hours=168)   # Cameras
+unifi_get_traffic_flows(source_network_id="6ad32ac06c116a998e57fdb0", within_hours=168)   # Nursery
 ```
 
 Each flow carries an `action` (`allowed` or `blocked`), a `direction` and the policies it
 matched. A healthy result has the following properties:
 
-- **IOT:** the only allowed `local` destinations are `192.168.0.12` and the IOT gateway address `192.168.2.1`. An allowed `local` DNS or NTP flow to a public address is the DNAT redirect at work. Any other allowed local destination is a rule gap.
+- **IOT and Nursery:** the only allowed `local` destinations are `192.168.0.12` and the network's own gateway address (`192.168.2.1` or `192.168.5.1`). An allowed `local` DNS or NTP flow to a public address is the DNAT redirect at work. Any other allowed local destination is a rule gap.
 - **Cameras:** the only allowed local destinations are `192.168.0.12` and the gateway, which hosts the NVR. Any allowed internet flow is a breach.
 - **Both:** blocked flows to other LAN hosts show the containment policies doing their job.
 

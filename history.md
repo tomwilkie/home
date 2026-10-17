@@ -93,6 +93,27 @@ its Home Assistant path is the local API. It was removed to restore its internet
 - The IOT network's DHCP DNS server and NTP server were both `192.168.0.12`.
 - The port 53 and port 123 blocks had no hits in seven days, and Traffic Flows showed IOT DNS flows to public resolvers marked `local` and allowed, which is the redirect at work.
 
+### 2026-10-17: Nursery network for the eufy baby camera
+
+The eufy baby camera and monitor in the nursery were on the `iot` SSID. Traffic Flows and the
+firewall log showed both talking only to eufy's cloud: HTTPS to `care-app-eu.eufylife.com` and
+UDP to three AWS relay addresses on port 32100, the ThroughTek Kalay protocol, plus LAN streaming
+from the phones, which `LAN to IOT` allows. There was no gateway-visible traffic between the two
+devices, and the monitor moved about 150 KB a day, which is not video. The likely reading is that
+the monitor receives video over the devices' own 2.4 GHz radio and uses WiFi only for the cloud.
+Neither device appeared in the AdGuard query log, which is #2.
+
+To let the pair talk locally, a `nursery` SSID with Client Device Isolation off was created on
+the IOT VLAN and both devices moved to it. That reopened a gap: an unisolated wireless client on
+the IOT VLAN reaches the wired IOT devices, because switch-port isolation only blocks traffic
+between isolated ports. The fix was a Nursery network (VLAN 5, `192.168.5.0/24`) in the IOT zone,
+the SSID repointed at it, a logged `Block IOT Inter-Network` policy as the auditable copy of the
+predefined intra-zone block, and the DNAT redirect script extended to `br5`. Creating the network
+through the MCP server rejected `mdns_enabled` as read-only, so the network came up with mDNS
+reflection on. After the SSID move, the monitor's flows carried a second source address,
+`192.168.32.222`, on about half its relay keepalives, which looks like the monitor's own pairing
+interface leaking out of its WiFi uplink; harmless, but worth knowing if it misbehaves.
+
 ## Observability
 
 ### Unpoller discovery vanished
