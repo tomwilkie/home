@@ -42,6 +42,7 @@ firewall policies that block IOT to the main network and allow IOT to `192.168.0
 - **A Protect camera can show offline after a subnet move** until the NVR rediscovers it. If it doesn't recover, reboot it or power-cycle its PoE port.
 - **Reassigning a wired port's VLAN does not drop the link**, so the device keeps its old DHCP lease and loses its gateway. To force a fresh lease, disable and re-enable the switch port. A PoE power-cycle does nothing for a self-powered device.
 - **A cloud-registered device needs a power-cycle after the move.** The Hive Hub is self-powered, so the controller cannot reboot it, and it only re-registers with its cloud after it is power-cycled by hand.
+- **Music Assistant keeps a moved speaker's old IP address.** The native `wiim` integration polls the current address and recovers, but the Music Assistant proxy goes `unavailable` and stays there. Music Assistant rediscovers speakers over mDNS only when the add-on starts, and the nightly 04:00 restart of Home Assistant Core does not restart the add-on. To recover, restart the Music Assistant add-on (`d5369777_music_assistant`).
 
 ## Firewall policies
 

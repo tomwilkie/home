@@ -141,6 +141,27 @@ must render `[]`:
    | reject('in', states | map(attribute='entity_id') | list) | list }}
 ```
 
+### Remove a Music Assistant player
+
+`ha_remove_device` refuses to remove a Music Assistant proxy while Music Assistant still manages
+the player, and disabling the Home Assistant device only leaves its entities `unavailable`. The
+integration has no option to exclude a player. Use one of the following:
+
+- **Reload the Music Assistant integration, then remove the device.** The reload releases the player. If Music Assistant rediscovers the speaker and adds the proxy back, disable the player in Music Assistant.
+- **Disable the player in Music Assistant** (add-on web UI, **Settings**, **Players**). The proxy drops out of Home Assistant, and `ha_remove_device` then succeeds with no reload.
+
+Disable a guest's AirPlay Mac (`universal_player`, player ID `up…`) rather than delete it.
+Music Assistant re-creates a deleted player, enabled, when the Mac rejoins the network.
+
+To script Music Assistant, use its internal WebSocket at the config entry's `url`
+(`http://d5369777-music-assistant:8094/ws`), from inside the Home Assistant container
+(`docker exec homeassistant python3 script.py`, with `aiohttp` available). The public port 8095
+rejects the config entry's token. Each message is `{"message_id", "command", "args"}`, and the
+first is `auth` with `{"token"}`. The useful commands are `config/players`,
+`config/players/get` and `config/players/save` with `{player_id, values: {enabled: false}}`.
+`scp` fails against the host, so upload a script with
+`ssh root@homeassistant.local 'cat > /config/script.py' < script.py`.
+
 ### Visual consistency
 
 Cards that sit next to each other in a section must look like a set. When you add or restyle a

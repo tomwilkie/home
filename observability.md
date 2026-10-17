@@ -327,6 +327,15 @@ A log-derived alert is a recording rule, then a metric, then an alert: the recor
 LogQL metric query and writes the result to Prometheus, and the alert thresholds the metric.
 `zigbee2mqtt_errors:rate15m` is an example.
 
+Alerts reach a person through the `email receiver` contact point, which the default
+notification policy routes to. The following rules keep delivery working:
+
+- **Don't route to `grafana-default-email`.** Grafana ships it with the placeholder address `<example@email.com>`, so an alert sent there reaches nobody. It has an empty `uid`, so it cannot be updated in place: to change delivery, create a contact point and repoint the policy.
+- **Change contact points and policies through the provisioning API** (`/api/v1/provisioning/contact-points` and `/api/v1/provisioning/policies`). Writing the whole Alertmanager config to `/api/alertmanager/grafana/config/api/v1/alerts` through `gcx` returns `404 data source not found`.
+- **Test a contact point in the Grafana UI** (**Contact points**, **Test**). The legacy test endpoint returns `410`, and the replacement under `/apis/notifications.alerting.grafana.app/` rejects every request body tried.
+
+The incident that found the placeholder is in [_Alerts never delivered_](history.md#2026-06-25-alerts-never-delivered).
+
 ### Exporter down
 
 `observability/alerts/exporter-down.json` defines one rule in folder `Observability`, group

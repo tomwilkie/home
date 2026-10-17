@@ -137,6 +137,14 @@ prefix, hence the `door_temperature` exclusion.
 At the default `size_memory: 1000`, AdGuard flushed the query log about hourly, so Loki received
 it in hourly batches. `size_memory: 0` gives about 24,000 to 36,000 small appends a day.
 
+### 2026-06-25: alerts never delivered
+
+Every alert rule was healthy and evaluating, but the only contact point,
+`grafana-default-email`, still held Grafana's placeholder address `<example@email.com>`. No
+alert had ever reached an inbox, including the `IOT DNAT redirect removed` test that had been
+recorded as emailed. A provisioned `email receiver` contact point was created and the default
+notification policy repointed to it. `grafana-default-email` was left in place, unreferenced.
+
 ### 2026-10-01: U5G Max modem resets
 
 The U5G Max's cellular modem (a Sierra Wireless EM9291) hangs and reboots itself, typically on
@@ -342,6 +350,25 @@ restored the composed names.
 The Hive device was renamed from `Hallway - Thermostat` to `Hallway - Hive`, which changed
 `climate.hallway_thermostat` from `Hallway - Thermostat Thermostat` to
 `Hallway - Hive Thermostat`.
+
+### 2026-07-18: Kitchen Deebot moved to Matter
+
+The Ecovacs cloud integration broke on a server-side auth error (`1013`, "Please update to the
+latest version"), a global outage awaiting upstream
+[DeebotUniverse/client.py#1706](https://github.com/DeebotUniverse/client.py/pull/1706). The
+Kitchen Deebot X9 Pro Omni was moved to a local Matter connection. The Matter entity was renamed
+to take back `vacuum.kitchen_vacuum`, so the dashboards, `input_datetime.kitchen_vacuum_last_run`
+and the vacuum automations needed no edits. The `history_stats` sensor
+`sensor.kitchen_vacuum_cleaning_time` was deleted with the Ecovacs entry and was re-created
+through the config flow, which produced a mangled entity ID until it was renamed.
+
+### 2026-08-22: UniFi tracker cleanup
+
+A sweep removed 382 UniFi trackers, taking the entity registry from 633 to 251 entries: 355 with
+private MACs, 23 ghosts from the camera ports and 4 aged-out clients. The pre-sweep registry is
+backed up at `/config/core.entity_registry.bak-privatemac` on the Home Assistant host. The same
+day, 12 trackers with doubled names got a name override and were renamed area-first with a
+`_unifi` suffix.
 
 ## Wake routines
 

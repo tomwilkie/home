@@ -3,7 +3,8 @@
 This document covers two schemes. The scheduled restart sweep restarts devices that degrade with
 uptime, driven by labels on devices rather than a hardcoded entity list. The
 [integration watchdogs](#integration-watchdogs) are its reactive counterpart: they reload a
-config entry that has wedged.
+config entry that has wedged. It also covers the manual cleanup of
+[UniFi ghost trackers](#unifi-ghost-trackers).
 
 ## Scheduled restarts
 
@@ -259,3 +260,17 @@ The following gaps remain:
 
 - **`homeassistant.components.hive: debug` is set** in the `logger:` block of `configuration.yaml`. It is noisy. Remove it after the upstream issues settle.
 - **`automation.morning_hot_water` depends on the reload.** Its catch-up triggers are in [_Catch-up triggers_](wake-routines.md#catch-up-triggers).
+
+## UniFi ghost trackers
+
+The UniFi integration accumulates throwaway `device_tracker.unifi_default_<mac>` entities. Every
+few days a phantom client appears on a camera PoE port (seen on `Garage Switch` port 5 and
+`Basement Switch` port 3), on the Cameras VLAN, with no OUI and no hostname. It lives for
+about four minutes and never returns. Home Assistant creates a tracker that sits at `not_home`,
+then turns `unavailable` when the controller ages the client out.
+
+- **`ignore_local_mac` does not stop them.** The filter applies only to wireless clients, and UniFi reports the ghosts as wired. About half of them use globally administered vendor MACs, so no MAC filter would catch them.
+- **Don't sweep on the `unifi_default_` prefix alone.** Real network clients with no area carry it too.
+- **Delete a tracker only if it matches the ghost signature or has aged out.** The signature is a UniFi client that is wired, named `Unknown`, offline, and lived less than 600 seconds between `first_seen` and `last_seen`. A tracker whose MAC returns `client not found` from the controller has aged out and is also safe to delete.
+
+The first cleanup is in [_UniFi tracker cleanup_](history.md#2026-08-22-unifi-tracker-cleanup).

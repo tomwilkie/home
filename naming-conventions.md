@@ -53,7 +53,8 @@ Entity IDs follow `{domain}.{area_id}_{device_slug}_{measurement}`:
 
 - **The area comes first for every entity,** including the ones that integrations create, such as adaptive lighting switches and template helpers. When an integration creates an entity with the area elsewhere (`switch.adaptive_lighting_living_room`), rename it with `ha_set_entity(new_entity_id=...)`.
 - **Entities on a device without an area are out of scope.**
-- **A `device_tracker` entity from a network-scanning integration** follows the convention only if its device has an area. Leave a bare network client as it is.
+- **A `device_tracker` entity from a network-scanning integration** follows the convention only if its device has an area. Leave a bare network client as it is. A UniFi tracker for hardware that has its own first-class entities takes a `_unifi` suffix (`device_tracker.kitchen_nest_protect_unifi`) to tell the two apart.
+- **A config flow does not reuse an entity ID held in `deleted_entities`.** It generates a mangled ID instead (`sensor.kitchen_kitchen_deebot_x9_pro_omni_kitchen_vacuum_cleaning_time`). To reuse the old ID, create the entry, then rename the entity with `ha_set_entity(new_entity_id=...)`, which takes the deleted ID back.
 
 ### Display names
 
@@ -91,6 +92,16 @@ The override costs the prefix, so compensate with an explicit `name:` on the das
 entities:
   - entity: switch.living_room_adaptive_lighting
     name: Living Room
+```
+
+A UniFi `device_tracker` is the case where the override holds the whole name. The integration
+sets both the device name and the entity's `original_name` to the full client name, so the
+composition doubles it (`Basement - Nest Protect Basement - Nest Protect`). Set the override to
+the single correct string:
+
+```sh
+hass-cli raw ws config/entity_registry/update \
+  --json='{"entity_id":"device_tracker.basement_nest_protect_unifi","name":"Basement - Nest Protect"}'
 ```
 
 An override that restates `original_name` only strips the prefix. To find overrides, run the
