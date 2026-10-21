@@ -65,6 +65,12 @@ This is a single-maintainer repo of documentation and config, with no CI and no 
 branch adds a merge round trip and buys nothing. When asked to commit, commit on `master` and
 push. Don't run `git checkout -b`, don't open a pull request, and don't ask which branch.
 
+**Before you start any work, bring `master` up to date with upstream.** Run `git fetch`, and if
+`master` is behind `origin/master`, run `git pull --rebase` before you read or edit anything, so
+that you work from the current documents rather than stale ones. If the working tree has
+uncommitted changes, or the rebase conflicts, stop and ask rather than stashing or discarding
+anything.
+
 Commit messages follow `<area>: <lowercase summary>` (for example `lighting:`, `naming:`,
 `notifications:`, `maintenance:`), with a body explaining why when the change is not
 self-evident.
