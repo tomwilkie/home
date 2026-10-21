@@ -203,7 +203,11 @@ add-on.
 
 ## Environment variables
 
-Copy `observability/.env.example` to `observability/.env` and set the following:
+`make .env` writes `observability/.env` from a 1Password Environment with `op environment read`,
+so the [1Password CLI](https://developer.1password.com/docs/cli/) must be signed in. `make up`
+runs it when `.env` is missing, but never refreshes an existing file, so after you rotate a
+secret, delete `.env` and run `make up` again. To set the values by hand instead, copy
+`observability/.env.example` to `observability/.env` and set the following:
 
 | Variable | Description |
 |---|---|
@@ -220,7 +224,8 @@ SSH as `root@homeassistant.local`:
 |---|---|
 | `make deploy` | `push` then `up` |
 | `make push` | Create `/homeassistant/alloy/` on the host and upload `alloy/config.alloy` |
-| `make up` | `docker compose up -d` |
+| `make up` | `docker compose up -d`, after `make .env` if `.env` is missing |
+| `make .env` | Write `.env` from the 1Password Environment |
 | `make down` | `docker compose down` |
 | `make restart` | `docker compose restart alloy` |
 | `make logs` | Tail the last 100 lines of Alloy logs |

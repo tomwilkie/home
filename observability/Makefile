@@ -13,7 +13,7 @@ push:
 	ssh $(HAOS_HOST) "mkdir -p $(HAOS_DIR)"
 	ssh $(HAOS_HOST) "cat > $(HAOS_DIR)/config.alloy" < alloy/config.alloy
 
-up:
+up: .env
 	docker compose up -d
 
 down:
@@ -30,3 +30,6 @@ ps:
 
 shell:
 	docker compose exec alloy bash
+
+.env:
+	op environment read kq66m26rzkq7ad23i2zmjuchia >.env
