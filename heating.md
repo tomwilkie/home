@@ -23,8 +23,10 @@ Assistant host. Edit it with `ha_config_set_yaml(yaml_path="climate")`, then cal
 ## Heating relay
 
 `switch.heating_relay` is a template switch in `configuration.yaml`. It does not switch the
-boiler. It sets the Hive thermostat (`climate.hallway_thermostat`) with one
-`climate.set_temperature` call that also sets `hvac_mode: heat`:
+boiler. It sets the Hive thermostat (`climate.hallway_thermostat`) to `heat` with
+`climate.set_hvac_mode`, then sets the setpoint with `climate.set_temperature`. The mode needs
+its own call, because the `tomwilkie/ha-hive` fork ignores `hvac_mode` inside
+`climate.set_temperature`:
 
 | Relay | Hive setpoint |
 |---|---|
