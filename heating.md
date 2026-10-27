@@ -12,7 +12,7 @@ Assistant host. Edit it with `ha_config_set_yaml(yaml_path="climate")`, then cal
 | Setting | Value | Notes |
 |---|---|---|
 | `heater` | `switch.heating_relay` | See [_Heating relay_](#heating-relay) |
-| `target_sensor` | `sensor.hallway_thermostat_current_temperature` | The Hive thermostat's own reading |
+| `target_sensor` | `sensor.hallway_thermostat_temperature` | The Hive thermostat's own reading. A template sensor helper on the `current_temperature` attribute of `climate.hallway_thermostat`, because `generic_thermostat` reads a sensor's state, not an attribute, and the Hive fork exposes no temperature sensor. |
 | `min_temp` / `max_temp` | 15 / 23 | `max_temp` must stay below the relay's "on" setpoint |
 | `comfort_temp` | 21 | |
 | `sleep_temp` | 20 | |

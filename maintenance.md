@@ -230,9 +230,9 @@ not registered, so `automation.morning_hot_water` fails with
 `Action hive.boost_hot_water not found`. The upstream defects behind this are in
 [_Hive outage_](history.md#2026-09-20-hive-outage).
 
-`automation.hive_watchdog` watches `water_heater.hallway_thermostat`,
-`climate.hallway_thermostat` and `binary_sensor.basement_hive_hub_status`. When every one of
-them is stranded and is a restored stub, it calls `homeassistant.reload_config_entry` and checks
+`automation.hive_watchdog` watches `water_heater.hallway_thermostat` and
+`climate.hallway_thermostat`. The Hive fork has no hub status entity. When both are
+stranded and are restored stubs, it calls `homeassistant.reload_config_entry` and checks
 again two minutes later. A third branch handles "unavailable and not stubs" by announcing
 without reloading. Recovery after the 04:00 restart lands at about 04:30, ahead of the morning
 boost.
