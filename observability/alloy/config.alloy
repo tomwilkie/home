@@ -1,14 +1,37 @@
 // ── Grafana Cloud stack ───────────────────────────────────────────────────────
-import.git "grafana_cloud" {
-  repository     = "https://github.com/grafana/alloy-modules.git"
-  path           = "modules/cloud/grafana/cloud/module.alloy"
-  revision       = "021e920"
-  pull_frequency = "0s"
+// Look up the stack's Prometheus and Loki endpoints from the Grafana Cloud API,
+// so only the stack slug and one token need configuring. This is the metrics and
+// logs half of the upstream alloy-modules "cloud/grafana/cloud" module, inlined
+// because that module still calls the deprecated json_decode() and we don't use
+// its traces or profiles receivers.
+remote.http "grafana_cloud" {
+  url = "https://grafana.com/api/instances/" + sys.env("STACK_NAME")
+  client {
+    bearer_token = sys.env("ACCESS_TOKEN")
+  }
+  poll_frequency = "24h"
 }
 
-grafana_cloud.stack "receivers" {
-  stack_name = sys.env("STACK_NAME")
-  token      = sys.env("ACCESS_TOKEN")
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = encoding.from_json(remote.http.grafana_cloud.content)["hmInstancePromUrl"] + "/api/prom/push"
+
+    basic_auth {
+      username = encoding.from_json(remote.http.grafana_cloud.content)["hmInstancePromId"]
+      password = sys.env("ACCESS_TOKEN")
+    }
+  }
+}
+
+loki.write "grafana_cloud" {
+  endpoint {
+    url = encoding.from_json(remote.http.grafana_cloud.content)["hlInstanceUrl"] + "/loki/api/v1/push"
+
+    basic_auth {
+      username = encoding.from_json(remote.http.grafana_cloud.content)["hlInstanceId"]
+      password = sys.env("ACCESS_TOKEN")
+    }
+  }
 }
 
 // ── Alloy self-monitoring ─────────────────────────────────────────────────────
@@ -19,7 +42,7 @@ logging {
 }
 
 loki.process "alloy" {
-  forward_to = [grafana_cloud.stack.receivers.logs]
+  forward_to = [loki.write.grafana_cloud.receiver]
 
   stage.static_labels {
     values = {
@@ -47,7 +70,7 @@ discovery.relabel "integrations_alloy_health" {
 }
 
 prometheus.scrape "integrations_alloy_health" {
-  forward_to      = [grafana_cloud.stack.receivers.metrics]
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
   targets         = discovery.relabel.integrations_alloy_health.output
   scrape_interval = "60s"
   job_name        = "integrations/alloy"
@@ -95,7 +118,7 @@ prometheus.scrape "integrations_node_exporter" {
 }
 
 prometheus.relabel "integrations_node_exporter" {
-  forward_to = [grafana_cloud.stack.receivers.metrics]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
 
   rule {
     source_labels = ["__name__"]
@@ -125,14 +148,14 @@ discovery.relabel "integrations_cadvisor" {
 
 prometheus.scrape "integrations_cadvisor" {
   targets         = discovery.relabel.integrations_cadvisor.output
-  forward_to      = [grafana_cloud.stack.receivers.metrics]
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
   scrape_interval = "60s"
 }
 
 // ── Systemd journal logs ──────────────────────────────────────────────────────
 loki.source.journal "system" {
   path          = "/var/log/journal"
-  forward_to    = [grafana_cloud.stack.receivers.logs]
+  forward_to    = [loki.write.grafana_cloud.receiver]
   relabel_rules = loki.relabel.journal.rules
 
   labels = {
@@ -216,7 +239,7 @@ discovery.relabel "logs_integrations_docker" {
 loki.source.docker "logs_integrations_docker" {
   host             = "unix:///var/run/docker.sock"
   targets          = discovery.docker.logs_integrations_docker.targets
-  forward_to       = [grafana_cloud.stack.receivers.logs]
+  forward_to       = [loki.write.grafana_cloud.receiver]
   relabel_rules    = discovery.relabel.logs_integrations_docker.rules
   refresh_interval = "5s"
 }
@@ -224,7 +247,7 @@ loki.source.docker "logs_integrations_docker" {
 // ── Gather Home Assistant metrics ─────────────────────────────────────────────────────
 
 prometheus.scrape "homeassistant" {
-  forward_to = [grafana_cloud.stack.receivers.metrics]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
   targets = [
     {
       "__address__" = "localhost:8123",
@@ -234,7 +257,7 @@ prometheus.scrape "homeassistant" {
   ]
   scrape_interval = "60s"
   metrics_path = "/api/prometheus"
-  bearer_token = env("HASS_METRICS_TOKEN")
+  bearer_token = sys.env("HASS_METRICS_TOKEN")
   scheme = "http"
 }
 
@@ -242,7 +265,7 @@ prometheus.scrape "homeassistant" {
 // Dev/edge zigbee2mqtt exposes a Prometheus endpoint on the host at :9142.
 // Alloy uses host networking, so localhost reaches it (same as the HA scrape).
 prometheus.scrape "zigbee2mqtt" {
-  forward_to = [grafana_cloud.stack.receivers.metrics]
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
   targets = [
     {
       "__address__" = "localhost:9142",
@@ -304,7 +327,7 @@ discovery.relabel "unpoller" {
 }
 
 prometheus.scrape "unpoller" {
-  forward_to      = [grafana_cloud.stack.receivers.metrics]
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
   targets         = discovery.relabel.unpoller.output
   scrape_interval = "60s"
 }
@@ -351,7 +374,7 @@ loki.source.syslog "unifi" {
 // are queried with |= / |~ — only bounded fields (rule/policy name, CEF header)
 // become labels.
 loki.process "unifi" {
-  forward_to = [grafana_cloud.stack.receivers.logs]
+  forward_to = [loki.write.grafana_cloud.receiver]
 
   // Default; the content matches below override it for the recognised kinds.
   stage.static_labels {
@@ -435,7 +458,7 @@ loki.source.file "adguard" {
 }
 
 loki.process "adguard" {
-  forward_to = [grafana_cloud.stack.receivers.logs]
+  forward_to = [loki.write.grafana_cloud.receiver]
 
   // Use AdGuard's own query timestamp (T, RFC3339Nano) as the Loki timestamp so a
   // catch-up after Alloy downtime stamps entries with the real query time, not
