@@ -124,17 +124,12 @@ hass-cli raw ws config/entity_registry/update \
 ### Legacy entities
 
 An older integration with `has_entity_name: false` opts out of composition. The `friendly_name`
-is the override if one is set, and otherwise whatever the integration builds. Hive prepends the
-device name itself.
-
-When such an integration's own name repeats a word in the device name, neither entity-side
-option works: an override strips the area, and clearing it leaves a stutter. Rename the device
-so that it does not repeat the word. The Hive device is named `Hallway - Hive`, not
-`Hallway - Thermostat`, so that `climate.hallway_thermostat` displays as
-`Hallway - Hive Thermostat`.
-
-- **The Hive entity IDs keep the `thermostat` device slug** (`climate.hallway_thermostat`). A device slug in an entity ID can lag a device rename that was made to fix name composition, because renaming the IDs would break every consumer for no functional gain.
-- **`climate.hallway_thermostat` and `water_heater.hallway_thermostat` share a display name.** The one Hive device hosts the heating and the hot water entities (`*.basement_hotwater_*`), and Hive gives both an `original_name` of `Thermostat`. An override would strip the prefix.
+is the override if one is set, and otherwise whatever the integration builds, so no entity-side
+change gives it the `{Area} - {Device}` prefix, and a device rename can only avoid a stutter.
+Fix the integration instead. Hive was the one legacy integration here until the
+`tomwilkie/ha-hive` fork adopted `has_entity_name` in v0.1.5, after which its device went back
+to `Hallway - Thermostat` and its overrides were cleared, as described in
+[_Hive names compose_](history.md#2026-10-28-hive-names-compose).
 
 Entities with no device, such as the `min_max` helper `sensor.house_temperature`, get no
 composition and are out of scope.

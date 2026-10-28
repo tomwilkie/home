@@ -370,6 +370,18 @@ backed up at `/config/core.entity_registry.bak-privatemac` on the Home Assistant
 day, 12 trackers with doubled names got a name override and were renamed area-first with a
 `_unifi` suffix.
 
+### 2026-10-28: Hive names compose
+
+The `tomwilkie/ha-hive` fork was a legacy integration with `has_entity_name: false`, so it
+built each `friendly_name` itself. The v0.1.4 battery sensor arrived as `Thermostat Battery
+Level`, and a bare `Battery Level` override stripped the device name instead of composing it.
+v0.1.5 set `has_entity_name` on every entity and gave each a bare name: `None` for the climate
+entity, `Hot water` for the water heater, `Battery level` and `Boost` for the sensors. After the
+upgrade the `Battery Level` and `Boost` overrides were cleared, and the device went back from
+`Hallway - Hive` to `Hallway - Thermostat`, because the stutter that forced the July rename was
+gone. `climate.hallway_thermostat` now displays as `Hallway - Thermostat` and
+`water_heater.hallway_thermostat` as `Hallway - Thermostat Hot water`.
+
 ## Wake routines
 
 ### Sleep sound volume
