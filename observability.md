@@ -215,9 +215,11 @@ gcx profiles query -d grafanacloud-profiles '{service_name="alloy"}' \
   --profile-type process_cpu:cpu:nanoseconds:cpu:nanoseconds --since 1h
 ```
 
-Most of Alloy's CPU goes to the cAdvisor exporter, mainly its per-container disk usage scan,
-which runs once a minute per container. Alloy exposes no setting for cAdvisor's collection
-interval, so to cut that cost you must disable the `disk` metrics in `disabled_metrics`.
+The cAdvisor exporter has `disk` in `disabled_metrics`. cAdvisor collects disk usage by walking
+every container's filesystem once a minute, which took about half of Alloy's CPU, and Alloy
+exposes no setting for that interval. Without it, the `Disk usage`, `Filesystem Utilisation` and
+`Inode Utilisation` panels on `docker-container-overview` are empty. The read and write panels
+come from `diskIO`, which stays on.
 
 ## Environment variables
 

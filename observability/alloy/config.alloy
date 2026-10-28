@@ -156,6 +156,15 @@ prometheus.relabel "integrations_node_exporter" {
 prometheus.exporter.cadvisor "integrations_cadvisor" {
   docker_host = "unix:///var/run/docker.sock"
   docker_only = true
+
+  // Setting this replaces cAdvisor's default list, so it repeats the defaults
+  // and adds "disk". The disk usage metrics come from a once-a-minute walk of
+  // every container's filesystem, which was about half of Alloy's CPU.
+  // "diskIO" (read and write bytes) is cheap and stays on.
+  disabled_metrics = [
+    "advtcp", "cpu_topology", "cpuset", "hugetlb", "memory_numa", "process",
+    "referenced_memory", "resctrl", "sched", "tcp", "udp", "disk",
+  ]
 }
 
 discovery.relabel "integrations_cadvisor" {
