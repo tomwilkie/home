@@ -1,0 +1,12 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Commit messages follow the repo convention: <area>: <lowercase summary>",
+      "matchFileNames": ["observability/**"],
+      "commitMessagePrefix": "observability:"
+    }
+  ]
+}

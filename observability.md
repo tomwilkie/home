@@ -235,6 +235,17 @@ SSH as `root@homeassistant.local`:
 `/homeassistant/alloy/config.alloy` is `/mnt/data/supervisor/homeassistant/alloy/config.alloy`
 to the Supervisor. Alloy's persistent state is the Docker volume `alloy-data`.
 
+### Upgrading Alloy
+
+Renovate watches the `image:` tag in `docker-compose.yml` and opens a pull request when Grafana
+releases a new Alloy, with the release notes in the PR body. Its config is `renovate.json` at the
+repo root. Check the breaking changes against the components in `alloy/config.alloy`, merge, then
+run `make up` to pull the new image, because merging alone changes nothing on the host. The
+container runs at `--stability.level=experimental`, so changes to experimental features apply
+too. After the restart, confirm the container is `healthy` with `make ps` and look for `level=warn`
+in `make logs`: a deprecation warning there means the config needs a change before the function
+is removed.
+
 ## Grafana dashboards
 
 Dashboard JSON files live in `observability/dashboards/`. This repo is the source of truth, so

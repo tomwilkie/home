@@ -63,7 +63,11 @@ The following rules are specific to this repo and win where they disagree with t
 
 This is a single-maintainer repo of documentation and config, with no CI and no review step, so a
 branch adds a merge round trip and buys nothing. When asked to commit, commit on `master` and
-push. Don't run `git checkout -b`, don't open a pull request, and don't ask which branch.
+push. Don't run `git checkout -b`, don't open a pull request, and don't ask which branch. The one
+exception is Renovate, which opens pull requests for dependency updates such as the Alloy image,
+because the release notes in the PR are worth reading before the update is deployed (see
+[_Upgrading Alloy_](observability.md#upgrading-alloy)). Merge those on GitHub rather than
+redoing them by hand.
 
 **Before you start any work, bring `master` up to date with upstream.** Run `git fetch`, and if
 `master` is behind `origin/master`, run `git pull --rebase` before you read or edit anything, so
