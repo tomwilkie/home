@@ -1,7 +1,7 @@
 # Observability
 
-[Grafana Alloy](https://grafana.com/docs/alloy/latest/) ships Home Assistant metrics and logs to
-Grafana Cloud. It runs as a plain Docker container on the Home Assistant OS (HAOS) host, with
+[Grafana Alloy](https://grafana.com/docs/alloy/latest/) ships Home Assistant metrics and logs,
+and continuous profiles of itself, to Grafana Cloud. It runs as a plain Docker container on the Home Assistant OS (HAOS) host, with
 `network_mode: host` so that it reaches Home Assistant on `localhost:8123`.
 
 ## Why Alloy is not an add-on
@@ -201,6 +201,24 @@ it, stop the add-on (slug `a0d7b954_adguard`), edit
 `/mnt/data/supervisor/apps/data/a0d7b954_adguard/adguard/AdGuardHome.yaml`, then start the
 add-on.
 
+## Profiles
+
+`pyroscope.scrape "alloy"` scrapes Alloy's own pprof endpoints on `localhost:12345` and
+`pyroscope.write` sends the profiles to Grafana Cloud Profiles, so you can see where Alloy spends
+CPU and memory without capturing a profile by hand. The profiles carry `service_name="alloy"`,
+`job="integrations/alloy"` and the host as `instance`. The endpoint comes from the stack lookup,
+like the metrics and logs endpoints. The following command shows the CPU flame graph for the last
+hour:
+
+```sh
+gcx profiles query -d grafanacloud-profiles '{service_name="alloy"}' \
+  --profile-type process_cpu:cpu:nanoseconds:cpu:nanoseconds --since 1h
+```
+
+Most of Alloy's CPU goes to the cAdvisor exporter, mainly its per-container disk usage scan,
+which runs once a minute per container. Alloy exposes no setting for cAdvisor's collection
+interval, so to cut that cost you must disable the `disk` metrics in `disabled_metrics`.
+
 ## Environment variables
 
 `make .env` writes `observability/.env` from a 1Password Environment with `op environment read`,
@@ -212,7 +230,7 @@ secret, delete `.env` and run `make up` again. To set the values by hand instead
 | Variable | Description |
 |---|---|
 | `STACK_NAME` | Grafana Cloud stack slug |
-| `ACCESS_TOKEN` | `glc_…` token with the MetricsPublisher and LogsPublisher roles |
+| `ACCESS_TOKEN` | `glc_…` token that can write metrics, logs and profiles |
 | `HASS_METRICS_TOKEN` | Long-lived Home Assistant token for scraping `/api/prometheus` |
 
 ## Deployment

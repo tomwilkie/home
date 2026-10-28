@@ -76,6 +76,31 @@ prometheus.scrape "integrations_alloy_health" {
   job_name        = "integrations/alloy"
 }
 
+// Continuous profiles of Alloy itself, scraped from its own pprof endpoints on
+// the HTTP server port and sent to Grafana Cloud Profiles.
+pyroscope.write "grafana_cloud" {
+  endpoint {
+    url = encoding.from_json(remote.http.grafana_cloud.content)["hpInstanceUrl"]
+
+    basic_auth {
+      username = encoding.from_json(remote.http.grafana_cloud.content)["hpInstanceId"]
+      password = sys.env("ACCESS_TOKEN")
+    }
+  }
+}
+
+pyroscope.scrape "alloy" {
+  targets = [
+    {
+      "__address__"  = "localhost:12345",
+      "service_name" = "alloy",
+      "instance"     = constants.hostname,
+      "job"          = "integrations/alloy",
+    },
+  ]
+  forward_to = [pyroscope.write.grafana_cloud.receiver]
+}
+
 // ── Node metrics ──────────────────────────────────────────────────────────────
 prometheus.exporter.unix "integrations_node_exporter" {
   procfs_path = "/host/proc"
