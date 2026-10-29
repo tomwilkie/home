@@ -63,6 +63,12 @@ catch-up triggers, as described in [_Catch-up triggers_](#catch-up-triggers), wi
 fixed at 18:00 to 19:00 by a native `condition: time`. The boost length is the time left until
 19:00, so a late catch-up still ends on time.
 
+It boosts only if the house was occupied at some point in the last 24 hours, so an empty house
+is not heated for a bath. `sensor.house_occupancy_last_24h` is a `history_stats` helper that
+counts the hours `binary_sensor.house_occupancy` was `on` over the last 24 hours, and the
+condition is that it is above `0`. It reads the recorder, so the 04:00 restart does not reset it
+the way it resets a state condition with `for: 24h`.
+
 ## Nursery sleep routine
 
 Kiran sleeps in the Nursery from 19:00 to 07:00. `input_boolean.kiran_asleep` is the sleep
