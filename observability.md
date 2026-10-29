@@ -293,6 +293,12 @@ edit the file here and upload it to Grafana.
 | `zigbee2mqtt-coordinator.json` | `zigbee2mqtt-coordinator` | Coordinator and adapter health: version, network status, MQTT throughput, queue and retries |
 | `zigbee2mqtt-device.json` | `zigbee2mqtt-device` | Per-device drill-down, where `device` is the IEEE address |
 | `home-temperature-by-area.json` | `home-temperature-by-area` | One row per area, each with a time series of that area's temperature entities |
+| `central-heating.json` | `eeasfye26sge8c` | Hive thermostat, water heater and boiler status, with boiler runtime and radiator, boiler and outside temperatures |
+
+Select a single entity's series with `entity`, and aggregate `friendly_name` away with
+`max by (__name__, entity)`. The exporter puts `friendly_name` in the labels, so a rename starts
+a new series, and a stat or gauge panel shows the old and new series side by side until the old
+one leaves the time range.
 
 The zigbee2mqtt dashboards are tagged `zigbee2mqtt-integration` and link to each other. The
 overview's device table links to `/d/zigbee2mqtt-device?var-device=<ieee_address>` by IEEE
