@@ -1,7 +1,7 @@
 # Observability
 
 [Grafana Alloy](https://grafana.com/docs/alloy/latest/) ships Home Assistant metrics and logs,
-and continuous profiles of itself, to Grafana Cloud. It runs as a plain Docker container on the Home Assistant OS (HAOS) host, with
+and continuous profiles of itself and of Home Assistant Core, to Grafana Cloud. It runs as a plain Docker container on the Home Assistant OS (HAOS) host, with
 `network_mode: host` so that it reaches Home Assistant on `localhost:8123`.
 
 ## Why Alloy is not an add-on
@@ -214,6 +214,19 @@ hour:
 gcx profiles query -d grafanacloud-profiles '{service_name="alloy"}' \
   --profile-type process_cpu:cpu:nanoseconds:cpu:nanoseconds --since 1h
 ```
+
+### Home Assistant profiles
+
+The [`ha-pyroscope`](https://github.com/tomwilkie/ha-pyroscope) integration, installed through
+HACS, runs the Pyroscope Python SDK inside Home Assistant Core. It pushes to
+`pyroscope.receive_http "homeassistant"` on `http://localhost:4040` with no credentials, and
+Alloy forwards the profiles through `pyroscope.write`, so the Grafana Cloud token stays in
+`.env` and Home Assistant holds none. The profiles carry `service_name="homeassistant"` and an
+`ha_version` tag. To see them, run the command above with `{service_name="homeassistant"}`.
+
+- **Both receiver listeners bind to `127.0.0.1`.** The receiver has no auth, and Alloy runs on the host network, so a wildcard bind would let any LAN client push profiles. The `grpc` block is there because the gRPC listener otherwise binds `[::]` on a random port.
+- **Change the sample rate under the integration's Configure.** Saving restarts the profiler. It defaults to 100 Hz.
+- **Profiling is in-process, not eBPF.** `pyroscope.ebpf` cannot start on HAOS, because the kernel is built without syscall tracepoints (`CONFIG_FTRACE_SYSCALLS`). The [2026-10-29 entry](history.md#2026-10-29-ebpf-profiling-ruled-out) in history.md records the attempt.
 
 The cAdvisor exporter has `disk` in `disabled_metrics`. cAdvisor collects disk usage by walking
 every container's filesystem once a minute, which took about half of Alloy's CPU, and Alloy

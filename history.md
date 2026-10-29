@@ -158,6 +158,22 @@ investigation on 2026-10-01 was as follows:
 - **Change.** On 2026-10-01 the U5G went to Early Access 8.0.2 by manual firmware URL, which updated the modem to `SWIX65C_03.04.10.01`. After the update, SINR on the same n78 cell reads 0 to 3.5 dB, with RSRP and RSRQ unchanged, which may be a reporting change. A 30-ping test over `wwan0` showed no loss and a 42 ms average.
 - **Plan.** Keep the U5G as backup for a week. If no resets occur, return it to load balancing for at least two weeks, the condition that produced most resets. Compare the 07:52 speed test over `gre1` (`unpoller_device_speedtest_download{port="if!gre1"}`, 314 Mbps before the upgrade) to tell a SINR reporting change from a real loss. If the radio is worse or the resets continue, roll back to 7.5.3, which is cached on the UDM.
 
+### 2026-10-29: eBPF profiling ruled out
+
+The first attempt at continuous profiles of Home Assistant Core used Alloy's `pyroscope.ebpf`,
+targeted at the `homeassistant` container. The HAOS kernel (6.18.52-haos) has BPF syscalls,
+perf events, kprobes and uprobes, but neither BTF nor the BPF JIT. Three errors followed in
+turn:
+
+- **Kernel symbols.** `unable to read kallsyms addresses`. With `perf_event_paranoid` at 2, the kernel hides addresses without `CAP_SYSLOG`. Adding the capability fixed it.
+- **Locked memory.** `failed to set temporary rlimit`. Setting `ulimits: memlock: -1` in the compose file fixed it.
+- **Syscall tracepoints.** `open /sys/kernel/tracing/events/syscalls/sys_enter_bpf/id: no such file or directory`. The kernel is built without `CONFIG_FTRACE_SYSCALLS`, and HAOS offers no way to change the kernel.
+
+The change was rolled back, including the extra capabilities (`SYS_ADMIN`, `BPF`, `PERFMON`,
+`SYSLOG`). The same day, the `ha-pyroscope` integration replaced it, profiling from inside the
+process and pushing through Alloy, as described in
+[_Home Assistant profiles_](observability.md#home-assistant-profiles).
+
 ## Notifications
 
 ### 2026-08-17 and 2026-08-22: appliance helpers reset by `initial`

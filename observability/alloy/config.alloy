@@ -101,6 +101,20 @@ pyroscope.scrape "alloy" {
   forward_to = [pyroscope.write.grafana_cloud.receiver]
 }
 
+// Profiles pushed by the ha-pyroscope integration inside Home Assistant Core,
+// forwarded with the Grafana Cloud credentials above so Home Assistant holds
+// none. Localhost only: the receiver has no auth.
+pyroscope.receive_http "homeassistant" {
+  http {
+    listen_address = "127.0.0.1"
+    listen_port    = 4040
+  }
+  grpc {
+    listen_address = "127.0.0.1"
+  }
+  forward_to = [pyroscope.write.grafana_cloud.receiver]
+}
+
 // ── Node metrics ──────────────────────────────────────────────────────────────
 prometheus.exporter.unix "integrations_node_exporter" {
   procfs_path = "/host/proc"
