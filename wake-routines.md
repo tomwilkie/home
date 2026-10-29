@@ -1,8 +1,8 @@
 # Wake routines
 
 This document covers how the morning is scheduled: one wake-time helper, the automations that
-read and write it, Kiran's nursery sleep routine, and a separate path for mornings when a flight
-forces a much earlier shower.
+read and write it, Kiran's nursery sleep routine, the evening hot water for Kiran's bath, and a
+separate path for mornings when a flight forces a much earlier shower.
 
 ## The wake time
 
@@ -25,8 +25,8 @@ shutters and starts the vacuums, which is why the early-flight routine does not 
 Saturdays the boost lasts 1 hour 30 minutes from the same start time, because the cleaner uses
 the hot water on Friday and a one-hour boost left too little for Kiran's Saturday evening bath.
 The duration is a template in the action's `data` (`now().isoweekday() == 6`), so the automation
-has one `hive.boost_hot_water` step. If Saturday still runs short, add an afternoon top-up
-timed to finish before the bath rather than a longer morning boost.
+has one `hive.boost_hot_water` step. The bath itself is covered by
+[_Evening hot water_](#evening-hot-water).
 
 ### Catch-up triggers
 
@@ -54,6 +54,14 @@ Two guards make the retries safe:
 `automation.trigger` with `skip_condition: false` is a dry run only outside the boost window.
 Inside the window, with the boost sensor `off`, the conditions pass and a real boost starts.
 Check `wake_up_time` first, because a manual override moves the window.
+
+## Evening hot water
+
+`automation.evening_hot_water` boosts the hot water from 18:00 to 19:00 every evening, for
+Kiran's bath. It copies the morning boost's guards and its `hive_recovered` and `ha_start`
+catch-up triggers, as described in [_Catch-up triggers_](#catch-up-triggers), with the window
+fixed at 18:00 to 19:00 by a native `condition: time`. The boost length is the time left until
+19:00, so a late catch-up still ends on time.
 
 ## Nursery sleep routine
 
