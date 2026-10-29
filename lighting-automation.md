@@ -107,8 +107,13 @@ lighting sleep level and turns the automation back on at wake. `light.nursery_ro
 on/off light, so it stays out of the adaptive lighting instance, which would otherwise switch it
 on when sleep mode turns on.
 
-The Nursery instance sets `sleep_brightness` to `20`, the one setting besides `lights` that
-differs from the standard values, because the default 1% was too dark to see Kiran at night.
+The Nursery instance differs from the standard values in two settings besides `lights`:
+
+- `sleep_brightness` is `20`, because the default 1% was too dark to see Kiran at night.
+- `max_brightness` is `50`, because Kiran naps in the Nursery during the day and full brightness is too bright for a nap.
+
+At 21:00 the sleep routine turns `light.nursery_hue_go` off, as described in
+[_Nursery sleep routine_](wake-routines.md#nursery-sleep-routine).
 
 ### Master Bedroom
 

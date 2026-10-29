@@ -64,7 +64,7 @@ state, and the following helpers and automations read or write it:
 |---|---|
 | `schedule.kiran_sleep` | On from 19:00 to 07:00 every day. |
 | `automation.kiran_sleep_schedule` | Copies the schedule's `off` to `on` and `on` to `off` edges onto the boolean. |
-| `automation.nursery_sleep_routine` | Runs the bedtime branch when the boolean turns on and the wake branch when it turns off. |
+| `automation.nursery_sleep_routine` | Runs the bedtime branch when the boolean turns on and the wake branch when it turns off, and turns the Hue Go off at 21:00. |
 
 The boolean, not the schedule, drives the routine, so a nap or an early night is a manual toggle.
 Both helpers are on the Settings view of the Settings dashboard.
@@ -80,6 +80,9 @@ The wake branch stops the track, sets `repeat_set: off`, turns sleep mode off an
 `automation.nursery_lights` back on. Between 05:00 and 09:00 it turns both lamps on for the
 morning, and the blueprint's `daylight` trigger turns them off at sunrise plus one hour. At any
 other time it is the end of a nap, and it turns both lamps off.
+
+At 21:00 the routine turns `light.nursery_hue_go` off, so the sleep-level night light lasts only
+the first two hours of the night.
 
 - **Set the volume after `music_assistant.play_media`, on the Music Assistant proxy entity.** Music Assistant applies its own stored player volume about a second into playback, so a `media_player.volume_set` before the play call, or on the native `apple_tv` entity, is overwritten with no error. The step sits after the play call with a three-second delay.
 - **Don't announce to this speaker.** Its notifications toggle stays off, so house announcements never play in the nursery. Never announce through its native `apple_tv` entity either: a replace-mode announcement takes the HomePod's AirPlay output away from Music Assistant, which keeps reporting `playing` into a silent room. Only a fresh `music_assistant.play_media` rebuilds the session. See [_Choose the entity that supports announce_](notifications.md#choose-the-entity-that-supports-announce).
