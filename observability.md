@@ -74,9 +74,15 @@ otherwise picks the raw container name for Docker and the per-event CEF `name` l
 |---|---|---|---|---|
 | Alloy's own logs | `alloy` | `integrations/alloy` | hostname | |
 | Docker container logs | container name with the add-on prefix stripped | `integrations/docker` | hostname | `container`, `stream`, `compose_service` |
-| Systemd journal | `linux` | `integrations/linux` | hostname | `unit`, `level`, `container` |
+| Systemd journal | `linux` | `integrations/linux` | hostname | `unit`, `level` |
 | UniFi syslog | `unifi` | `integrations/unifi` | `udm` | `log_type`, plus the labels in [_UniFi syslog_](#unifi-syslog) |
 | AdGuard Home query log | `adguard` | `integrations/adguard` | hostname | |
+
+HAOS sends container output to journald as well as to Docker. The journal pipeline drops any
+entry with a container name, because the Docker pipeline already ships it, and keeps Docker's
+own `docker.service` lines, which have none. The cost is that container logs have no second
+path: if the Docker pipeline stops matching a container, its logs are lost rather than still
+arriving through the journal.
 
 The AdGuard add-on's container stdout also arrives as `service_name=adguard` with
 `job=integrations/docker`. That is AdGuard's operational log, not the query log, so select on
