@@ -10,6 +10,9 @@ services:
       - DAC_READ_SEARCH
     security_opt:
       - seccomp:unconfined
+      # docker-default denies ptrace reads of host processes, which floods the
+      # kernel audit log every scrape. See observability.md → Why Alloy runs without AppArmor.
+      - apparmor=unconfined
     volumes:
       # Node exporter mounts
       - /proc:/host/proc:ro,rslave

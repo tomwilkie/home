@@ -174,6 +174,22 @@ The change was rolled back, including the extra capabilities (`SYS_ADMIN`, `BPF`
 process and pushing through Alloy, as described in
 [_Home Assistant profiles_](observability.md#home-assistant-profiles).
 
+### 2026-10-30: AppArmor audit flood
+
+A log review found about 4.7 million journal lines a day with no `unit` or `level` label. Nearly
+all of them were kernel audit records (AVC, SYSCALL and PROCTITLE lines) of AppArmor denying
+Alloy's ptrace reads:
+
+```
+AVC apparmor="DENIED" operation="ptrace" profile="docker-default" comm="alloy" requested_mask="read" peer="hassio-supervisor"
+```
+
+The peers were unconfined host processes and other containers. The flood also overflowed the
+kernel audit backlog (`audit: backlog limit exceeded`) 19 to 40 times a day, which dropped real
+audit events. The denials ran at a steady 1,100 a minute. At 10:36 UTC, `make up` recreated the
+container with `apparmor=unconfined`, and no denials appeared from 10:37 to 10:49. The issue
+was [#16](https://github.com/tomwilkie/home/issues/16).
+
 ## Notifications
 
 ### 2026-08-17 and 2026-08-22: appliance helpers reset by `initial`

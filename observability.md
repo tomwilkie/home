@@ -13,6 +13,15 @@ is deliberate, as the
 and [discussion #3203](https://github.com/orgs/home-assistant/discussions/3203) explain, so
 Alloy runs under Docker Compose outside the Supervisor.
 
+## Why Alloy runs without AppArmor
+
+`docker-compose.yml` runs Alloy with `apparmor=unconfined`, next to `seccomp:unconfined`. Alloy
+shares the host's process namespace and reads other processes' `/proc` entries on every scrape.
+Docker's default AppArmor profile, `docker-default`, denies those reads, and the kernel logs each
+denial as an audit record, enough to overflow the kernel's audit backlog. The
+[_AppArmor audit flood_](history.md#2026-10-30-apparmor-audit-flood) entry in history.md has the
+measurements.
+
 ## Metrics
 
 The following table lists the scrape jobs:
