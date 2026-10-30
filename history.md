@@ -466,3 +466,16 @@ Two faults combined:
 The fix dropped `is not none`, added an earliest-wins condition and put the event summary in
 the notification title. The rules are in
 [_Filter_](wake-routines.md#filter) and [_Notification_](wake-routines.md#notification).
+
+## Heating
+
+### 2026-10-30: house state never reached Away
+
+`automation.update_house_state` set `input_select.house_state` to `Away` only when
+`binary_sensor.house_occupancy` had been `off` with `for: 24h`. A `for:` duration counts from
+`last_changed`, and the 04:00 restart resets `last_changed` even when the state comes back
+unchanged, so the timer never passed 24 hours. Over the 10 days of recorder history,
+`house_state` was only ever `Day` or `Night`. The condition was replaced with
+`sensor.house_occupancy_last_24h` below `0.01` hours, which the recorder backs and a restart
+does not reset. At the time of the change no automation, script or repo dashboard read
+`house_state`, so `Away` had no effect on anything else. Reported in issue #13.

@@ -65,3 +65,8 @@ It does nothing while the thermostat is `off`.
 without occupancy. The heating uses one hour without occupancy and with nobody in `zone.home`.
 The difference is deliberate: the heating should drop back for an afternoon out, while
 `house_state` marks a trip away.
+
+The `Away` branch reads `sensor.house_occupancy_last_24h` below `0.01` hours, not a state
+condition with `for: 24h`, because the 04:00 restart resets `last_changed` and the `for:` timer
+with it (see [_2026-10-30: house state never reached Away_](history.md#2026-10-30-house-state-never-reached-away)).
+The sensor is described in [_Evening hot water_](wake-routines.md#evening-hot-water).
