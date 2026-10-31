@@ -467,6 +467,30 @@ last five days.
 The investigation into the resets is in
 [_U5G Max modem resets_](history.md#2026-10-01-u5g-max-modem-resets) in `history.md`.
 
+### Music Assistant provider signed out
+
+`observability/alerts/music-assistant-login-failed.json` defines one rule in folder
+`Home Assistant`, group `music-assistant`, with a one-minute interval and `for: 0s`. It fires
+when the Music Assistant add-on logged a `LoginFailed` exception in the last hour:
+
+```logql
+sum(count_over_time({job="integrations/docker", service_name="music_assistant"}
+  |= "LoginFailed" [1h])) or vector(0)
+```
+
+- **It covers every provider, not only Apple Music.** Each provider raises the same `LoginFailed` exception when its sign-in expires, and the fix is the same: sign in to the provider again in Music Assistant settings.
+- **The one-hour window suits sparse errors.** An expired provider fails only when Music Assistant loads it or syncs the library, a few times a day, so each burst sends one notification and resolves an hour later. While the sign-in stays expired, the next sync fires it again.
+
+The Apple Music sign-in that motivated the rule expired on 24 October 2026, as recorded in
+[issue #21](https://github.com/tomwilkie/home/issues/21).
+
+After you edit the file, update the rule:
+
+```sh
+gcx api /api/v1/provisioning/alert-rules/music-assistant-login-failed -X PUT \
+  -H "X-Disable-Provenance: true" -d @observability/alerts/music-assistant-login-failed.json
+```
+
 ### IOT DNAT redirect tripwire
 
 The tripwire detects the removal of the UDM's DNS and NTP redirects described in

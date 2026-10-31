@@ -1,0 +1,61 @@
+{
+  "uid": "music-assistant-login-failed",
+  "title": "Music Assistant provider signed out",
+  "folderUID": "home-assistant",
+  "ruleGroup": "music-assistant",
+  "condition": "threshold",
+  "for": "0s",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "annotations": {
+    "summary": "A Music Assistant provider raised LoginFailed in the last hour, so its sign-in has expired. Sign in to the provider again in Music Assistant settings. See observability.md#music-assistant-provider-signed-out."
+  },
+  "labels": {},
+  "data": [
+    {
+      "refId": "query",
+      "datasourceUid": "grafanacloud-logs",
+      "relativeTimeRange": {
+        "from": 3600,
+        "to": 0
+      },
+      "model": {
+        "refId": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "grafanacloud-logs"
+        },
+        "editorMode": "code",
+        "queryType": "instant",
+        "expr": "sum(count_over_time({job=\"integrations/docker\", service_name=\"music_assistant\"} |= \"LoginFailed\" [1h])) or vector(0)"
+      }
+    },
+    {
+      "refId": "threshold",
+      "datasourceUid": "__expr__",
+      "relativeTimeRange": {
+        "from": 3600,
+        "to": 0
+      },
+      "model": {
+        "refId": "threshold",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "type": "threshold",
+        "expression": "query",
+        "conditions": [
+          {
+            "evaluator": {
+              "type": "gt",
+              "params": [
+                0
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
