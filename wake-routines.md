@@ -13,7 +13,7 @@ or write it:
 |---|---|---|
 | `automation.reset_wake_up_time` | Writes | At 17:00 daily, sets `wake_up_time` from `input_datetime.weekday_wakeup_time` (07:00) on Sunday to Thursday evenings, or `input_datetime.weekend_wakeup_time` (08:00) on Friday and Saturday evenings. A manual override therefore lasts one morning. |
 | `automation.synchronise_alarm_time` | Both | Mirrors `wake_up_time` and `time.master_bedroom_clock_alarm_time`, the ESPHome bedside clock. Setting either sets the other, and context guards on both branches stop a loop. |
-| `automation.morning_hot_water` | Reads | Calls `hive.boost_hot_water` at `wake_up_time` minus one hour. |
+| `automation.morning_hot_water` | Reads | Calls `hive.boost_hot_water` at `wake_up_time` minus 45 minutes. |
 | `automation.wake_up_routine` | Reads | At `wake_up_time`: runs the air purifier for one hour, runs a 30-minute light sunrise in the master bedroom, opens the shutters, and from Monday to Thursday starts every Roomba in an unoccupied area. |
 
 `wake_up_time` is the whole morning, not an alarm. Moving it moves the bedside alarm, opens the
@@ -21,12 +21,10 @@ shutters and starts the vacuums, which is why the early-flight routine does not 
 
 ## Morning hot water
 
-`automation.morning_hot_water` boosts for one hour, starting one hour before `wake_up_time`. On
-Saturdays the boost lasts 1 hour 30 minutes from the same start time, because the cleaner uses
-the hot water on Friday and a one-hour boost left too little for Kiran's Saturday evening bath.
-The duration is a template in the action's `data` (`now().isoweekday() == 6`), so the automation
-has one `hive.boost_hot_water` step. The bath itself is covered by
-[_Evening hot water_](#evening-hot-water).
+`automation.morning_hot_water` boosts for the 45 minutes before `wake_up_time`, which covers
+two showers. The boost length is the time left until `wake_up_time`, so a late catch-up still
+ends on time. Saturdays get the same boost as every other day, because the evening boost
+reheats the tank for the bath, as described in [_Evening hot water_](#evening-hot-water).
 
 ### Catch-up triggers
 
@@ -35,12 +33,12 @@ loses the boost. The automation calls a Hive service, and when the Hive config e
 set up, that service is not registered. Home Assistant retries a Hive setup that fails on a
 transient error, as described in [_Hive_](maintenance.md#hive).
 
-Every trigger is gated on the same window (`wake - 1 h <= now < wake`), so a late recovery
+Every trigger is gated on the same window (`wake - 45 min <= now < wake`), so a late recovery
 cannot boost for a shower that has already happened:
 
 | Trigger | ID | Covers |
 |---|---|---|
-| `time` at `wake_up_time` minus one hour | `scheduled` | The normal path |
+| `time` at `wake_up_time` minus 45 minutes | `scheduled` | The normal path |
 | `state` on `wake_up_time` | `wake_changed` | A late override into a window that has already started |
 | `state` on `water_heater.hallway_thermostat` from `unavailable` | `hive_recovered` | Hive was down at the scheduled instant, and the retried setup brings it back |
 | `homeassistant` start | `ha_start` | A restart inside the window |
@@ -56,11 +54,12 @@ Check `wake_up_time` first, because a manual override moves the window.
 
 ## Evening hot water
 
-`automation.evening_hot_water` boosts the hot water from 18:00 to 19:00 every evening, for
-Kiran's bath. It copies the morning boost's guards and its `hive_recovered` and `ha_start`
-catch-up triggers, as described in [_Catch-up triggers_](#catch-up-triggers), with the window
-fixed at 18:00 to 19:00 by a native `condition: time`. The boost length is the time left until
-19:00, so a late catch-up still ends on time.
+`automation.evening_hot_water` boosts the hot water from 18:45 to 19:30 every evening, ending
+when Kiran's 19:30 bath starts so the tank has not cooled. It copies the morning boost's guards
+and its `hive_recovered` and `ha_start` catch-up triggers, as described in
+[_Catch-up triggers_](#catch-up-triggers), with the window fixed at 18:45 to 19:30 by a native
+`condition: time`. The boost length is the time left until 19:30, so a late catch-up still ends
+on time.
 
 It boosts only if the house was occupied at some point in the last 24 hours, so an empty house
 is not heated for a bath. `sensor.house_occupancy_last_24h` is a `history_stats` helper that
