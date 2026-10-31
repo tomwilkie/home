@@ -38,7 +38,7 @@ its own call, because the `tomwilkie/ha-hive` fork ignores `hvac_mode` inside
 - **The relay reports `unavailable` when Hive does.** Its `availability` template follows `climate.hallway_thermostat`. Without it, a Hive outage read as "off", and the thermostat believed it still had control.
 - **Keep the Hive thermostat in `heat` mode, not `auto`.** In `auto` the Hive schedule would fight Home Assistant.
 
-Hive outages after the 04:00 restart are covered by `automation.hive_watchdog`, as described in
+Home Assistant retries a Hive setup that fails after the 04:00 restart, as described in
 [_Hive_](maintenance.md#hive).
 
 ## Preset automation

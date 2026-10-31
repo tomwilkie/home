@@ -55,7 +55,7 @@ you move it:
 
 | Time | Automation | Interaction |
 |---|---|---|
-| 04:00 | `automation.restart_home_assistant_at_4am_every_day` | Bounces every ESPHome connection. The sweep needs it finished first. It also strands Netatmo and Hive, as described in [_Integration watchdogs_](#integration-watchdogs). |
+| 04:00 | `automation.restart_home_assistant_at_4am_every_day` | Bounces every ESPHome connection. The sweep needs it finished first. It also strands Netatmo, as described in [_Integration watchdogs_](#integration-watchdogs). |
 | 04:30 | `automation.scheduled_device_restarts` | Takes about five minutes with every device due |
 | 04:45 | `automation.restart_kitchen_display_browser` | Clears the Fully Kiosk WebView |
 | 05:30 | `automation.update_esphome_devices` | Flashes firmware with three-minute waits per device, and must not be interrupted |
@@ -154,20 +154,20 @@ because its failure counter resets after `boot_is_good_after: 1min`.
 A watchdog reloads a config entry that has wedged. Watchdogs are reactive, not scheduled, and
 they carry no label, because the unit of recovery is an integration, not a device.
 
-Both watchdogs share the following design:
+Every watchdog follows the following design:
 
 | Decision | Why |
 |---|---|
 | `time_pattern` every 15 minutes, not a `state` trigger with `for:` | The retry matters as much as the detection. A reload only helps if the cloud API answers that time, and the entities don't change state while stranded, so a one-shot trigger fires once. |
 | Every watched entity must be `unavailable` for 15 minutes | The dwell keeps the watchdog quiet during the 04:00 restart. Requiring every entity separates an entry-level failure from one device dropping out. |
-| The reload targets an entity, not an `entry_id` | The [entity ID rule](CLAUDE.md#entity-ids-not-device-ids). The registry keeps `config_entry_id` on an unavailable restored stub, so the target resolves when nothing was set up. |
+| The reload passes `entry_id: "{{ config_entry_id('<entity>') }}"`, not a `target` | Reloading by target is deprecated and stops working in 2027.4. Resolving the entry from an entity keeps the [entity ID rule](CLAUDE.md#entity-ids-not-device-ids). The registry keeps `config_entry_id` on an unavailable restored stub, so the entry resolves when nothing was set up. |
 | A failed reload announces with `speak: false` | A diagnostic is recorded, not announced (see [_Which callers speak_](notifications.md#which-callers-speak)). The title is fixed, so repeated failures overwrite one notification. |
 | A separate trigger dismisses the notification on recovery, and watches one entity | The entities come back together, so watching them all would queue identical dismiss runs. |
 | `mode: queued, max: 10` | The reload branch holds a run open for two minutes while triggers are 15 minutes apart, so nothing stacks, and a recovery that lands mid-reload is not dropped. |
 
 Don't add a watchdog by reflex. `roomba`, `norman_shutters` and `music_assistant` go through
-`not ready yet` retries every night and recover without help. Hive and Netatmo need one because
-they fail in ways that Home Assistant does not retry.
+`not ready yet` retries every night and recover without help. Netatmo needs one because it fails
+in a way that Home Assistant does not retry. Hive no longer does, as described in [_Hive_](#hive).
 
 ### Netatmo
 
@@ -223,43 +223,23 @@ The following gaps remain:
 
 ### Hive
 
-Every Home Assistant start signs in to Hive afresh with a five-second timeout. If that call
-times out, the config entry lands in `SETUP_ERROR`, which Home Assistant does not retry. The
-entry stays down until a reload, with no heating or hot water control, and Hive's services are
-not registered, so `automation.morning_hot_water` fails with
-`Action hive.boost_hot_water not found`. The upstream defects behind this are in
-[_Hive outage_](history.md#2026-09-20-hive-outage).
+Hive has no watchdog, because Home Assistant recovers it. The
+[`tomwilkie/ha-hive`](https://github.com/tomwilkie/ha-hive) fork raises `ConfigEntryNotReady`
+for every transient failure at setup: a timeout, a network error, an HTTP 5xx response, Cognito
+throttling or an empty device list. Home Assistant retries the setup with backoff, rather than
+leaving the entry in `SETUP_ERROR` as core's integration does. Only a refusal from Hive or
+Cognito (`HiveApiError`) still ends in `SETUP_ERROR`, and a reload would not fix that either.
 
-`automation.hive_watchdog` watches `water_heater.hallway_thermostat` and
-`climate.hallway_thermostat`. The Hive fork has no hub status entity. When both are
-stranded and are restored stubs, it calls `homeassistant.reload_config_entry` and checks
-again two minutes later. A third branch handles "unavailable and not stubs" by announcing
-without reloading. Recovery after the 04:00 restart lands at about 04:30, ahead of the morning
-boost.
+The fork also unloads exactly the platforms it set up, so reloading a loaded entry is safe. With
+core's integration it wedged the entry in `FAILED_UNLOAD`. The outages that drove the fork are
+in [_Hive outage_](history.md#2026-09-20-hive-outage), and the reload test that retired the
+watchdog is in [_Hive watchdog removed_](history.md#2026-10-31-hive-watchdog-removed).
 
-- **Every watched entity must have `restored: true`.** A loaded entry whose hub is offline also makes every entity `unavailable`, without the `restored` attribute, and one entity can be a stub while its entry is loaded. Reloading a loaded Hive entry wedges it in `FAILED_UNLOAD`, which only a Home Assistant restart clears ([core#182753](https://github.com/home-assistant/core/issues/182753)). From 2026.10 the unload failure is non-fatal, after which the guard is defensive rather than required.
-- **The reload step has `continue_on_error: true`.** An entry in `FAILED_UNLOAD` leaves restored stubs too, so `restored: true` does not prove that the entry was not loaded, and `reload_config_entry` raises on such an entry. Without the flag, the run stops at the reload, and the delay and the announcement do not run.
+The following points remain:
 
-The guard stops the watchdog causing a wedge. It does not recover a wedge that exists.
-
-To verify the guard, test it in isolation, because a wrong entity ID in a native condition fails
-silently. Create a throwaway automation with the same condition and a `system_log.write` action,
-force the state, and read the log. Then read the watchdog's trace with
-`ha_get_automation_traces`, which lists each entity of a multi-entity `state` condition
-separately:
-
-```bash
-./scripts/ha-api /api/states/water_heater.hallway_thermostat -X POST \
-  -d '{"state":"unavailable","attributes":{"restored":true}}'
-```
-
-- **`restored` is live-only.** The recorder strips it from stored attributes, so it does not appear in `/api/history`.
-- **Don't test the reload branch against a healthy, loaded Hive entry.** That is the path that wedges it.
-
-The following gaps remain:
-
-- **`homeassistant.components.hive: debug` is set** in the `logger:` block of `configuration.yaml`. It is noisy. Remove it after the upstream issues settle.
-- **`automation.morning_hot_water` depends on the reload.** Its catch-up triggers are in [_Catch-up triggers_](wake-routines.md#catch-up-triggers).
+- **Don't move back to core's Hive integration without a watchdog.** Core does not retry a failed setup ([core#182752](https://github.com/home-assistant/core/issues/182752)). The watchdog design that worked around it is in the history entry.
+- **`homeassistant.components.hive: debug` is set** in the `logger:` block of `configuration.yaml`. It is noisy. Remove it after the fork settles.
+- **`automation.morning_hot_water` catches up when the entry recovers.** Its catch-up triggers are in [_Catch-up triggers_](wake-routines.md#catch-up-triggers).
 
 ## UniFi ghost trackers
 

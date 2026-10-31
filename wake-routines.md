@@ -32,9 +32,8 @@ has one `hive.boost_hot_water` step. The bath itself is covered by
 
 The boost is a one-shot service call at one instant, so anything that swallows that instant
 loses the boost. The automation calls a Hive service, and when the Hive config entry fails to
-set up, that service is not registered. `automation.hive_watchdog` in
-[maintenance.md](maintenance.md#hive) reloads a failed entry within about 30 minutes of the
-04:00 restart.
+set up, that service is not registered. Home Assistant retries a Hive setup that fails on a
+transient error, as described in [_Hive_](maintenance.md#hive).
 
 Every trigger is gated on the same window (`wake - 1 h <= now < wake`), so a late recovery
 cannot boost for a shower that has already happened:
@@ -43,13 +42,13 @@ cannot boost for a shower that has already happened:
 |---|---|---|
 | `time` at `wake_up_time` minus one hour | `scheduled` | The normal path |
 | `state` on `wake_up_time` | `wake_changed` | A late override into a window that has already started |
-| `state` on `water_heater.hallway_thermostat` from `unavailable` | `hive_recovered` | Hive was down at the scheduled instant, and the watchdog's reload brings it back |
+| `state` on `water_heater.hallway_thermostat` from `unavailable` | `hive_recovered` | Hive was down at the scheduled instant, and the retried setup brings it back |
 | `homeassistant` start | `ha_start` | A restart inside the window |
 
 Two guards make the retries safe:
 
 - **`binary_sensor.basement_hotwater_boost` must be `off`.** This stops a catch-up boosting twice when the scheduled run succeeded and Hive only blipped. It is the reliable indicator of a boost: `water_heater.hallway_thermostat` stays `off` during a boost and `sensor.basement_hotwater_mode` does not change.
-- **The water heater must not be `unavailable` or `unknown`.** The automation skips rather than raises, and `hive_recovered` retries after the watchdog reloads the entry.
+- **The water heater must not be `unavailable` or `unknown`.** The automation skips rather than raises, and `hive_recovered` retries after Home Assistant sets the entry up.
 
 `automation.trigger` with `skip_condition: false` is a dry run only outside the boost window.
 Inside the window, with the boost sensor `off`, the conditions pass and a real boost starts.

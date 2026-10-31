@@ -46,7 +46,7 @@ that only needs a record: the persistent notification is the log.
 | `automation.notify_on_app_stopped` | no | Add-ons with `device_class: running` bounce nightly around 03:00, and a daytime blip would announce a container name to the house. |
 | `automation.vacuum_bin_full` | no | Low urgency, and several Roombas can report at once. |
 | `automation.early_flight_hot_water` | no | It fires the evening before. See [wake-routines.md](wake-routines.md). |
-| `automation.netatmo_watchdog`, `automation.hive_watchdog` | no | Diagnostics. See [maintenance.md](maintenance.md). |
+| `automation.netatmo_watchdog` | no | Diagnostics. See [maintenance.md](maintenance.md). |
 
 Each silenced call carries an inline `note:` that explains why, so that nobody restores the
 speech.

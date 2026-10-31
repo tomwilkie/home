@@ -392,6 +392,28 @@ entity must be a stub.
 `automation.morning_hot_water` gained its `hive_recovered` and `ha_start` catch-up triggers the
 same day.
 
+### 2026-10-31: Hive watchdog removed
+
+`automation.hive_watchdog` was deleted after the `tomwilkie/ha-hive` fork, at version 0.1.5
+with `apyhiveapi` 0.1.5, fixed both defects that it worked around:
+
+- **A transient setup failure is retried.** The library turns timeouts, network errors, HTTP 5xx responses, Cognito throttling and an empty device list into `HiveConnectionError`, and the fork raises `ConfigEntryNotReady` for it, so the entry goes to `SETUP_RETRY`.
+- **Reloading a loaded entry no longer wedges it.** The fork forwards and unloads the same platform list, and has no `light` platform. A reload of the healthy, loaded entry at 13:30 UTC came back `loaded`, both thermostats returned without `restored`, and no Hive errors were logged.
+
+The watchdog polled every 15 minutes and reloaded only when `water_heater.hallway_thermostat`
+and `climate.hallway_thermostat` had been `unavailable` for 15 minutes and both carried
+`restored: true`, which marks a placeholder from an entry that never set up. A loaded entry
+whose hub was offline matched neither, so a third branch announced it without reloading. The
+reload step had `continue_on_error: true`, because `reload_config_entry` raises on an entry in
+`FAILED_UNLOAD`, which also leaves restored stubs. Rebuild it on these lines if Hive goes back to
+core's integration.
+
+The same day, `automation.netatmo_watchdog` moved from a reload by `target` to
+`entry_id: "{{ config_entry_id(...) }}"`. Reloading by target logs a deprecation warning and stops
+working in 2027.4 ([issue #26](https://github.com/tomwilkie/home/issues/26)). Loki traced both
+warnings in the preceding week, at 23:15 on 27 October and 17:30 on 28 October, to the Netatmo
+watchdog.
+
 ## Naming
 
 ### July 2026: redundant name overrides
