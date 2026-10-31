@@ -238,7 +238,7 @@ watchdog is in [_Hive watchdog removed_](history.md#2026-10-31-hive-watchdog-rem
 The following points remain:
 
 - **Don't move back to core's Hive integration without a watchdog.** Core does not retry a failed setup ([core#182752](https://github.com/home-assistant/core/issues/182752)). The watchdog design that worked around it is in the history entry.
-- **`homeassistant.components.hive: debug` is set** in the `logger:` block of `configuration.yaml`. It is noisy. Remove it after the fork settles.
+- **`custom_components.hive` and `apyhiveapi` are at `debug`** in the `logger:` block of `configuration.yaml`. The fork logs under the first and its library under the second, so `homeassistant.components.hive` catches nothing. They log each poll's status and timing but not the response body. They are noisy, so remove them after the fork settles.
 - **`automation.morning_hot_water` catches up when the entry recovers.** Its catch-up triggers are in [_Catch-up triggers_](wake-routines.md#catch-up-triggers).
 
 ## UniFi ghost trackers
