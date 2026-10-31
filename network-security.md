@@ -194,8 +194,9 @@ AdGuard Home runs as the Home Assistant add-on `a0d7b954_adguard` and is the res
 only. The main LAN uses the UDM resolver.
 
 - **Listener:** `0.0.0.0:53`. The add-on default binds `127.0.0.1`, so `bind_hosts` under `dns` in `AdGuardHome.yaml` is changed. The admin UI stays on `127.0.0.1` behind Home Assistant Ingress.
-- **Upstream:** Quad9 DNS over HTTPS (`https://dns10.quad9.net/dns-query`), with DNSSEC on.
-- **Blocking:** the AdGuard default blocklist.
+- **Upstream:** Cloudflare and Google DNS over HTTPS (`https://dns.cloudflare.com/dns-query` and `https://dns.google/dns-query`), bootstrapped through `1.1.1.1:53`, with DNSSEC on.
+- **Blocking:** the AdGuard DNS filter. AdGuard is the only ad blocker for IOT.
+- **No UniFi content filtering on IOT-zone networks.** A UniFi content-filter profile, ad blocking included, adds its network to the gateway's `dnsfilter` ipset, and UniFi's `DNSFILTER` chain then DNATs that network's port 53 traffic to the gateway's own CoreDNS on `127.0.0.1:1053`. The redirect in [_DNAT redirect_](#dnat-redirect) skips traffic already addressed to `192.168.0.12`, so every device that uses the DHCP resolver gets answered by the gateway instead of AdGuard and vanishes from the query log. The `Default` profile covers only the main LAN and can stay. To check, run `ipset list dnsfilter` on the gateway: no `192.168.2.0/24` or `192.168.5.0/24` may appear. See [_2026-10-31: IOT DNS bypassed AdGuard_](history.md#2026-10-31-iot-dns-bypassed-adguard).
 - **Query log:** 90 days, per client, filterable by IOT address in the AdGuard UI. Alloy also ships it to Loki, as described in [_AdGuard Home query log_](observability.md#adguard-home-query-log).
 
 ### chrony

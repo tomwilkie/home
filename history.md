@@ -114,6 +114,26 @@ reflection on. After the SSID move, the monitor's flows carried a second source 
 `192.168.32.222`, on about half its relay keepalives, which looks like the monitor's own pairing
 interface leaking out of its WiFi uplink; harmless, but worth knowing if it misbehaves.
 
+### 2026-10-31: IOT DNS bypassed AdGuard
+
+The AdGuard query log held only a handful of IOT clients (#2), mostly the WiiM and the two Arylic
+LP10s. Loki matched AdGuard's own query log exactly, so the Alloy pipeline was not at fault.
+Conntrack on the gateway showed the cause: the Dyson fan's query to `192.168.0.12:53` was answered
+from `127.0.0.1:1053`, the gateway's CoreDNS. The UniFi content-filter profile `IOT`, which
+blocked the `ADVERTISEMENT` category, had put `192.168.2.0/24` in the `dnsfilter` ipset, and
+UniFi's `DNSFILTER` chain DNATed that subnet's DNS to CoreDNS. Our redirect rule ends the chain
+for DNS addressed elsewhere, so the speakers with hardcoded public resolvers reached AdGuard,
+while every device that used the DHCP resolver was hijacked. The Nursery network had no profile,
+which is why the eufy monitor did appear.
+
+The `IOT` profile was disabled. Within minutes the Dyson fan, the Kitchen Display, the VELUX
+gateway and the AirGradient appeared in AdGuard and in Loki.
+
+The same day, #29 (no blocked queries) was closed: protection was on, the AdGuard DNS filter held
+about 185,000 rules and blocked `doubleclick.net` on test, and the IOT devices that reached
+AdGuard looked up nothing on the list. The LogQL in that issue filtered on a top-level `Reason`,
+which the on-disk log does not have; a blocked line carries `Result.IsFiltered: true`.
+
 ## Observability
 
 ### Unpoller discovery vanished

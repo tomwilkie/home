@@ -194,7 +194,7 @@ time:
 
 ```
 {"T":"…","QH":"connect.prusa3d.com","QT":"AAAA","IP":"192.168.2.67",
- "Upstream":"https://dns10.quad9.net:443/dns-query","Result":{},"Cached":true,…}
+ "Upstream":"https://dns.google:443/dns-query","Result":{},"Cached":true,…}
 ```
 
 ```
