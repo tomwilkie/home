@@ -36,7 +36,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "### \ud83d\udc33 Docker - Host Overview \u2014 ${instance}\n\nAggregate resource usage across all containers on a single Docker host.",
+          "content": "### 🐳 Docker - Host Overview — ${instance}\n\nAggregate resource usage across all containers on a single Docker host.",
           "mode": "markdown"
         },
         "pluginVersion": "13.1.0-25668120414",
@@ -1337,7 +1337,7 @@
         {
           "allowCustomValue": true,
           "current": {
-            "text": "grafanacloud-prom",
+            "text": "grafanacloud-brookroad-prom",
             "value": "grafanacloud-prom"
           },
           "hide": 0,
@@ -1452,7 +1452,7 @@
     "timezone": "browser",
     "title": "Docker - Host Overview",
     "uid": "docker-host-overview",
-    "version": 3
+    "version": 4
   },
   "meta": {
     "annotationsPermissions": {
@@ -1469,19 +1469,21 @@
     "canSave": true,
     "canStar": true,
     "created": "2026-05-20T10:21:01Z",
+    "createdBy": "tomwilkiepersonal",
     "expires": "0001-01-01T00:00:00Z",
-    "folderId": 0,
-    "folderTitle": "General",
-    "folderUid": "",
-    "folderUrl": "",
+    "folderId": 2390772269031424,
+    "folderTitle": "Observability",
+    "folderUid": "observability",
+    "folderUrl": "/dashboards/f/observability/observability",
     "hasAcl": false,
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
     "slug": "docker-host-overview",
     "type": "db",
-    "updated": "2026-05-20T11:13:19Z",
+    "updated": "2026-11-01T13:19:14Z",
+    "updatedBy": "tomwilkiepersonal",
     "url": "/d/docker-host-overview/docker-host-overview",
-    "version": 3
+    "version": 4
   }
 }

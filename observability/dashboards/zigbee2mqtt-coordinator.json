@@ -804,7 +804,7 @@
     "timezone": "browser",
     "title": "zigbee2mqtt - Coordinator",
     "uid": "zigbee2mqtt-coordinator",
-    "version": 2
+    "version": 3
   },
   "meta": {
     "annotationsPermissions": {
@@ -823,19 +823,19 @@
     "created": "2026-07-02T13:08:52Z",
     "createdBy": "tomwilkiepersonal",
     "expires": "0001-01-01T00:00:00Z",
-    "folderId": 0,
-    "folderTitle": "General",
-    "folderUid": "",
-    "folderUrl": "",
+    "folderId": 29,
+    "folderTitle": "zigbee2mqtt",
+    "folderUid": "ff5gy1xcq2xhcc",
+    "folderUrl": "/dashboards/f/ff5gy1xcq2xhcc/zigbee2mqtt",
     "hasAcl": false,
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
     "slug": "zigbee2mqtt-coordinator",
     "type": "db",
-    "updated": "2026-07-02T13:10:03Z",
+    "updated": "2026-11-01T13:19:07Z",
     "updatedBy": "tomwilkiepersonal",
     "url": "/d/zigbee2mqtt-coordinator/zigbee2mqtt-coordinator",
-    "version": 2
+    "version": 3
   }
 }

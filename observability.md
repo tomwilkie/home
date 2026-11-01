@@ -342,17 +342,19 @@ is removed.
 ## Grafana dashboards
 
 Dashboard JSON files live in `observability/dashboards/`. This repo is the source of truth, so
-edit the file here and upload it to Grafana.
+edit the file here and upload it to Grafana. Each dashboard sits in the Grafana folder of its
+area, next to that area's alert rules, and the file records the folder.
 
-| File | UID | Description |
-|---|---|---|
-| `docker-cluster-overview.json` | `docker-cluster-overview` | One row per Docker host |
-| `docker-container-overview.json` | `docker-container-overview` | Per-container drill-down |
-| `docker-host-overview.json` | `docker-host-overview` | Aggregate resource usage for one host |
-| `zigbee2mqtt-overview.json` | `zigbee2mqtt-overview` | Fleet summary stats and a per-device table with last-seen age, link quality and message sparklines |
-| `zigbee2mqtt-coordinator.json` | `zigbee2mqtt-coordinator` | Coordinator and adapter health: version, network status, MQTT throughput, queue and retries |
-| `zigbee2mqtt-device.json` | `zigbee2mqtt-device` | Per-device drill-down, where `device` is the IEEE address |
-| `central-heating.json` | `eeasfye26sge8c` | Two tabs. **Heating**: Hive thermostat, water heater and boiler status, with boiler runtime and radiator, boiler and outside temperatures. **Rooms**: one row per area, each with a time series of that area's temperature entities |
+| File | UID | Folder | Description |
+|---|---|---|---|
+| `docker-cluster-overview.json` | `docker-cluster-overview` | Observability | One row per Docker host |
+| `docker-container-overview.json` | `docker-container-overview` | Observability | Per-container drill-down |
+| `docker-host-overview.json` | `docker-host-overview` | Observability | Aggregate resource usage for one host |
+| `zigbee2mqtt-overview.json` | `zigbee2mqtt-overview` | zigbee2mqtt | Fleet summary stats and a per-device table with last-seen age, link quality and message sparklines |
+| `zigbee2mqtt-coordinator.json` | `zigbee2mqtt-coordinator` | zigbee2mqtt | Coordinator and adapter health: version, network status, MQTT throughput, queue and retries |
+| `zigbee2mqtt-device.json` | `zigbee2mqtt-device` | zigbee2mqtt | Per-device drill-down, where `device` is the IEEE address |
+| `home-assistant-battery-status.json` | `1cd4cd88-fa62-4059-9848-f6f6fdbe0ef9` | Home Assistant | The ten lowest batteries below 100%, from `homeassistant_sensor_battery_percent` |
+| `central-heating.json` | `eeasfye26sge8c` | Home Assistant | Two tabs. **Heating**: Hive thermostat, water heater and boiler status, with boiler runtime and radiator, boiler and outside temperatures. **Rooms**: one row per area, each with a time series of that area's temperature entities |
 
 Select a single entity's series with `entity`, and aggregate `friendly_name` away with
 `max by (__name__, entity)`. The exporter puts `friendly_name` in the labels, so a rename starts
@@ -377,10 +379,10 @@ follow these steps:
    ```
 
 2. Edit `observability/dashboards/SLUG.json`.
-3. Upload it. The stored file has `dashboard` and `meta` keys, and the upload endpoint wants `dashboard` and `overwrite`:
+3. Upload it. The stored file has `dashboard` and `meta` keys, and the upload endpoint wants `dashboard`, `folderUid` and `overwrite`. Pass `folderUid` from `meta`, because without it Grafana moves the dashboard to **General**:
 
    ```bash
-   jq '{dashboard: .dashboard, overwrite: true}' observability/dashboards/SLUG.json \
+   jq '{dashboard: .dashboard, folderUid: .meta.folderUid, overwrite: true}' observability/dashboards/SLUG.json \
      | gcx api /api/dashboards/db -d @-
    ```
 
@@ -390,9 +392,10 @@ follow these steps:
 ### Workflow for a v2 dashboard
 
 A v2 dashboard goes through the Kubernetes-style API, not `/api/dashboards/db`, which can't
-express tabs. The stored file is the resource with only `apiVersion`, `kind`, `metadata.name`
-and `spec`. Strip the rest of `metadata`, because it holds the stack namespace and server
-bookkeeping.
+express tabs. The stored file is the resource with only `apiVersion`, `kind`, `metadata.name`,
+the `grafana.app/folder` annotation and `spec`. Strip the rest of `metadata`, because it holds
+the stack namespace and server bookkeeping. Keep the folder annotation, because without it
+Grafana moves the dashboard to **General**.
 
 1. Look up the stack namespace. `gcx resources get` returns v0alpha1 whatever version you ask for, so use it only for the namespace:
 
@@ -404,7 +407,9 @@ bookkeeping.
 
    ```bash
    gcx api /apis/dashboard.grafana.app/v2/namespaces/$NS/dashboards/UID \
-     | jq '{apiVersion, kind, metadata: {name: .metadata.name}, spec}' > /tmp/live.json
+     | jq '{apiVersion, kind, metadata: {name: .metadata.name,
+         annotations: {"grafana.app/folder": .metadata.annotations["grafana.app/folder"]}}, spec}' \
+     > /tmp/live.json
    diff <(jq -S . observability/dashboards/SLUG.json) <(jq -S . /tmp/live.json)
    ```
 

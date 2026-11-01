@@ -51,7 +51,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "### \ud83d\udc33 Docker - Container Overview \u2014 ${name} on ${instance}\n\nPer-container drill-down showing CPU, memory, network, disk, and resource pressure for a single Docker container.",
+          "content": "### 🐳 Docker - Container Overview — ${name} on ${instance}\n\nPer-container drill-down showing CPU, memory, network, disk, and resource pressure for a single Docker container.",
           "mode": "markdown"
         },
         "pluginVersion": "13.1.0-25668120414",
@@ -1348,7 +1348,7 @@
             "refId": "B"
           }
         ],
-        "title": "CPU Usage \u2014 User / System",
+        "title": "CPU Usage — User / System",
         "type": "timeseries"
       },
       {
@@ -1451,7 +1451,7 @@
           "type": "prometheus",
           "uid": "${prometheus_datasource}"
         },
-        "description": "Working set = RSS + non-reclaimable cache. Page cache is normal to be high \u2014 it can be reclaimed under pressure.",
+        "description": "Working set = RSS + non-reclaimable cache. Page cache is normal to be high — it can be reclaimed under pressure.",
         "fieldConfig": {
           "defaults": {
             "color": {
@@ -2972,7 +2972,7 @@
         {
           "allowCustomValue": true,
           "current": {
-            "text": "grafanacloud-prom",
+            "text": "grafanacloud-brookroad-prom",
             "value": "grafanacloud-prom"
           },
           "hide": 0,
@@ -3093,7 +3093,7 @@
     "timezone": "default",
     "title": "Docker - Container Overview",
     "uid": "docker-container-overview",
-    "version": 4
+    "version": 5
   },
   "meta": {
     "annotationsPermissions": {
@@ -3110,19 +3110,21 @@
     "canSave": true,
     "canStar": true,
     "created": "2026-05-20T10:21:00Z",
+    "createdBy": "tomwilkiepersonal",
     "expires": "0001-01-01T00:00:00Z",
-    "folderId": 0,
-    "folderTitle": "General",
-    "folderUid": "",
-    "folderUrl": "",
+    "folderId": 2390772269031424,
+    "folderTitle": "Observability",
+    "folderUid": "observability",
+    "folderUrl": "/dashboards/f/observability/observability",
     "hasAcl": false,
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
     "slug": "docker-container-overview",
     "type": "db",
-    "updated": "2026-05-20T11:13:20Z",
+    "updated": "2026-11-01T13:19:13Z",
+    "updatedBy": "tomwilkiepersonal",
     "url": "/d/docker-container-overview/docker-container-overview",
-    "version": 4
+    "version": 5
   }
 }

@@ -849,7 +849,7 @@
     "timezone": "browser",
     "title": "zigbee2mqtt - Device",
     "uid": "zigbee2mqtt-device",
-    "version": 8
+    "version": 9
   },
   "meta": {
     "annotationsPermissions": {
@@ -868,19 +868,19 @@
     "created": "2026-06-26T09:11:55Z",
     "createdBy": "tomwilkiepersonal",
     "expires": "0001-01-01T00:00:00Z",
-    "folderId": 0,
-    "folderTitle": "General",
-    "folderUid": "",
-    "folderUrl": "",
+    "folderId": 29,
+    "folderTitle": "zigbee2mqtt",
+    "folderUid": "ff5gy1xcq2xhcc",
+    "folderUrl": "/dashboards/f/ff5gy1xcq2xhcc/zigbee2mqtt",
     "hasAcl": false,
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
     "slug": "zigbee2mqtt-device",
     "type": "db",
-    "updated": "2026-07-02T12:59:57Z",
+    "updated": "2026-11-01T13:19:08Z",
     "updatedBy": "tomwilkiepersonal",
     "url": "/d/zigbee2mqtt-device/zigbee2mqtt-device",
-    "version": 8
+    "version": 9
   }
 }

@@ -51,7 +51,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "### \ud83d\udc33 Docker - Cluster Overview\n\nCross-host summary \u2014 one row per Docker host \u2014 for comparing CPU, memory, network, and disk usage across all instances.",
+          "content": "### 🐳 Docker - Cluster Overview\n\nCross-host summary — one row per Docker host — for comparing CPU, memory, network, and disk usage across all instances.",
           "mode": "markdown"
         },
         "pluginVersion": "13.1.0-25668120414",
@@ -744,7 +744,7 @@
         {
           "allowCustomValue": true,
           "current": {
-            "text": "grafanacloud-prom",
+            "text": "grafanacloud-brookroad-prom",
             "value": "grafanacloud-prom"
           },
           "hide": 0,
@@ -812,7 +812,7 @@
     "timezone": "browser",
     "title": "Docker - Cluster Overview",
     "uid": "docker-cluster-overview",
-    "version": 5
+    "version": 6
   },
   "meta": {
     "annotationsPermissions": {
@@ -829,19 +829,21 @@
     "canSave": true,
     "canStar": true,
     "created": "2026-05-19T15:52:58Z",
+    "createdBy": "tomwilkiepersonal",
     "expires": "0001-01-01T00:00:00Z",
-    "folderId": 0,
-    "folderTitle": "General",
-    "folderUid": "",
-    "folderUrl": "",
+    "folderId": 2390772269031424,
+    "folderTitle": "Observability",
+    "folderUid": "observability",
+    "folderUrl": "/dashboards/f/observability/observability",
     "hasAcl": false,
     "isFolder": false,
     "provisioned": false,
     "provisionedExternalId": "",
     "slug": "docker-cluster-overview",
     "type": "db",
-    "updated": "2026-05-20T11:08:31Z",
+    "updated": "2026-11-01T13:19:10Z",
+    "updatedBy": "tomwilkiepersonal",
     "url": "/d/docker-cluster-overview/docker-cluster-overview",
-    "version": 5
+    "version": 6
   }
 }
