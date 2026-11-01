@@ -58,10 +58,17 @@ upstream as
 - **Installed slug `39e0dbb4_unpoller`.** It has no prebuilt image, so the Supervisor builds it from the Dockerfile. To move to a newer unpoller, bump the tag in the Dockerfile and the add-on `version`, then update the add-on.
 - **bluemaex's `71dadad1_unpoller` is stopped with `boot: manual`.** Both publish host port 9130, so only one can run, and both read `/config/addons/unpoller/up.conf`.
 
-The UniFi-Poller dashboards in the Grafana `Unifi` folder are imported from
-[unpoller/dashboards](https://github.com/unpoller/dashboards/tree/master/v2.0.0), with
-`${DS_PROMETHEUS}` replaced by `grafanacloud-prom`, and are not file-managed in this repo.
+The UniFi-Poller dashboards in the Grafana `Unifi` folder come from
+[unpoller/dashboards](https://github.com/unpoller/dashboards/tree/master/v2.0.0), which this
+repo pins as a submodule at `observability/dashboards/unpoller`. Run `make unpoller-dashboards`
+from `observability/` to deploy them. The target uploads the Client, UAP, UMBB, USG and USW
+Insights Prometheus dashboards to the `Unifi` folder under their upstream UIDs.
 `UniFi-Poller: UMBB Insights - Prometheus` (`unpoller-umbb`) covers the U5G Max.
+
+- **Don't edit these dashboards in Grafana.** The next deploy overwrites them with the upstream files. Propose a change upstream instead.
+- **The target fills in the datasource.** Upstream files are import templates, so the target replaces every `${DS_…}` input with `grafanacloud-prom`, which also covers the USG dashboard's `${DS_UNIFI_POLLER}`, and drops the `__inputs` and `__requires` blocks.
+- **Renovate opens a PR for every upstream commit.** Upstream has no releases or tags, so the submodule tracks `master`. A PR that touches only the InfluxDB dashboards can be merged without a deploy. After you merge one that changes a Prometheus dashboard, run `git submodule update` and then the target.
+- **To deploy another upstream dashboard,** add its short name to `UNPOLLER_BOARDS` in the `Makefile`. The target expects files named `UniFi-Poller_ <name> Insights - Prometheus.json`.
 
 ## Logs
 

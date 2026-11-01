@@ -6,3 +6,7 @@
 	path = esphome/doorbell
 	url = https://github.com/tomwilkie/doorbell.git
 	branch = main
+[submodule "observability/dashboards/unpoller"]
+	path = observability/dashboards/unpoller
+	url = https://github.com/unpoller/dashboards.git
+	branch = master

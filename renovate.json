@@ -14,7 +14,14 @@
     {
       "description": "ESPHome device repos vendored as submodules under esphome/",
       "matchManagers": ["git-submodules"],
+      "matchDepNames": ["esphome/**"],
       "commitMessagePrefix": "esphome:"
+    },
+    {
+      "description": "unpoller/dashboards has no releases, so every commit to its master opens a PR. Deploy with `make unpoller-dashboards`",
+      "matchManagers": ["git-submodules"],
+      "matchDepNames": ["observability/dashboards/unpoller"],
+      "commitMessagePrefix": "observability:"
     }
   ]
 }
