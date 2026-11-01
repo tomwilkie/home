@@ -353,7 +353,7 @@ area, next to that area's alert rules, and the file records the folder.
 | `zigbee2mqtt-overview.json` | `zigbee2mqtt-overview` | zigbee2mqtt | Fleet summary stats and a per-device table with last-seen age, link quality and message sparklines |
 | `zigbee2mqtt-coordinator.json` | `zigbee2mqtt-coordinator` | zigbee2mqtt | Coordinator and adapter health: version, network status, MQTT throughput, queue and retries |
 | `zigbee2mqtt-device.json` | `zigbee2mqtt-device` | zigbee2mqtt | Per-device drill-down, where `device` is the IEEE address |
-| `home-assistant-battery-status.json` | `1cd4cd88-fa62-4059-9848-f6f6fdbe0ef9` | Home Assistant | The ten lowest batteries below 100%, from `homeassistant_sensor_battery_percent` |
+| `batteries.json` | `1cd4cd88-fa62-4059-9848-f6f6fdbe0ef9` | Home Assistant | Replaceable batteries: device count, how many are below 20%, low-battery warnings, offline battery sensors, the lowest level, and the ten lowest batteries. A regular expression on `entity` leaves out rechargeable devices (phones, tablets, the Kitchen Display, the robot vacuums) |
 | `central-heating.json` | `eeasfye26sge8c` | Home Assistant | Two tabs. **Heating**: Hive thermostat, water heater and boiler status, with boiler runtime and radiator, boiler and outside temperatures. **Rooms**: one row per area, each with a time series of that area's temperature entities |
 
 Select a single entity's series with `entity`, and aggregate `friendly_name` away with

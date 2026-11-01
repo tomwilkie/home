@@ -1,0 +1,521 @@
+{
+  "dashboard": {
+    "annotations": {
+      "list": [
+        {
+          "builtIn": 1,
+          "datasource": {
+            "type": "grafana",
+            "uid": "-- Grafana --"
+          },
+          "enable": true,
+          "hide": true,
+          "iconColor": "rgba(0, 211, 255, 1)",
+          "name": "Annotations & Alerts",
+          "type": "dashboard"
+        }
+      ]
+    },
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 0,
+    "id": 26,
+    "links": [],
+    "panels": [
+      {
+        "gridPos": {
+          "h": 6,
+          "w": 9,
+          "x": 0,
+          "y": 0
+        },
+        "id": 2,
+        "options": {
+          "code": {
+            "language": "plaintext",
+            "showLineNumbers": false,
+            "showMiniMap": false
+          },
+          "content": "## Batteries\n\nDevices on replaceable batteries. Phones, tablets, the Kitchen Display and the robot vacuums are rechargeable, so they're left out.\n\nReplace a battery below **20%**, when the device warns that it's low, or when it goes offline.",
+          "mode": "markdown"
+        },
+        "title": "",
+        "transparent": true,
+        "type": "text"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-prom"
+        },
+        "description": "Devices with a battery level sensor, excluding rechargeables.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "decimals": 0,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "text"
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 3,
+          "x": 9,
+          "y": 0
+        },
+        "id": 3,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "center",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "value",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "grafanacloud-prom"
+            },
+            "editorMode": "code",
+            "expr": "count(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}))",
+            "instant": true,
+            "range": false,
+            "refId": "A"
+          }
+        ],
+        "title": "Devices",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-prom"
+        },
+        "description": "Batteries below 20%.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "decimals": 0,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green"
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 3,
+          "x": 12,
+          "y": 0
+        },
+        "id": 4,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "center",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "value",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "grafanacloud-prom"
+            },
+            "editorMode": "code",
+            "expr": "count(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}) < 20) or vector(0)",
+            "instant": true,
+            "range": false,
+            "refId": "A"
+          }
+        ],
+        "title": "Replace",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-prom"
+        },
+        "description": "Devices whose own battery-low or battery-health sensor is on.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "decimals": 0,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green"
+                },
+                {
+                  "color": "orange",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 3,
+          "x": 15,
+          "y": 0
+        },
+        "id": 5,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "center",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "value",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "grafanacloud-prom"
+            },
+            "editorMode": "code",
+            "expr": "count(max by (entity) (homeassistant_binary_sensor_state{entity=~\"binary_sensor\\\\..*(battery_low|battery_health|replace_battery).*\"}) == 1) or vector(0)",
+            "instant": true,
+            "range": false,
+            "refId": "A"
+          }
+        ],
+        "title": "Warnings",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-prom"
+        },
+        "description": "Battery sensors that are unavailable, which often means the battery is flat.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "decimals": 0,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green"
+                },
+                {
+                  "color": "red",
+                  "value": 1
+                }
+              ]
+            },
+            "unit": "none"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 3,
+          "x": 18,
+          "y": 0
+        },
+        "id": 6,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "center",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "value",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "grafanacloud-prom"
+            },
+            "editorMode": "code",
+            "expr": "count(max by (entity) (homeassistant_entity_available{entity=~\"sensor\\\\..*_battery(_level|_percent)?(_[0-9]+)?\", entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}) == 0) or vector(0)",
+            "instant": true,
+            "range": false,
+            "refId": "A"
+          }
+        ],
+        "title": "Offline",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-prom"
+        },
+        "description": "The lowest battery level.",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "decimals": 0,
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "dark-red"
+                },
+                {
+                  "color": "yellow",
+                  "value": 33
+                },
+                {
+                  "color": "green",
+                  "value": 66
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 6,
+          "w": 3,
+          "x": 21,
+          "y": 0
+        },
+        "id": 7,
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "justifyMode": "center",
+          "orientation": "auto",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showPercentChange": false,
+          "textMode": "value",
+          "wideLayout": true
+        },
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "grafanacloud-prom"
+            },
+            "editorMode": "code",
+            "expr": "min(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}))",
+            "instant": true,
+            "range": false,
+            "refId": "A"
+          }
+        ],
+        "title": "Lowest",
+        "type": "stat"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-prom"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "decimals": 0,
+            "mappings": [],
+            "max": 102,
+            "min": 3,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "dark-red"
+                },
+                {
+                  "color": "yellow",
+                  "value": 33
+                },
+                {
+                  "color": "green",
+                  "value": 66
+                }
+              ]
+            },
+            "unit": "percent"
+          },
+          "overrides": []
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 6
+        },
+        "id": 1,
+        "options": {
+          "displayMode": "lcd",
+          "legend": {
+            "calcs": [],
+            "displayMode": "list",
+            "placement": "bottom",
+            "showLegend": false
+          },
+          "maxVizHeight": 300,
+          "minVizHeight": 16,
+          "minVizWidth": 8,
+          "namePlacement": "auto",
+          "orientation": "horizontal",
+          "reduceOptions": {
+            "calcs": [
+              "lastNotNull"
+            ],
+            "fields": "",
+            "values": false
+          },
+          "showUnfilled": true,
+          "sizing": "auto",
+          "valueMode": "color"
+        },
+        "pluginVersion": "12.1.0-87021",
+        "targets": [
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "grafanacloud-prom"
+            },
+            "editorMode": "code",
+            "exemplar": false,
+            "expr": "bottomk(10, sort(homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}) < 100)",
+            "instant": true,
+            "legendFormat": "{{friendly_name}}",
+            "range": false,
+            "refId": "A"
+          }
+        ],
+        "title": "Lowest batteries",
+        "type": "bargauge"
+      }
+    ],
+    "preload": false,
+    "schemaVersion": 41,
+    "tags": [
+      "homeassistant"
+    ],
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {},
+    "timezone": "browser",
+    "title": "Batteries",
+    "uid": "1cd4cd88-fa62-4059-9848-f6f6fdbe0ef9",
+    "version": 5
+  },
+  "meta": {
+    "annotationsPermissions": {
+      "dashboard": {
+        "canAdd": true,
+        "canDelete": true,
+        "canEdit": true
+      }
+    },
+    "apiVersion": "v0alpha1",
+    "canAdmin": true,
+    "canDelete": true,
+    "canEdit": true,
+    "canSave": true,
+    "canStar": true,
+    "created": "2025-05-12T13:47:24Z",
+    "createdBy": "tomwilkiepersonal",
+    "expires": "0001-01-01T00:00:00Z",
+    "folderId": 4339315371155456,
+    "folderTitle": "Home Assistant",
+    "folderUid": "home-assistant",
+    "folderUrl": "/dashboards/f/home-assistant/home-assistant",
+    "hasAcl": false,
+    "isFolder": false,
+    "provisioned": false,
+    "provisionedExternalId": "",
+    "slug": "batteries",
+    "type": "db",
+    "updated": "2026-11-01T13:24:32Z",
+    "updatedBy": "tomwilkiepersonal",
+    "url": "/d/1cd4cd88-fa62-4059-9848-f6f6fdbe0ef9/batteries",
+    "version": 5
+  }
+}
