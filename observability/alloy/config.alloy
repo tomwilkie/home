@@ -295,9 +295,69 @@ discovery.relabel "logs_integrations_docker" {
 loki.source.docker "logs_integrations_docker" {
   host             = "unix:///var/run/docker.sock"
   targets          = discovery.docker.logs_integrations_docker.targets
-  forward_to       = [loki.write.grafana_cloud.receiver]
+  forward_to       = [loki.process.docker.receiver]
   relabel_rules    = discovery.relabel.logs_integrations_docker.rules
   refresh_interval = "5s"
+}
+
+// ESPHome devices with "Subscribe to logs from the device" on in their Home
+// Assistant config entry (the Voice Assistants and Everything Presence Lites)
+// have their log written into Home Assistant's own log by the
+// homeassistant.components.esphome.manager logger, one device line per entry:
+//
+//   ... WARNING (MainThread) [homeassistant.components.esphome.manager]
+//       Everything Presence Lite ef33a0: [W][component:313]: api cleared Warning flag
+//
+// Move those lines into the same stream as the syslog from the custom devices
+// (see loki.source.syslog "esphome"), with matching labels: instance is the
+// config entry title lower-cased with spaces as hyphens, which equals the
+// ESPHome device name, and level uses the syslog severity names. The source
+// label tells the two paths apart. Keep subscription off for the devices that
+// send syslog, or their lines arrive twice.
+loki.process "docker" {
+  forward_to = [loki.write.grafana_cloud.receiver]
+
+  stage.match {
+    // Device lines only: the logger also writes Home Assistant's own warnings,
+    // which have no "[X][component]" prefix and stay in the homeassistant stream.
+    selector = "{service_name=\"homeassistant\"} |~ \"\\\\[homeassistant\\\\.components\\\\.esphome\\\\.manager\\\\] .+?: \\\\[[A-Z]{1,2}\\\\]\\\\[\""
+
+    stage.replace {
+      expression = "(\\x1b\\[[0-9;]*m)"
+      replace    = ""
+    }
+    stage.regex {
+      expression = "\\[homeassistant\\.components\\.esphome\\.manager\\] (?P<device>.+?): \\[(?P<esp_level>[A-Z]{1,2})\\]\\[(?P<component>[^:\\]]+)(?::[0-9]+)?\\]: ?(?P<msg>.*)$"
+    }
+    stage.template {
+      source   = "instance"
+      template = "{{ Replace (ToLower .device) \" \" \"-\" -1 }}"
+    }
+    stage.template {
+      source   = "level"
+      template = "{{ if eq .esp_level \"E\" }}error{{ else if eq .esp_level \"W\" }}warning{{ else if eq .esp_level \"I\" }}notice{{ else if eq .esp_level \"C\" }}informational{{ else }}debug{{ end }}"
+    }
+    stage.labels {
+      values = {
+        instance  = "instance",
+        component = "component",
+        level     = "level",
+      }
+    }
+    stage.static_labels {
+      values = {
+        job          = "integrations/esphome",
+        service_name = "esphome",
+        source       = "homeassistant",
+      }
+    }
+    stage.label_drop {
+      values = ["container", "stream", "compose_service"]
+    }
+    stage.output {
+      source = "msg"
+    }
+  }
 }
 
 // ── Gather Home Assistant metrics ─────────────────────────────────────────────────────
@@ -502,6 +562,7 @@ loki.source.syslog "esphome" {
     labels = {
       job          = "integrations/esphome",
       service_name = "esphome",
+      source       = "syslog",
     }
   }
   relabel_rules = loki.relabel.esphome.rules

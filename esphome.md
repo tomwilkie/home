@@ -17,7 +17,9 @@ The following table lists the custom devices:
 The Voice Assistants and the Everything Presence Lites also run ESPHome, but on vendor firmware.
 Each has an on-device update entity, and `automation.update_esphome_devices` installs their
 updates at 05:30, as described in [_Timing_](maintenance.md#timing). That automation does not
-reach the custom devices, which have no update entity.
+reach the custom devices, which have no update entity. Their logs reach Loki through Home Assistant's log
+subscription rather than syslog, as described in
+[_ESPHome device logs_](observability.md#esphome-device-logs).
 
 ## Layout
 

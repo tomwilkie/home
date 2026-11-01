@@ -77,7 +77,7 @@ otherwise picks the raw container name for Docker and the per-event CEF `name` l
 | Systemd journal | `linux` | `integrations/linux` | hostname | `unit`, `level` |
 | UniFi syslog | `unifi` | `integrations/unifi` | `udm` | `log_type`, plus the labels in [_UniFi syslog_](#unifi-syslog) |
 | AdGuard Home query log | `adguard` | `integrations/adguard` | hostname | |
-| ESPHome device syslog | `esphome` | `integrations/esphome` | device name | `component`, `level` |
+| ESPHome device logs | `esphome` | `integrations/esphome` | device name | `component`, `level`, `source` |
 
 HAOS sends container output to journald as well as to Docker. The journal pipeline drops any
 entry with a container name, because the Docker pipeline already ships it, and keeps Docker's
@@ -179,7 +179,15 @@ is normal for CEF alone.
 
 ### ESPHome device logs
 
-The custom ESPHome devices in [esphome.md](esphome.md) send their log with the ESPHome
+Every ESPHome device's log lands in one stream, `job="integrations/esphome"`, by one of two
+paths. The `source` label says which:
+
+| `source` | Devices | Path |
+|---|---|---|
+| `syslog` | The custom devices in [esphome.md](esphome.md) | The device sends it straight to Alloy |
+| `homeassistant` | The Voice Assistants and the Everything Presence Lites, which run vendor firmware | Home Assistant subscribes to the device's log and writes it into its own log, and Alloy moves the lines out of the Docker stream |
+
+The custom devices send their log with the ESPHome
 `syslog` component, as RFC 5424 over UDP, to `loki.source.syslog "esphome"` on
 `192.168.0.12:5140`. The listener needs its own port, because the UniFi listener on 514 uses the
 `raw` format. The devices are on the IOT VLAN, and the `IOT to Home Assistant` firewall policy
@@ -189,6 +197,17 @@ already allows them to reach the host.
 - **`loki.process "esphome"` strips ANSI escape sequences.** ESPHome wraps some values, such as the SSID in the Wi-Fi config dump, in conceal codes meant for a serial console.
 - **The log arrives while Home Assistant's API connection is down,** which is when it matters most, but not while the device is off Wi-Fi, and UDP drops packets under load.
 - **Select on `job`, not `service_name`.** The removed ESPHome Device Builder add-on also logged as `service_name="esphome"`, under `job="integrations/docker"`, and that history stays in Loki until it ages out.
+
+The vendor devices have **Subscribe to logs from the device** (`subscribe_logs`) on in their
+ESPHome config entry options. Home Assistant writes each device line with the
+`homeassistant.components.esphome.manager` logger as `<entry title>: [W][component:313]: ...`,
+and `loki.process "docker"` matches that shape:
+
+- **The labels match the syslog path.** `instance` is the config entry title in lower case with spaces as hyphens, which equals the ESPHome device name. `level` uses the syslog severity names, mapped from ESPHome's level letter. The line keeps only the device's message.
+- **Only lines with the `[X][component]` prefix move.** The same logger writes Home Assistant's own warnings about the integration, and those stay in the `homeassistant` stream.
+- **Home Assistant's `logger` level sets the detail.** At `default: info`, Home Assistant subscribes at ESPHome's CONFIG level, so DEBUG lines never leave the device. Raising `homeassistant.components.esphome.manager` to `debug` subscribes every device at ESPHome's most verbose level.
+- **Nothing arrives while the API connection is down,** unlike the syslog path.
+- **Keep `subscribe_logs` off for the custom devices,** or their lines arrive twice.
 
 To read one device's API connection log, query:
 
