@@ -573,6 +573,11 @@ happened at good signal, and its cause was not found.
 The clock was reflashed with `power_save_mode: none` and the seconds hand redrawn every 100 ms
 instead of 25 ms. After the reboot it rejoined at −48 dBm.
 
+`power_save_mode: none` raised the clock's internal temperature from an hourly average of 42 to
+46 °C that morning to about 58 °C. Its signal had recovered to between −48 and −62 dBm on a
+nearer AP, so the same day it went back to the default light power save, relying on the better
+link and the seconds-hand change.
+
 ### 2026-11-01: boiler short cycles
 
 Boiler On showed 2-minute firings every 8 to 10 minutes from 25 to 27 October. The colour

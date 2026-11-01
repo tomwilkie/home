@@ -66,7 +66,7 @@ gateway's reflector.
 - **Format with `yamlfmt .` before committing.** Each folder has a `.yamlfmt` that keeps single blank lines and skips git-ignored files.
 - **The clock's display uses `mipi_spi` with model `GC9A01A` and the model's default transform.** The default mirrors the x axis, which is what this panel needs. A `transform:` block with `mirror_x: false` draws the face mirrored left to right.
 - **Every device config must define a time source,** because the `syslog` component in `debug.yaml` needs one for its timestamps. `debug.yaml` cannot define it: ESPHome rejects a second SNTP block with a different ID, and the clock already has one. Use `sntp` with chrony at `192.168.0.12` as the server. ESPHome's SNTP component ignores the NTP server that DHCP offers, so the address is in the config.
-- **The clock runs with `power_save_mode: none`.** It sits on a weak Wi-Fi link, and light power save drops API keep-alives, as tracked in [#7](https://github.com/tomwilkie/home/issues/7).
+- **The clock uses ESPHome's default light Wi-Fi power save.** `power_save_mode: none` raised its chip temperature from about 45 °C to about 58 °C, so it stays off unless the API disconnects in [#7](https://github.com/tomwilkie/home/issues/7) return, as recorded in [_Clock API disconnects_](history.md#2026-11-01-clock-api-disconnects).
 - **Boiler On needs blue above 50 and red below 30.** The burner raises the blue channel from about 44 to about 67 and leaves red near 24, while daylight from the cupboard door raises red and saturates the clear channel. Don't add `delayed_on` or `delayed_off`: the short burner cycles are real and worth seeing.
 
 ## CI
