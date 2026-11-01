@@ -485,6 +485,58 @@ loki.process "unifi" {
   }
 }
 
+// ── ESPHome device logs ──────────────────────────────────────────────────────
+// The custom ESPHome devices (clock, doorbell, boiler monitor; configs in
+// esphome/) send their log over UDP with the ESPHome syslog component, as
+// RFC 5424, to 192.168.0.12:5140. Port 514 is taken by the UniFi listener, which
+// needs the raw format. The devices are on the IOT VLAN, and the
+// "IOT to Home Assistant" firewall policy allows them to reach this host.
+//
+// ESPHome puts the device name in the syslog HOSTNAME and the logging component
+// (wifi, api, sensor, ...) in APP-NAME. Both are bounded, so they become labels.
+loki.source.syslog "esphome" {
+  listener {
+    address       = "0.0.0.0:5140"
+    protocol      = "udp"
+    syslog_format = "rfc5424"
+    labels = {
+      job          = "integrations/esphome",
+      service_name = "esphome",
+    }
+  }
+  relabel_rules = loki.relabel.esphome.rules
+  forward_to    = [loki.process.esphome.receiver]
+}
+
+loki.relabel "esphome" {
+  forward_to = []
+
+  rule {
+    source_labels = ["__syslog_message_hostname"]
+    target_label  = "instance"
+  }
+  rule {
+    source_labels = ["__syslog_message_app_name"]
+    target_label  = "component"
+  }
+  rule {
+    source_labels = ["__syslog_message_severity"]
+    target_label  = "level"
+  }
+}
+
+// ESPHome wraps some values (the SSID and BSSID in the config dump) in ANSI
+// conceal codes for the serial console. Strip all ANSI sequences so the lines
+// read cleanly and line filters match.
+loki.process "esphome" {
+  forward_to = [loki.write.grafana_cloud.receiver]
+
+  stage.replace {
+    expression = "(\\x1b\\[[0-9;]*m)"
+    replace    = ""
+  }
+}
+
 // ── AdGuard Home query log ────────────────────────────────────────────────────
 // AdGuard Home (HA add-on a0d7b954_adguard) is the IOT DNS resolver. It has no
 // native log export, so we tail its on-disk query log and ship it to Loki for

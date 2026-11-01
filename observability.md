@@ -77,6 +77,7 @@ otherwise picks the raw container name for Docker and the per-event CEF `name` l
 | Systemd journal | `linux` | `integrations/linux` | hostname | `unit`, `level` |
 | UniFi syslog | `unifi` | `integrations/unifi` | `udm` | `log_type`, plus the labels in [_UniFi syslog_](#unifi-syslog) |
 | AdGuard Home query log | `adguard` | `integrations/adguard` | hostname | |
+| ESPHome device syslog | `esphome` | `integrations/esphome` | device name | `component`, `level` |
 
 HAOS sends container output to journald as well as to Docker. The journal pipeline drops any
 entry with a container name, because the Docker pipeline already ships it, and keeps Docker's
@@ -175,6 +176,31 @@ curl -s localhost:12345/metrics | grep -E 'loki_source_syslog_entries_total|loki
 
 Firewall lines are high-volume, and CEF events arrive a few per minute, so a short quiet capture
 is normal for CEF alone.
+
+### ESPHome device logs
+
+The custom ESPHome devices in [esphome.md](esphome.md) send their log with the ESPHome
+`syslog` component, as RFC 5424 over UDP, to `loki.source.syslog "esphome"` on
+`192.168.0.12:5140`. The listener needs its own port, because the UniFi listener on 514 uses the
+`raw` format. The devices are on the IOT VLAN, and the `IOT to Home Assistant` firewall policy
+already allows them to reach the host.
+
+- **Labels come from the syslog header.** ESPHome puts the device name in the hostname field and the logging component (`wifi`, `api.connection`, `sensor` and so on) in the app name, so `loki.relabel "esphome"` maps them to `instance` and `component`, and the severity to `level`. All three are bounded.
+- **`loki.process "esphome"` strips ANSI escape sequences.** ESPHome wraps some values, such as the SSID in the Wi-Fi config dump, in conceal codes meant for a serial console.
+- **The log arrives while Home Assistant's API connection is down,** which is when it matters most, but not while the device is off Wi-Fi, and UDP drops packets under load.
+- **Select on `job`, not `service_name`.** The removed ESPHome Device Builder add-on also logged as `service_name="esphome"`, under `job="integrations/docker"`, and that history stays in Loki until it ages out.
+
+To read one device's API connection log, query:
+
+```
+{job="integrations/esphome", instance="clock", component=~"api.*"}
+```
+
+To check that packets reach the host before Alloy parses them, capture on the port:
+
+```sh
+tcpdump -ni any udp port 5140 -A
+```
 
 ### AdGuard Home query log
 

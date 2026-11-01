@@ -24,7 +24,7 @@ reach the custom devices, which have no update entity.
 - **The clock and the doorbell are git submodules tracking `main`.** Their repos are public, so each stands alone. To change one, commit and push inside the submodule first, then commit the new submodule commit in this repo. Renovate opens a pull request here when either repo's `main` moves past the recorded commit.
 - **Clone with `git clone --recurse-submodules`,** or run `git submodule update --init` in an existing clone. Without it the two folders are empty.
 - **The boiler monitor lives directly in this repo,** because it has no project of its own.
-- **Each folder has its own `debug.yaml`, and the copies must stay identical.** Every config includes it as the `core` package, and it supplies the diagnostic entities that the restart sweep and health checks read: Wi-Fi signal, uptime, internal temperature, free memory, online status, IP address, SSID, version and the reboot button. Copy any change to all three folders.
+- **Each folder has its own `debug.yaml`, and the copies must stay identical.** Every config includes it as the `core` package. It supplies the diagnostic entities that the restart sweep and health checks read (Wi-Fi signal, uptime, internal temperature, free memory, online status, IP address, SSID, version and the reboot button), and it sends the device log to Loki, as described in [_ESPHome device logs_](observability.md#esphome-device-logs). Copy any change to all three folders.
 
 ## Secrets
 
@@ -65,7 +65,7 @@ gateway's reflector.
 - **All devices build on esp-idf,** which is ESPHome's default for the ESP32.
 - **Format with `yamlfmt .` before committing.** Each folder has a `.yamlfmt` that keeps single blank lines and skips git-ignored files.
 - **The clock's display uses `mipi_spi` with model `GC9A01A` and the model's default transform.** The default mirrors the x axis, which is what this panel needs. A `transform:` block with `mirror_x: false` draws the face mirrored left to right.
-- **The clock syncs time from chrony at `192.168.0.12`.** ESPHome's SNTP component ignores the NTP server that DHCP offers, so the address is in the config.
+- **Every device config must define a time source,** because the `syslog` component in `debug.yaml` needs one for its timestamps. `debug.yaml` cannot define it: ESPHome rejects a second SNTP block with a different ID, and the clock already has one. Use `sntp` with chrony at `192.168.0.12` as the server. ESPHome's SNTP component ignores the NTP server that DHCP offers, so the address is in the config.
 - **The clock runs with `power_save_mode: none`.** It sits on a weak Wi-Fi link, and light power save drops API keep-alives, as tracked in [#7](https://github.com/tomwilkie/home/issues/7).
 - **Boiler On needs blue above 50 and red below 30.** The burner raises the blue channel from about 44 to about 67 and leaves red near 24, while daylight from the cupboard door raises red and saturates the clear channel. Don't add `delayed_on` or `delayed_off`: the short burner cycles are real and worth seeing.
 

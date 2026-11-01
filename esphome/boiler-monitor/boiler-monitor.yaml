@@ -73,3 +73,10 @@ binary_sensor:
     lambda: |-
       // Burner raises blue with red flat; daylight from the cupboard door raises red too.
       return id(blue_channel).state > 50 && id(red_channel).state < 30;
+
+# Timestamps for the syslog in debug.yaml. chrony on Home Assistant; ESPHome
+# ignores the DHCP NTP option.
+time:
+  - platform: sntp
+    servers:
+      - 192.168.0.12
