@@ -2,11 +2,19 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "labels": ["dependencies"],
+  "git-submodules": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "description": "Commit messages follow the repo convention: <area>: <lowercase summary>",
       "matchFileNames": ["observability/**"],
       "commitMessagePrefix": "observability:"
+    },
+    {
+      "description": "ESPHome device repos vendored as submodules under esphome/",
+      "matchManagers": ["git-submodules"],
+      "commitMessagePrefix": "esphome:"
     }
   ]
 }
