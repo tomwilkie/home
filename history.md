@@ -456,6 +456,18 @@ upgrade the `Battery Level` and `Boost` overrides were cleared, and the device w
 gone. `climate.hallway_thermostat` now displays as `Hallway - Thermostat` and
 `water_heater.hallway_thermostat` as `Hallway - Thermostat Hot water`.
 
+### 2026-11-01: case-only name overrides
+
+Two bars on the Grafana Batteries dashboard were labelled only `Battery Level` and
+`Battery Percent`, because bare overrides had stripped the `{Area} - {Device}` prefix. The July
+sweep had compared `name` with `original_name` exactly, so it missed overrides that changed only
+the capitalisation. An audit found 369 overrides on enabled entities with composed names, and the documented query later found 11 more: 10 on disabled Z-Wave and Zigbee entities, and the Kleenex pollen sensor.
+
+- **Cleared 326.** The audit cleared overrides that matched the integration's name ignoring case (every Nest Protect entity, the Adaptive Lighting sub-switches, the printer cartridges, the Hive boost sensor and some Z-Wave entities), along with cosmetic Nest Protect rewordings (`WiFi Test`, `Brightness`, `Last Audio Self Test`), Z-Wave overrides that embedded a device name or reworded a readable name, and `Light` or `On/Off` overrides on device-named lights.
+- **Set full names on 10 UniFi trackers** whose overrides were fragments such as `Doorbell`, `Status` or `Presence`. The Hive hub's UniFi device was renamed from `myHivehub` to `Basement - Hive Hub`.
+- **Renamed the Dining Room Nest Protect.** The device became `Living Room - Nest Protect (Dining Room)`, and its 21 `*.nest_protect_dining_room_*` entities became `*.living_room_nest_protect_dining_room_*`. No automation, script, dashboard or Grafana rule referenced them.
+- **Kept** the per-room `Adaptive Lighting` switch names, the Z-Wave `Electric Consumption [W]` style replacements, the Z-Wave entities whose `original_name` is empty or `unknown`, and the firmware and status overrides on update and printer entities with no `original_name`.
+
 ## Wake routines
 
 ### Sleep sound volume

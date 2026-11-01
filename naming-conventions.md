@@ -104,14 +104,24 @@ hass-cli raw ws config/entity_registry/update \
   --json='{"entity_id":"device_tracker.basement_nest_protect_unifi","name":"Basement - Nest Protect"}'
 ```
 
-An override that restates `original_name` only strips the prefix. To find overrides, run the
-following, and clear every row where `name` equals `original_name`:
+An override that restates `original_name` only strips the prefix, and so does one that changes
+only its capitalisation (`Battery Level` for `Battery level`). Keep Home Assistant's sentence
+case rather than overriding it. Don't override a readable name to reword it either
+(`WiFi Test` for `Wi-Fi test`): the override costs the prefix for a cosmetic change.
+
+To find overrides that restate the integration's name, run the following. It skips UniFi
+entities, whose overrides hold the whole name. Clear every row it prints:
 
 ```bash
 ssh root@homeassistant.local -C 'jq -r ".data.entities[]
-  | select(.has_entity_name == true and .name != null and .device_id != null)
-  | [.entity_id, .name, (.original_name // \"-\")] | @tsv" /config/.storage/core.entity_registry'
+  | select(.has_entity_name == true and .name != null and .name != \"\" and .device_id != null
+      and .platform != \"unifi\"
+      and (.name | ascii_downcase) == ((.original_name // \"\") | ascii_downcase))
+  | [.entity_id, .name, .original_name] | @tsv" /config/.storage/core.entity_registry'
 ```
+
+Drop the `ascii_downcase` comparison from the query to list every override, then review each
+one against the rules in this section.
 
 To clear an override, use `ha_set_entity(entity_id, name="")` for one entity, or the WebSocket
 call in a loop for many:
@@ -120,6 +130,12 @@ call in a loop for many:
 hass-cli raw ws config/entity_registry/update \
   --json='{"entity_id":"sensor.foo","name":null}'
 ```
+
+An entity whose `original_name` is null is the device's main feature, such as the light of a
+smart bulb, and takes the device name as its `friendly_name`. A `Light` override on it shows only
+`Light`. To restore the device name, use `ha_set_entity(entity_id, use_device_name=True)`. Home
+Assistant refuses that while the entity has an area of its own, so first clear the entity's area
+with `ha_set_entity(entity_id, area_id="")` and let it inherit the device's area.
 
 ### Legacy entities
 
