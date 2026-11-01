@@ -1,0 +1,78 @@
+esphome:
+  name: boiler-monitor
+  friendly_name: Boiler Monitor
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret boiler_api_encryption_key
+
+ota:
+  - platform: esphome
+    password: !secret boiler_ota_password
+    # Migration only: remove allow_plaintext_upload and password once flashed.
+    encryption:
+      allow_plaintext_upload: true
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+packages:
+  core: !include debug.yaml
+
+i2c:
+  sda: GPIO25
+  scl: GPIO26
+  id: bus_a
+
+one_wire:
+  - platform: gpio
+    pin: GPIO21
+
+sensor:
+  - platform: tcs34725
+    red_channel:
+      name: "TCS34725 Red Channel"
+      id: red_channel
+      entity_category: "diagnostic"
+    green_channel:
+      name: "TCS34725 Green Channel"
+      entity_category: "diagnostic"
+    blue_channel:
+      name: "TCS34725 Blue Channel"
+      id: blue_channel
+      entity_category: "diagnostic"
+    clear_channel:
+      name: "TCS34725 Clear Channel"
+      entity_category: "diagnostic"
+    illuminance:
+      name: "TCS34725 Illuminance"
+      entity_category: "diagnostic"
+    color_temperature:
+      name: "TCS34725 Color Temperature"
+      entity_category: "diagnostic"
+    update_interval: 60s
+  - platform: dallas_temp
+    name: "Temperature 1"
+    update_interval: 60s
+    address: 0x50000000582e6e28
+  - platform: dallas_temp
+    name: "Temperature 2"
+    update_interval: 60s
+    address: 0x59000000589c3b28
+
+binary_sensor:
+  - platform: template
+    device_class: heat
+    name: "Boiler On"
+    lambda: |-
+      // Burner raises blue with red flat; daylight from the cupboard door raises red too.
+      return id(blue_channel).state > 50 && id(red_channel).state < 30;

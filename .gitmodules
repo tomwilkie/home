@@ -1,0 +1,8 @@
+[submodule "esphome/clock"]
+	path = esphome/clock
+	url = https://github.com/tomwilkie/clock.git
+	branch = main
+[submodule "esphome/doorbell"]
+	path = esphome/doorbell
+	url = https://github.com/tomwilkie/doorbell.git
+	branch = main
