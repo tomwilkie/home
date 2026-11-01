@@ -1,1386 +1,2194 @@
 {
-  "dashboard": {
-    "annotations": {
-      "list": [
-        {
-          "builtIn": 1,
-          "datasource": {
-            "type": "grafana",
-            "uid": "-- Grafana --"
-          },
+  "apiVersion": "dashboard.grafana.app/v2",
+  "kind": "Dashboard",
+  "metadata": {
+    "name": "eeasfye26sge8c"
+  },
+  "spec": {
+    "annotations": [
+      {
+        "kind": "AnnotationQuery",
+        "spec": {
+          "builtIn": true,
           "enable": true,
           "hide": true,
           "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "target": {
-            "limit": 100,
-            "matchAny": false,
-            "tags": [],
+          "legacyOptions": {
             "type": "dashboard"
           },
-          "type": "dashboard"
+          "name": "Annotations & Alerts",
+          "query": {
+            "datasource": {
+              "name": "-- Grafana --"
+            },
+            "group": "grafana",
+            "kind": "DataQuery",
+            "spec": {
+              "limit": 100,
+              "matchAny": false,
+              "tags": [],
+              "type": "dashboard"
+            },
+            "version": "v0"
+          }
         }
-      ]
-    },
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 1,
-    "id": 16,
-    "liveNow": false,
-    "panels": [
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Current thermostat temperature with target",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "max": 32,
-            "min": 0,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                }
-              ]
-            },
-            "unit": "celsius"
-          }
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 4,
-          "x": 0,
-          "y": 0
-        },
-        "id": 1,
-        "options": {
-          "barShape": "flat",
-          "barWidthFactor": 0.5,
-          "effects": {
-            "barGlow": false,
-            "centerGlow": false,
-            "gradient": false
-          },
-          "endpointMarker": "point",
-          "minVizHeight": 75,
-          "minVizWidth": 75,
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "segmentCount": 1,
-          "segmentSpacing": 0.3,
-          "shape": "gauge",
-          "showThresholdLabels": true,
-          "showThresholdMarkers": true,
-          "sizing": "auto",
-          "sparkline": false,
-          "textMode": "auto"
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "max by (__name__, entity) (homeassistant_climate_current_temperature_celsius{entity=\"climate.house_thermostat\"})",
-            "instant": true,
-            "legendFormat": "current",
-            "range": false,
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "max by (__name__, entity) (homeassistant_climate_target_temperature_celsius{entity=\"climate.house_thermostat\"})",
-            "instant": true,
-            "legendFormat": "target",
-            "range": false,
-            "refId": "B"
-          }
-        ],
-        "title": "Current Temperature",
-        "transformations": [
-          {
-            "id": "configFromData",
-            "options": {
-              "applyTo": {
-                "id": "byName",
-                "options": "current"
-              },
-              "configRefId": "B",
-              "mappings": [
-                {
-                  "fieldName": "target",
-                  "handlerKey": "threshold1",
-                  "reducerId": "lastNotNull"
-                }
-              ]
-            }
-          }
-        ],
-        "type": "gauge"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Heating state of the house thermostat",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "heating"
-              },
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "Heating"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "red",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "preheating"
-              },
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "Preheating"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "orange",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "idle"
-              },
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "Idle"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "green",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "off"
-              },
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "Off"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "text",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 4,
-          "x": 4,
-          "y": 0
-        },
-        "id": 2,
-        "options": {
-          "colorMode": "value",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "name",
-          "wideLayout": true
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "exemplar": false,
-            "expr": "max by (action) (homeassistant_climate_action{entity=\"climate.house_thermostat\"}) == 1",
-            "instant": true,
-            "legendFormat": "{{action}}",
-            "range": false,
-            "refId": "A"
-          }
-        ],
-        "title": "Heating Status",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Current water heater operation status",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            }
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "on"
-              },
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "On"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "red",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "eco"
-              },
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "Eco"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "green",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "off"
-              },
-              "properties": [
-                {
-                  "id": "displayName",
-                  "value": "Off"
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "text",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 4,
-          "x": 8,
-          "y": 0
-        },
-        "id": 11,
-        "options": {
-          "colorMode": "value",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "name",
-          "wideLayout": true
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "max by (mode) (homeassistant_water_heater_operation_mode{entity=\"water_heater.hallway_thermostat\"}) == 1",
-            "instant": true,
-            "legendFormat": "{{mode}}",
-            "queryType": "instant",
-            "range": false,
-            "refId": "A"
-          }
-        ],
-        "title": "Water Heater Status",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Current boiler on/off status",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "mappings": [
-              {
-                "options": {
-                  "0": {
-                    "color": "green",
-                    "index": 0,
-                    "text": "Off"
-                  },
-                  "1": {
-                    "color": "red",
-                    "index": 1,
-                    "text": "On"
-                  }
-                },
-                "type": "value"
-              }
-            ],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            }
-          }
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 4,
-          "x": 12,
-          "y": 0
-        },
-        "id": 3,
-        "options": {
-          "colorMode": "value",
-          "graphMode": "none",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}",
-            "legendFormat": "__auto",
-            "range": false,
-            "refId": "A"
-          }
-        ],
-        "title": "Boiler Status",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Boiler runtime over the selected time range",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                }
-              ]
-            },
-            "unit": "m"
-          }
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 4,
-          "x": 16,
-          "y": 0
-        },
-        "id": 10,
-        "options": {
-          "colorMode": "value",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": true
-          },
-          "showPercentChange": false,
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "exemplar": false,
-            "expr": "sum_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}[$__range:1m])",
-            "instant": true,
-            "interval": "1m",
-            "legendFormat": "Runtime",
-            "range": false,
-            "refId": "A"
-          }
-        ],
-        "title": "Boiler Runtime",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Current outside temperature reading",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "blue",
-                  "value": 0
-                },
-                {
-                  "color": "green",
-                  "value": 10
-                },
-                {
-                  "color": "yellow",
-                  "value": 20
-                },
-                {
-                  "color": "red",
-                  "value": 30
-                }
-              ]
-            },
-            "unit": "celsius"
-          }
-        },
-        "gridPos": {
-          "h": 4,
-          "w": 4,
-          "x": 20,
-          "y": 0
-        },
-        "id": 9,
-        "options": {
-          "colorMode": "value",
-          "graphMode": "none",
-          "justifyMode": "center",
-          "orientation": "auto",
-          "percentChangeColorMode": "standard",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showPercentChange": false,
-          "textMode": "auto",
-          "wideLayout": true
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "expr": "avg(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..+_aircon_outside_temperature\"})",
-            "legendFormat": "Outside",
-            "range": false,
-            "refId": "A"
-          }
-        ],
-        "title": "Outside Temperature",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Current and target temperature over time",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "smooth",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "showValues": false,
-              "spanNulls": true,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "decimals": 1,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "celsius"
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Target Temperature"
-              },
-              "properties": [
-                {
-                  "id": "custom.lineInterpolation",
-                  "value": "stepAfter"
-                }
-              ]
-            },
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Boiler On"
-              },
-              "properties": [
-                {
-                  "id": "unit",
-                  "value": "bool_on_off"
-                },
-                {
-                  "id": "min",
-                  "value": 0
-                },
-                {
-                  "id": "max",
-                  "value": 1
-                },
-                {
-                  "id": "custom.axisPlacement",
-                  "value": "hidden"
-                },
-                {
-                  "id": "custom.lineWidth",
-                  "value": 0
-                },
-                {
-                  "id": "custom.fillOpacity",
-                  "value": 15
-                },
-                {
-                  "id": "custom.lineInterpolation",
-                  "value": "stepAfter"
-                },
-                {
-                  "id": "custom.hideFrom",
-                  "value": {
-                    "legend": true,
-                    "tooltip": true,
-                    "viz": false
-                  }
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "red",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 10,
-          "w": 12,
-          "x": 0,
-          "y": 4
-        },
-        "id": 4,
-        "options": {
-          "annotations": {
-            "clustering": -1,
-            "multiLane": false
-          },
-          "legend": {
-            "calcs": [
-              "mean"
-            ],
-            "displayMode": "table",
-            "placement": "bottom",
-            "showLegend": true,
-            "sortBy": "Mean",
-            "sortDesc": true,
-            "width": 200
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "multi",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "avg_over_time(homeassistant_climate_current_temperature_celsius{entity=\"climate.house_thermostat\"}[$__interval])",
-            "legendFormat": "Current Temperature",
-            "range": true,
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "avg_over_time(homeassistant_climate_target_temperature_celsius{entity=\"climate.house_thermostat\"}[$__interval])",
-            "legendFormat": "Target Temperature",
-            "range": true,
-            "refId": "B"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "max(max_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}[$__interval]))",
-            "legendFormat": "Boiler On",
-            "range": true,
-            "refId": "C"
-          }
-        ],
-        "title": "Thermostat Temperature Trends",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "External temperature to correlate with heating demand",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "smooth",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "showValues": false,
-              "spanNulls": true,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "decimals": 1,
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                }
-              ]
-            },
-            "unit": "celsius"
-          }
-        },
-        "gridPos": {
-          "h": 10,
-          "w": 12,
-          "x": 12,
-          "y": 4
-        },
-        "id": 5,
-        "options": {
-          "annotations": {
-            "clustering": -1,
-            "multiLane": false
-          },
-          "legend": {
-            "calcs": [
-              "mean"
-            ],
-            "displayMode": "hidden",
-            "placement": "right",
-            "showLegend": false,
-            "sortBy": "Mean",
-            "sortDesc": true,
-            "width": 200
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "multi",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "avg(avg_over_time(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..+_aircon_outside_temperature\"}[15m]))",
-            "legendFormat": "Outside Temperature",
-            "range": true,
-            "refId": "A"
-          }
-        ],
-        "title": "Outside Temperature",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Temperature readings from all radiators",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "smooth",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "showValues": false,
-              "spanNulls": true,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "celsius"
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Heating On"
-              },
-              "properties": [
-                {
-                  "id": "unit",
-                  "value": "bool_on_off"
-                },
-                {
-                  "id": "min",
-                  "value": 0
-                },
-                {
-                  "id": "max",
-                  "value": 1
-                },
-                {
-                  "id": "custom.axisPlacement",
-                  "value": "hidden"
-                },
-                {
-                  "id": "custom.lineWidth",
-                  "value": 0
-                },
-                {
-                  "id": "custom.fillOpacity",
-                  "value": 15
-                },
-                {
-                  "id": "custom.lineInterpolation",
-                  "value": "stepAfter"
-                },
-                {
-                  "id": "custom.hideFrom",
-                  "value": {
-                    "legend": true,
-                    "tooltip": true,
-                    "viz": false
-                  }
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "orange",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 10,
-          "w": 24,
-          "x": 0,
-          "y": 14
-        },
-        "id": 6,
-        "options": {
-          "annotations": {
-            "clustering": -1,
-            "multiLane": false
-          },
-          "legend": {
-            "calcs": [
-              "mean"
-            ],
-            "displayMode": "table",
-            "placement": "right",
-            "showLegend": true,
-            "sortBy": "Name",
-            "sortDesc": false,
-            "width": 300
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "multi",
-            "sort": "desc"
-          }
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "avg_over_time(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..+_(radiator|towel_heater)(_.+)?_temperature\"}[$__interval])",
-            "legendFormat": "{{friendly_name}}",
-            "range": true,
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "max(max_over_time(homeassistant_climate_action{entity=\"climate.house_thermostat\", action=\"heating\"}[$__interval]))",
-            "legendFormat": "Heating On",
-            "range": true,
-            "refId": "B"
-          }
-        ],
-        "title": "Radiator Temperatures",
-        "transformations": [
-          {
-            "id": "renameByRegex",
-            "options": {
-              "regex": "(.*) Temperature",
-              "renamePattern": "$1"
-            }
-          }
-        ],
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Boiler temperature readings over time",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "smooth",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "showValues": false,
-              "spanNulls": true,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "transparent",
-                  "value": 0
-                }
-              ]
-            },
-            "unit": "celsius"
-          },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "Boiler On"
-              },
-              "properties": [
-                {
-                  "id": "unit",
-                  "value": "bool_on_off"
-                },
-                {
-                  "id": "min",
-                  "value": 0
-                },
-                {
-                  "id": "max",
-                  "value": 1
-                },
-                {
-                  "id": "custom.axisPlacement",
-                  "value": "hidden"
-                },
-                {
-                  "id": "custom.lineWidth",
-                  "value": 0
-                },
-                {
-                  "id": "custom.fillOpacity",
-                  "value": 15
-                },
-                {
-                  "id": "custom.lineInterpolation",
-                  "value": "stepAfter"
-                },
-                {
-                  "id": "custom.hideFrom",
-                  "value": {
-                    "legend": true,
-                    "tooltip": true,
-                    "viz": false
-                  }
-                },
-                {
-                  "id": "color",
-                  "value": {
-                    "fixedColor": "red",
-                    "mode": "fixed"
-                  }
-                }
-              ]
-            }
-          ]
-        },
-        "gridPos": {
-          "h": 10,
-          "w": 12,
-          "x": 0,
-          "y": 24
-        },
-        "id": 7,
-        "options": {
-          "annotations": {
-            "clustering": -1,
-            "multiLane": false
-          },
-          "legend": {
-            "calcs": [
-              "mean"
-            ],
-            "displayMode": "table",
-            "placement": "bottom",
-            "showLegend": true,
-            "sortBy": "Mean",
-            "sortDesc": true,
-            "width": 200
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "multi",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "avg_over_time(homeassistant_sensor_temperature_celsius{entity=~\"sensor.kitchen_boiler_monitor_temperature_.+\"}[$__interval])",
-            "legendFormat": "{{friendly_name}}",
-            "range": true,
-            "refId": "A"
-          },
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "max(max_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}[$__interval]))",
-            "legendFormat": "Boiler On",
-            "range": true,
-            "refId": "B"
-          }
-        ],
-        "title": "Boiler Temperature",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "prometheus",
-          "uid": "grafanacloud-prom"
-        },
-        "description": "Boiler runtime over the preceding 24 hours",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisBorderShow": false,
-              "axisCenteredZero": false,
-              "axisColorMode": "text",
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "barWidthFactor": 0.6,
-              "drawStyle": "line",
-              "fillOpacity": 0,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "insertNulls": false,
-              "lineInterpolation": "linear",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "showValues": false,
-              "spanNulls": true,
-              "stacking": {
-                "group": "A",
-                "mode": "none"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": 0
-                }
-              ]
-            },
-            "unit": "m"
-          }
-        },
-        "gridPos": {
-          "h": 10,
-          "w": 12,
-          "x": 12,
-          "y": 24
-        },
-        "id": 8,
-        "options": {
-          "annotations": {
-            "clustering": -1,
-            "multiLane": false
-          },
-          "legend": {
-            "calcs": [
-              "last"
-            ],
-            "displayMode": "table",
-            "placement": "right",
-            "showLegend": false,
-            "width": 200
-          },
-          "tooltip": {
-            "hideZeros": false,
-            "mode": "multi",
-            "sort": "none"
-          }
-        },
-        "pluginVersion": "13.1.0-25241150568",
-        "targets": [
-          {
-            "datasource": {
-              "type": "prometheus",
-              "uid": "grafanacloud-prom"
-            },
-            "editorMode": "code",
-            "expr": "sum_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}[24h:1m])",
-            "interval": "1m",
-            "legendFormat": "Runtime",
-            "range": true,
-            "refId": "A"
-          }
-        ],
-        "title": "Boiler Runtime (Rolling 24h)",
-        "type": "timeseries"
       }
     ],
-    "preload": false,
-    "refresh": "1m",
-    "schemaVersion": 42,
-    "tags": [
-      "heating"
-    ],
-    "time": {
-      "from": "now-24h",
-      "to": "now"
+    "cursorSync": "Crosshair",
+    "editable": true,
+    "elements": {
+      "panel-1": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max by (__name__, entity) (homeassistant_climate_current_temperature_celsius{entity=\"climate.house_thermostat\"})",
+                        "instant": true,
+                        "legendFormat": "current",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max by (__name__, entity) (homeassistant_climate_target_temperature_celsius{entity=\"climate.house_thermostat\"})",
+                        "instant": true,
+                        "legendFormat": "target",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "configFromData",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "applyTo": {
+                        "id": "byName",
+                        "options": "current"
+                      },
+                      "configRefId": "B",
+                      "mappings": [
+                        {
+                          "fieldName": "target",
+                          "handlerKey": "threshold1",
+                          "reducerId": "lastNotNull"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Current thermostat temperature with target",
+          "id": 1,
+          "links": [],
+          "title": "Current Temperature",
+          "vizConfig": {
+            "group": "gauge",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "max": 32,
+                  "min": 0,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "barShape": "flat",
+                "barWidthFactor": 0.5,
+                "effects": {
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": false
+                },
+                "endpointMarker": "point",
+                "minVizHeight": 75,
+                "minVizWidth": 75,
+                "orientation": "auto",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "segmentCount": 1,
+                "segmentSpacing": 0.3,
+                "shape": "gauge",
+                "showThresholdLabels": true,
+                "showThresholdMarkers": true,
+                "sizing": "auto",
+                "sparkline": false,
+                "textMode": "auto"
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-10": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "exemplar": false,
+                        "expr": "sum_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}[$__range:1m])",
+                        "instant": true,
+                        "interval": "1m",
+                        "legendFormat": "Runtime",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Boiler runtime over the selected time range",
+          "id": 10,
+          "links": [],
+          "title": "Boiler Runtime",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "m"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "area",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": true
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-11": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max by (mode) (homeassistant_water_heater_operation_mode{entity=\"water_heater.hallway_thermostat\"}) == 1",
+                        "instant": true,
+                        "legendFormat": "{{mode}}",
+                        "queryType": "instant",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Current water heater operation status",
+          "id": 11,
+          "links": [],
+          "title": "Water Heater Status",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "on"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "On"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "red",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "eco"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Eco"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "green",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "off"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Off"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "text",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-2": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "exemplar": false,
+                        "expr": "max by (action) (homeassistant_climate_action{entity=\"climate.house_thermostat\"}) == 1",
+                        "instant": true,
+                        "legendFormat": "{{action}}",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Heating state of the house thermostat",
+          "id": 2,
+          "links": [],
+          "title": "Heating Status",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  }
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "heating"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Heating"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "red",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "preheating"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Preheating"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "orange",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "idle"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Idle"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "green",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "off"
+                    },
+                    "properties": [
+                      {
+                        "id": "displayName",
+                        "value": "Off"
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "text",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "name",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-3": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}",
+                        "legendFormat": "__auto",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Current boiler on/off status",
+          "id": 3,
+          "links": [],
+          "title": "Boiler Status",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "mappings": [
+                    {
+                      "options": {
+                        "0": {
+                          "color": "green",
+                          "index": 0,
+                          "text": "Off"
+                        },
+                        "1": {
+                          "color": "red",
+                          "index": 1,
+                          "text": "On"
+                        }
+                      },
+                      "type": "value"
+                    }
+                  ],
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  }
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "auto",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-4": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "avg_over_time(homeassistant_climate_current_temperature_celsius{entity=\"climate.house_thermostat\"}[$__interval])",
+                        "legendFormat": "Current Temperature",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "avg_over_time(homeassistant_climate_target_temperature_celsius{entity=\"climate.house_thermostat\"}[$__interval])",
+                        "legendFormat": "Target Temperature",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max(max_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}[$__interval]))",
+                        "legendFormat": "Boiler On",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Current and target temperature over time",
+          "id": 4,
+          "links": [],
+          "title": "Thermostat Temperature Trends",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Target Temperature"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.lineInterpolation",
+                        "value": "stepAfter"
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Boiler On"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "bool_on_off"
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "hidden"
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 15
+                      },
+                      {
+                        "id": "custom.lineInterpolation",
+                        "value": "stepAfter"
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": true,
+                          "viz": false
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "red",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Mean",
+                  "sortDesc": true,
+                  "width": 200
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-5": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "avg(avg_over_time(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..+_aircon_outside_temperature\"}[15m]))",
+                        "legendFormat": "Outside Temperature",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "External temperature to correlate with heating demand",
+          "id": 5,
+          "links": [],
+          "title": "Outside Temperature",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "decimals": 1,
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "mean"
+                  ],
+                  "displayMode": "hidden",
+                  "placement": "right",
+                  "showLegend": false,
+                  "sortBy": "Mean",
+                  "sortDesc": true,
+                  "width": 200
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-6": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "avg_over_time(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..+_(radiator|towel_heater)(_.+)?_temperature\"}[$__interval])",
+                        "legendFormat": "{{friendly_name}}",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max(max_over_time(homeassistant_climate_action{entity=\"climate.house_thermostat\", action=\"heating\"}[$__interval]))",
+                        "legendFormat": "Heating On",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": [
+                {
+                  "group": "renameByRegex",
+                  "kind": "Transformation",
+                  "spec": {
+                    "options": {
+                      "regex": "(.*) Temperature",
+                      "renamePattern": "$1"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "description": "Temperature readings from all radiators",
+          "id": 6,
+          "links": [],
+          "title": "Radiator Temperatures",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Heating On"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "bool_on_off"
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "hidden"
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 15
+                      },
+                      {
+                        "id": "custom.lineInterpolation",
+                        "value": "stepAfter"
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": true,
+                          "viz": false
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "orange",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true,
+                  "sortBy": "Name",
+                  "sortDesc": false,
+                  "width": 300
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-7": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "avg_over_time(homeassistant_sensor_temperature_celsius{entity=~\"sensor.kitchen_boiler_monitor_temperature_.+\"}[$__interval])",
+                        "legendFormat": "{{friendly_name}}",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max(max_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}[$__interval]))",
+                        "legendFormat": "Boiler On",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Boiler temperature readings over time",
+          "id": 7,
+          "links": [],
+          "title": "Boiler Temperature",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "smooth",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "transparent",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Boiler On"
+                    },
+                    "properties": [
+                      {
+                        "id": "unit",
+                        "value": "bool_on_off"
+                      },
+                      {
+                        "id": "min",
+                        "value": 0
+                      },
+                      {
+                        "id": "max",
+                        "value": 1
+                      },
+                      {
+                        "id": "custom.axisPlacement",
+                        "value": "hidden"
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 15
+                      },
+                      {
+                        "id": "custom.lineInterpolation",
+                        "value": "stepAfter"
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": true,
+                          "viz": false
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "red",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "mean"
+                  ],
+                  "displayMode": "table",
+                  "placement": "bottom",
+                  "showLegend": true,
+                  "sortBy": "Mean",
+                  "sortDesc": true,
+                  "width": 200
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-8": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "sum_over_time(homeassistant_binary_sensor_state{entity=\"binary_sensor.kitchen_boiler_monitor_boiler_on\"}[24h:1m])",
+                        "interval": "1m",
+                        "legendFormat": "Runtime",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Boiler runtime over the preceding 24 hours",
+          "id": 8,
+          "links": [],
+          "title": "Boiler Runtime (Rolling 24h)",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "barWidthFactor": 0.6,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "showValues": false,
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": 0
+                      }
+                    ]
+                  },
+                  "unit": "m"
+                },
+                "overrides": []
+              },
+              "options": {
+                "annotations": {
+                  "clustering": -1,
+                  "multiLane": false
+                },
+                "legend": {
+                  "calcs": [
+                    "last"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": false,
+                  "width": 200
+                },
+                "tooltip": {
+                  "hideZeros": false,
+                  "mode": "multi",
+                  "sort": "none"
+                }
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-9": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "grafanacloud-prom"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "expr": "avg(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\..+_aircon_outside_temperature\"})",
+                        "legendFormat": "Outside",
+                        "range": false
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "description": "Current outside temperature reading",
+          "id": 9,
+          "links": [],
+          "title": "Outside Temperature",
+          "vizConfig": {
+            "group": "stat",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "thresholds"
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "blue",
+                        "value": 0
+                      },
+                      {
+                        "color": "green",
+                        "value": 10
+                      },
+                      {
+                        "color": "yellow",
+                        "value": 20
+                      },
+                      {
+                        "color": "red",
+                        "value": 30
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": []
+              },
+              "options": {
+                "colorMode": "value",
+                "graphMode": "none",
+                "justifyMode": "center",
+                "orientation": "auto",
+                "percentChangeColorMode": "standard",
+                "reduceOptions": {
+                  "calcs": [
+                    "lastNotNull"
+                  ],
+                  "fields": "",
+                  "values": false
+                },
+                "showPercentChange": false,
+                "textMode": "auto",
+                "wideLayout": true
+              }
+            },
+            "version": "13.1.0-25241150568"
+          }
+        }
+      },
+      "panel-12": {
+        "kind": "Panel",
+        "spec": {
+          "data": {
+            "kind": "QueryGroup",
+            "spec": {
+              "queries": [
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${prometheus_datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "max(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\.${area:raw}_.*\", entity!~\".*(target_temperature|boiler_monitor_temperature_[0-9]|device_temperature|internal_temperature|battery_temperature|door_temperature|outside).*\"} or homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\.${area:raw}_.*\"})",
+                        "legendFormat": "Max",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "C"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${prometheus_datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "min(homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\.${area:raw}_.*\", entity!~\".*(target_temperature|boiler_monitor_temperature_[0-9]|device_temperature|internal_temperature|battery_temperature|door_temperature|outside).*\"} or homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\.${area:raw}_.*\"})",
+                        "legendFormat": "Min",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "D"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${prometheus_datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "homeassistant_sensor_temperature_celsius{entity=~\"sensor\\\\.${area:raw}_.*\", entity!~\".*(target_temperature|boiler_monitor_temperature_[0-9]|device_temperature|internal_temperature|battery_temperature|door_temperature).*\"}",
+                        "legendFormat": "{{friendly_name}}",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "A"
+                  }
+                },
+                {
+                  "kind": "PanelQuery",
+                  "spec": {
+                    "hidden": false,
+                    "query": {
+                      "datasource": {
+                        "name": "${prometheus_datasource}"
+                      },
+                      "group": "prometheus",
+                      "kind": "DataQuery",
+                      "spec": {
+                        "editorMode": "code",
+                        "expr": "homeassistant_climate_current_temperature_celsius{entity=~\"climate\\\\.${area:raw}_.*\"}",
+                        "legendFormat": "{{friendly_name}}",
+                        "range": true
+                      },
+                      "version": "v0"
+                    },
+                    "refId": "B"
+                  }
+                }
+              ],
+              "queryOptions": {},
+              "transformations": []
+            }
+          },
+          "id": 12,
+          "links": [],
+          "title": "$area temperatures",
+          "vizConfig": {
+            "group": "timeseries",
+            "kind": "VizConfig",
+            "spec": {
+              "fieldConfig": {
+                "defaults": {
+                  "color": {
+                    "mode": "palette-classic"
+                  },
+                  "custom": {
+                    "axisBorderShow": false,
+                    "axisCenteredZero": false,
+                    "axisColorMode": "text",
+                    "axisLabel": "",
+                    "axisPlacement": "auto",
+                    "barAlignment": 0,
+                    "drawStyle": "line",
+                    "fillOpacity": 0,
+                    "gradientMode": "none",
+                    "hideFrom": {
+                      "legend": false,
+                      "tooltip": false,
+                      "viz": false
+                    },
+                    "insertNulls": false,
+                    "lineInterpolation": "linear",
+                    "lineWidth": 1,
+                    "pointSize": 5,
+                    "scaleDistribution": {
+                      "type": "linear"
+                    },
+                    "showPoints": "never",
+                    "spanNulls": true,
+                    "stacking": {
+                      "group": "A",
+                      "mode": "none"
+                    },
+                    "thresholdsStyle": {
+                      "mode": "off"
+                    }
+                  },
+                  "thresholds": {
+                    "mode": "absolute",
+                    "steps": [
+                      {
+                        "color": "green",
+                        "value": null
+                      }
+                    ]
+                  },
+                  "unit": "celsius"
+                },
+                "overrides": [
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Max"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.fillBelowTo",
+                        "value": "Min"
+                      },
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 14
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": false,
+                          "viz": false
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#6e7079",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "matcher": {
+                      "id": "byName",
+                      "options": "Min"
+                    },
+                    "properties": [
+                      {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.lineWidth",
+                        "value": 0
+                      },
+                      {
+                        "id": "custom.hideFrom",
+                        "value": {
+                          "legend": true,
+                          "tooltip": false,
+                          "viz": false
+                        }
+                      },
+                      {
+                        "id": "color",
+                        "value": {
+                          "fixedColor": "#6e7079",
+                          "mode": "fixed"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              "options": {
+                "legend": {
+                  "calcs": [
+                    "mean",
+                    "lastNotNull",
+                    "max"
+                  ],
+                  "displayMode": "table",
+                  "placement": "right",
+                  "showLegend": true
+                },
+                "tooltip": {
+                  "mode": "multi",
+                  "sort": "desc"
+                }
+              }
+            },
+            "version": ""
+          }
+        }
+      }
     },
-    "timepicker": {
-      "refresh_intervals": [
+    "layout": {
+      "kind": "TabsLayout",
+      "spec": {
+        "tabs": [
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "title": "Heating",
+              "layout": {
+                "kind": "GridLayout",
+                "spec": {
+                  "items": [
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-1"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 0,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-2"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 4,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-11"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 8,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-3"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 12,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-10"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 16,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-9"
+                        },
+                        "height": 4,
+                        "width": 4,
+                        "x": 20,
+                        "y": 0
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-4"
+                        },
+                        "height": 10,
+                        "width": 12,
+                        "x": 0,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-5"
+                        },
+                        "height": 10,
+                        "width": 12,
+                        "x": 12,
+                        "y": 4
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-6"
+                        },
+                        "height": 10,
+                        "width": 24,
+                        "x": 0,
+                        "y": 14
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-7"
+                        },
+                        "height": 10,
+                        "width": 12,
+                        "x": 0,
+                        "y": 24
+                      }
+                    },
+                    {
+                      "kind": "GridLayoutItem",
+                      "spec": {
+                        "element": {
+                          "kind": "ElementReference",
+                          "name": "panel-8"
+                        },
+                        "height": 10,
+                        "width": 12,
+                        "x": 12,
+                        "y": 24
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "kind": "TabsLayoutTab",
+            "spec": {
+              "title": "Rooms",
+              "layout": {
+                "kind": "RowsLayout",
+                "spec": {
+                  "rows": [
+                    {
+                      "kind": "RowsLayoutRow",
+                      "spec": {
+                        "collapse": false,
+                        "layout": {
+                          "kind": "GridLayout",
+                          "spec": {
+                            "items": [
+                              {
+                                "kind": "GridLayoutItem",
+                                "spec": {
+                                  "element": {
+                                    "kind": "ElementReference",
+                                    "name": "panel-12"
+                                  },
+                                  "height": 9,
+                                  "width": 24,
+                                  "x": 0,
+                                  "y": 0
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "repeat": {
+                          "mode": "variable",
+                          "value": "area"
+                        },
+                        "title": "$area"
+                      }
+                    }
+                  ]
+                }
+              },
+              "variables": [
+                {
+                  "kind": "DatasourceVariable",
+                  "spec": {
+                    "allowCustomValue": true,
+                    "current": {
+                      "text": "grafanacloud-prom",
+                      "value": "grafanacloud-prom"
+                    },
+                    "hide": "dontHide",
+                    "includeAll": false,
+                    "label": "Datasource",
+                    "multi": false,
+                    "name": "prometheus_datasource",
+                    "options": [],
+                    "pluginId": "prometheus",
+                    "refresh": "onDashboardLoad",
+                    "regex": "(?!grafanacloud-usage|grafanacloud-ml-metrics).+",
+                    "skipUrlSync": false
+                  }
+                },
+                {
+                  "kind": "CustomVariable",
+                  "spec": {
+                    "allValue": ".*",
+                    "allowCustomValue": true,
+                    "current": {
+                      "text": [
+                        "All"
+                      ],
+                      "value": [
+                        "$__all"
+                      ]
+                    },
+                    "hide": "dontHide",
+                    "includeAll": true,
+                    "label": "Area",
+                    "multi": true,
+                    "name": "area",
+                    "options": [
+                      {
+                        "selected": true,
+                        "text": "All",
+                        "value": "$__all"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Basement",
+                        "value": "basement"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Front Guest Room",
+                        "value": "front_guest_room"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Garage",
+                        "value": "garage"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Guest Bathroom",
+                        "value": "guest_bathroom"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Hallway",
+                        "value": "(hallway|front_door)"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Kitchen",
+                        "value": "kitchen"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Living Room",
+                        "value": "living_room"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Master Bathroom",
+                        "value": "master_bathroom"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Master Bedroom",
+                        "value": "master_bedroom"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Nursery",
+                        "value": "nursery"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Rear Guest Room",
+                        "value": "rear_guest_room"
+                      },
+                      {
+                        "selected": false,
+                        "text": "Tom's Office",
+                        "value": "toms_office"
+                      }
+                    ],
+                    "query": "Basement : basement, Front Guest Room : front_guest_room, Garage : garage, Guest Bathroom : guest_bathroom, Hallway : (hallway|front_door), Kitchen : kitchen, Living Room : living_room, Master Bathroom : master_bathroom, Master Bedroom : master_bedroom, Nursery : nursery, Rear Guest Room : rear_guest_room, Tom's Office : toms_office",
+                    "skipUrlSync": false
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "links": [],
+    "liveNow": false,
+    "preferences": {
+      "layout": {
+        "kind": "GridLayout",
+        "spec": {
+          "items": []
+        }
+      }
+    },
+    "preload": false,
+    "tags": [
+      "heating",
+      "homeassistant"
+    ],
+    "timeSettings": {
+      "autoRefresh": "1m",
+      "autoRefreshIntervals": [
         "5s",
         "10s",
         "30s",
@@ -1391,43 +2199,14 @@
         "1h",
         "2h",
         "1d"
-      ]
+      ],
+      "fiscalYearStartMonth": 0,
+      "from": "now-24h",
+      "hideTimepicker": false,
+      "timezone": "browser",
+      "to": "now"
     },
-    "timezone": "browser",
     "title": "Central Heating",
-    "uid": "eeasfye26sge8c",
-    "version": 56
-  },
-  "meta": {
-    "annotationsPermissions": {
-      "dashboard": {
-        "canAdd": true,
-        "canDelete": true,
-        "canEdit": true
-      }
-    },
-    "apiVersion": "v0alpha1",
-    "canAdmin": true,
-    "canDelete": true,
-    "canEdit": true,
-    "canSave": true,
-    "canStar": true,
-    "created": "2025-01-22T19:51:27Z",
-    "createdBy": "tomwilkiepersonal",
-    "expires": "0001-01-01T00:00:00Z",
-    "folderId": 0,
-    "folderTitle": "General",
-    "folderUid": "",
-    "folderUrl": "",
-    "hasAcl": false,
-    "isFolder": false,
-    "provisioned": false,
-    "provisionedExternalId": "",
-    "slug": "central-heating",
-    "type": "db",
-    "updated": "2026-10-29T18:02:26Z",
-    "updatedBy": "tomwilkiepersonal",
-    "url": "/d/eeasfye26sge8c/central-heating",
-    "version": 56
+    "variables": []
   }
 }

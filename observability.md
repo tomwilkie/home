@@ -352,8 +352,7 @@ edit the file here and upload it to Grafana.
 | `zigbee2mqtt-overview.json` | `zigbee2mqtt-overview` | Fleet summary stats and a per-device table with last-seen age, link quality and message sparklines |
 | `zigbee2mqtt-coordinator.json` | `zigbee2mqtt-coordinator` | Coordinator and adapter health: version, network status, MQTT throughput, queue and retries |
 | `zigbee2mqtt-device.json` | `zigbee2mqtt-device` | Per-device drill-down, where `device` is the IEEE address |
-| `home-temperature-by-area.json` | `home-temperature-by-area` | One row per area, each with a time series of that area's temperature entities |
-| `central-heating.json` | `eeasfye26sge8c` | Hive thermostat, water heater and boiler status, with boiler runtime and radiator, boiler and outside temperatures |
+| `central-heating.json` | `eeasfye26sge8c` | Two tabs. **Heating**: Hive thermostat, water heater and boiler status, with boiler runtime and radiator, boiler and outside temperatures. **Rooms**: one row per area, each with a time series of that area's temperature entities |
 
 Select a single entity's series with `entity`, and aggregate `friendly_name` away with
 `max by (__name__, entity)`. The exporter puts `friendly_name` in the labels, so a rename starts
@@ -365,6 +364,10 @@ overview's device table links to `/d/zigbee2mqtt-device?var-device=<ieee_address
 address, not friendly name, so the link survives a device rename.
 
 ### Workflow
+
+`central-heating.json` is a schema v2 dashboard, because tabs need v2, so it follows
+[_Workflow for a v2 dashboard_](#workflow-for-a-v2-dashboard). The other dashboards are v1 and
+follow these steps:
 
 1. Diff the local file against Grafana, and fetch the live version first if they differ. Fetch with `jq .` and not `jq -S`, to keep the original key order and small diffs:
 
@@ -384,6 +387,38 @@ address, not friendly name, so the link survives a device rename.
 4. Snapshot the changed panels, as described in [_Verify a dashboard visually_](#verify-a-dashboard-visually).
 5. Commit.
 
+### Workflow for a v2 dashboard
+
+A v2 dashboard goes through the Kubernetes-style API, not `/api/dashboards/db`, which can't
+express tabs. The stored file is the resource with only `apiVersion`, `kind`, `metadata.name`
+and `spec`. Strip the rest of `metadata`, because it holds the stack namespace and server
+bookkeeping.
+
+1. Look up the stack namespace. `gcx resources get` returns v0alpha1 whatever version you ask for, so use it only for the namespace:
+
+   ```bash
+   NS=$(gcx resources get dashboards/UID -o json | jq -r .metadata.namespace)
+   ```
+
+2. Diff the local file against Grafana, and fetch the live version first if they differ:
+
+   ```bash
+   gcx api /apis/dashboard.grafana.app/v2/namespaces/$NS/dashboards/UID \
+     | jq '{apiVersion, kind, metadata: {name: .metadata.name}, spec}' > /tmp/live.json
+   diff <(jq -S . observability/dashboards/SLUG.json) <(jq -S . /tmp/live.json)
+   ```
+
+3. Edit `observability/dashboards/SLUG.json`.
+4. Upload it with `PUT`:
+
+   ```bash
+   gcx api /apis/dashboard.grafana.app/v2/namespaces/$NS/dashboards/UID -X PUT \
+     -d @observability/dashboards/SLUG.json
+   ```
+
+5. Snapshot the changed panels, as described in [_Verify a dashboard visually_](#verify-a-dashboard-visually). `--panel` finds a panel on any tab.
+6. Commit.
+
 ### Verify a dashboard visually
 
 Valid JSON can still render wrong, so render the dashboard after every upload and read the PNG.
@@ -399,15 +434,16 @@ gcx dashboards snapshot UID --panel PANEL_ID --var area=toms_office \
 - **Each call overwrites `<uid>-panel-<id>.png`,** so rename the file between renders when you compare two.
 - **Don't commit or share a full-dashboard snapshot.** It renders the datasource picker, which shows the stack slug, and the slug contains the street name. A single-panel snapshot does not show the picker.
 
-### How `home-temperature-by-area` derives the area
+### How the Rooms tab derives the area
 
-The Home Assistant Prometheus exporter emits no `area` label, so the dashboard groups by the
-area-first `entity` ID prefix from [naming-conventions.md](naming-conventions.md).
+The Home Assistant Prometheus exporter emits no `area` label, so the **Rooms** tab of
+`central-heating` groups by the area-first `entity` ID prefix from
+[naming-conventions.md](naming-conventions.md).
 
-- **A custom `area` variable lists `Display : <slug-regex>` pairs.** One repeating row (`repeat: "area"`) clones a graph per area. To add a room, add one entry to the variable.
+- **A custom `area` variable lists `Display : <slug-regex>` pairs.** One repeating row (`repeat: {mode: "variable", value: "area"}`) clones panel 12 per area. To add a room, add one entry to the variable.
+- **The `area` and `prometheus_datasource` variables belong to the Rooms tab**, in the tab's `spec.variables` rather than the dashboard's, so the Heating tab shows no variable bar.
 - **The value is a regular expression fragment.** Hallway is `(hallway|front_door)`, and full slugs avoid the `master_bedroom` and `master_bathroom` prefix collision.
 - **Interpolate with `${area:raw}`.** Grafana escapes a multi-value variable inside `=~`, which breaks the Hallway alternation.
-- **The row is expanded.** It has `collapsed: false` and an empty `panels: []`, with the time series as a top-level sibling beneath it. Grafana needs that structure to repeat an expanded row.
 - **A grey band shows the minimum-to-maximum range.** Two extra queries (`Min` and `Max`) and a `Max` field override of `custom.fillBelowTo: "Min"` draw it. Per-line `fillOpacity` is 0, because stacked line fills otherwise hide the band.
 - **Only rooms appear.** Entities match by prefix at render time, which keeps the Server Rack entity, whose ID contains the street address, out of the committed JSON.
 
