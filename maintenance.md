@@ -144,7 +144,7 @@ because its failure counter resets after `boot_is_good_after: 1min`.
 
 ### Known gaps
 
-- **No telemetry backs the cadences.** The ESPHome [`debug` component](https://esphome.io/components/debug/) exposes free heap, largest contiguous block and fragmentation, which would show when a device needs a restart. It needs device YAML edits and reflashing, which this repo does not manage.
+- **No telemetry backs the cadences.** The ESPHome [`debug` component](https://esphome.io/components/debug/) exposes free heap, largest contiguous block and fragmentation, which would show when a device needs a restart. It needs device YAML edits and reflashing. This repo manages the YAML only for the custom devices in [esphome.md](esphome.md), not for the Voice Assistants or the Everything Presence Lites.
 - **No symptom-driven restart.** A watchdog on an `assist_satellite` stuck in `responding`, or on a device unavailable for some minutes, would catch a hang the same day. Add one if the schedule does not settle the audio.
 - **Upstream might fix the fault.** ESPHome has been [rewriting its audio stack](https://esphome.io/changelog/2026.6.0/). After a major ESPHome release, re-evaluate whether the sweep is still needed.
 - **Tom's Office - Elgato Key Light is not covered.** It has no known fault.

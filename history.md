@@ -521,3 +521,71 @@ unchanged, so the timer never passed 24 hours. Over the 10 days of recorder hist
 `sensor.house_occupancy_last_24h` below `0.01` hours, which the recorder backs and a restart
 does not reset. At the time of the change no automation, script or repo dashboard read
 `house_state`, so `Away` had no effect on anything else. Reported in issue #13.
+
+## ESPHome
+
+### 2026-11-01: configs moved out of the ESPHome dashboard
+
+The ESPHome Device Builder add-on held stale configs. Its `doorbell.yaml` was a stub with no
+speaker and with the API key, OTA password and fallback hotspot password inline, so installing
+from the dashboard would have flashed a doorbell that cannot chime. Its `boiler-monitor.yaml`
+included a `debug.yaml` that had moved to `lib/` (#25), and it pulled `one_wire` from
+`ssieb/esphome@onewire`, a branch that no longer existed, so it could not build. The clock had
+no config there at all; it was built from its own repo. The `archive/` folder held only retired
+devices: three Apollo PLT-1B plant sensors, the wind tunnels, a house thermostat, a shutter
+controller and an ESPHome web install. The wind tunnel config was already on GitHub.
+
+The clock and doorbell repos became submodules under `esphome/`, the boiler monitor moved into
+this repo, and the add-on and `/config/esphome` were removed. A leftover `Wind Tunnel` ESPHome
+config entry for `192.168.2.82`, with no device behind it, was left to remove by hand.
+
+The doorbell's real API key matched the dashboard stub, not `home_assistant_api_key` in Home
+Assistant's `secrets.yaml`. The clock's API had no key at all. Each device was flashed with
+ESPHome 2026.10.1 on a plaintext migration upload, then again with encrypted OTA only. The clock
+needed a third flash: its `mipi_spi` display had a `transform:` pinned to no mirroring, copied
+from the `ili9xxx` defaults, and it drew the face mirrored left to right.
+
+### 2026-11-01: doorbell dashboard gaps
+
+The dashboard reported `doorbell.yaml` going from `online` to `unknown` (via mDNS) on most days,
+for 20 minutes to 2 hours (#28). In every daytime gap from 18 October to 1 November, UniFi
+logged no Wi-Fi disconnect and Home Assistant logged no API disconnect. Only the dashboard's
+mDNS-based status lapsed. The dashboard's record of version 2026.10.1 was also wrong: the
+doorbell was running 2025.7.5, as its version sensor showed.
+
+### 2026-11-01: clock API disconnects
+
+`time.master_bedroom_clock_alarm_time` blipped `unavailable` for under a second (#7). Home
+Assistant logged unexpected API disconnects for the clock as follows:
+
+| Period | Unexpected disconnects | Clock Wi-Fi signal |
+|---|---|---|
+| 7 to 14 October | 22 | about −60 dBm |
+| 15 to 29 October | 0 | about −60 dBm, falling from 22 October |
+| 30 and 31 October | 4 | −80 to −85 dBm |
+
+The clock's uptime matched its Wi-Fi association time, so the later drops were neither reboots
+nor Wi-Fi drops. Its signal fell from 22 October while it was on the Nursery AP. When the gateway
+restarted at about 16:10 on 24 October for a firmware update, the clock rejoined on the Ground
+Floor AP at about −71 dBm (UniFi's reading) and stayed there. The 7 to 14 October cluster
+happened at good signal, and its cause was not found.
+
+The clock was reflashed with `power_save_mode: none` and the seconds hand redrawn every 100 ms
+instead of 25 ms. After the reboot it rejoined at −48 dBm.
+
+### 2026-11-01: boiler short cycles
+
+Boiler On showed 2-minute firings every 8 to 10 minutes from 25 to 27 October. The colour
+channels separated the burner from daylight. The burner moved blue from about 44 to about 67 and
+clear from about 17 to about 52, with red flat near 24. Daylight raised red to between 49 and
+64 and saturated clear at 100.
+
+Matched against Hive from 22:15 on 27 October, when `climate.hallway_thermostat` came back
+after the move to the Hive fork:
+
+- **Every long firing matched a call** for heating, a hot water boost, or both.
+- **Four one-minute readings matched no call**, all around midday: 12:45 on 28 October, 13:18 and 13:30 on 30 October and 12:55 on 31 October. Three had the daylight signature. The 13:30 reading did not show it in the 60-second samples.
+- **The short cycles of 25 to 27 October had the burner signature,** while Hive was `unavailable`, so nothing in Home Assistant recorded the call.
+
+The fix was a red-channel condition on Boiler On rather than delays, which would have hidden the
+real short cycles.
