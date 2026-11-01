@@ -1,0 +1,49 @@
+name: ESPHome
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "esphome/boiler-monitor/**"
+      - .github/workflows/esphome.yml
+  pull_request:
+    paths:
+      - "esphome/boiler-monitor/**"
+      - .github/workflows/esphome.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: esphome/boiler-monitor
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-go@v7.0.0
+        with:
+          go-version: stable
+          cache: false
+      - run: go install github.com/google/yamlfmt/cmd/yamlfmt@v0.21.0
+      - name: Check formatting (fix locally with `yamlfmt .`)
+        run: yamlfmt -lint .
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Write placeholder secrets
+        run: |
+          cat > secrets.yaml <<'SECRETS'
+          wifi_ssid: ci
+          wifi_password: ci-password
+          boiler_ota_password: ci-ota-password
+          boiler_api_encryption_key: "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY="
+          SECRETS
+      - uses: esphome/build-action@v8.1.0
+        with:
+          yaml-file: esphome/boiler-monitor/boiler-monitor.yaml
