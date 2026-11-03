@@ -25,7 +25,7 @@ Group all Apple TV errors into one report item per device.
 |---|---|---|---|
 | `Calling process_advertisement on a metadevice … is a bug` | Warning | A Bermuda tracker bug with Everything Presence Lite devices | Check HACS for a Bermuda update. |
 
-## Hive (`apyhiveapi`)
+## Hive (`hiveheating`)
 
 | Pattern | Severity | Interpretation | Action |
 |---|---|---|---|
