@@ -140,7 +140,6 @@ views:
                -  type: custom:clock-weather-card
                   entity: weather.home
                   sun_entity: sun.sun
-                  show_humidity: true
                   forecast_rows: 3
                -  type: glance
                   show_name: true
