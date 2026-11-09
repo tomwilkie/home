@@ -283,7 +283,8 @@ generates predefined rules, which sit in the predefined band and can never outra
 catch-all ALLOW.
 
 The rule's `source.client_macs` lists the following devices, each verified to have a local Home
-Assistant path. The addresses are DHCP leases, not reservations:
+Assistant path. The addresses are DHCP leases, not reservations, except the Dyson fan's, which
+Home Assistant reaches by a fixed host (see [_Dyson fan_](maintenance.md#dyson-fan)):
 
 | Device | IP | MAC | Local path |
 |---|---|---|---|

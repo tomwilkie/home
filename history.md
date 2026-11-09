@@ -414,6 +414,30 @@ working in 2027.4 ([issue #26](https://github.com/tomwilkie/home/issues/26)). Lo
 warnings in the preceding week, at 23:15 on 27 October and 17:30 on 28 October, to the Netatmo
 watchdog.
 
+### 2026-11-09: Dyson fan stranded after restarts
+
+`fan.master_bedroom_dyson_fan` went `unavailable` at four restarts in ten days, at 13:35 on
+31 October and at 04:00 on 2, 6 and 9 November. Three times it stayed down until the next
+restart or later: about 14 hours, 22 hours and 24 hours. On 9 November it came back in four
+seconds. The fan's WiFi was healthy throughout, on the IOT VLAN at −59 dBm.
+
+The `dyson_local` entry (HACS `libdyson-wg/ha-dyson` v1.7.0, `libdyson-neon` 1.6.0) had an empty
+`host`, so after each restart it logged `will connect when discovered by the discovery service`
+and waited for the fan's `_dyson_mqtt._tcp` announcement. On good restarts Loki shows
+`Connected to device` from the zeroconf browser thread within seconds. On bad ones it shows
+nothing at all, with no connect attempt and no error, for the whole outage: the announcement
+never crossed the mDNS reflector. On 3 November it arrived at 02:37 on its own.
+
+The library also cannot retry a failure in this mode: `DysonDiscovery.device_discovered` pops
+the callback before it runs, and a failed connect returns `False` without re-registering. The
+entry stays `loaded`, so Home Assistant does not retry either. `automation.power_cycle_dyson_fan`
+did not help, because its guard requires the fan to be `off` and it skipped the nights the fan
+was `unavailable`.
+
+The fix was a DHCP reservation for `192.168.2.19` and a fresh entry with that host. The entity
+IDs, names, device area and voice-assistant exposure all came back unchanged, and the fan
+connected at once.
+
 ## Naming
 
 ### July 2026: redundant name overrides

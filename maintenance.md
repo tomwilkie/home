@@ -3,8 +3,8 @@
 This document covers two schemes. The scheduled restart sweep restarts devices that degrade with
 uptime, driven by labels on devices rather than a hardcoded entity list. The
 [integration watchdogs](#integration-watchdogs) are its reactive counterpart: they reload a
-config entry that has wedged. It also covers the manual cleanup of
-[UniFi ghost trackers](#unifi-ghost-trackers).
+config entry that has wedged. It also covers why the [Dyson fan](#dyson-fan) has a fixed host,
+and the manual cleanup of [UniFi ghost trackers](#unifi-ghost-trackers).
 
 ## Scheduled restarts
 
@@ -240,6 +240,19 @@ The following points remain:
 - **Don't move back to core's Hive integration without a watchdog.** Core does not retry a failed setup ([core#182752](https://github.com/home-assistant/core/issues/182752)). The watchdog design that worked around it is in the history entry.
 - **`custom_components.hive` and `hiveheating` are at `debug`** in the `logger:` block of `configuration.yaml`. The fork logs under the first and its library under the second, so `homeassistant.components.hive` catches nothing. They log each poll's status and timing but not the response body. They are noisy, so remove them after the fork settles.
 - **`automation.morning_hot_water` catches up when the entry recovers.** Its catch-up triggers are in [_Catch-up triggers_](wake-routines.md#catch-up-triggers).
+
+## Dyson fan
+
+The `dyson_local` entry for Master Bedroom - Dyson Fan stores a fixed host, `192.168.2.19`,
+backed by a DHCP reservation in UniFi. Keep both. Without a host, the integration finds the fan
+only through its mDNS announcement, which has to cross from the IOT VLAN through the gateway's
+mDNS reflector. After some restarts the announcement never arrived, and the fan stayed
+`unavailable` for up to a day with the entry still `loaded`, so nothing retried. The record is
+in [_Dyson fan stranded after restarts_](history.md#2026-11-09-dyson-fan-stranded-after-restarts).
+
+- **With a host, a failed connect is retried.** Setup raises `ConfigEntryNotReady`, so Home Assistant retries with backoff. In discovery mode the library forgets the fan before it connects, and a failure is never retried.
+- **The entry has no reconfigure step.** To change the host, delete the device's entry, reload the `MyDyson` account entry, and enter the host in the discovery form that it opens. The fan's credential comes from the account, so you never type it. The entity IDs, names, area and exposure settings come back with the same serial.
+- **If the fan moves VLAN or address, update the reservation and the entry together.**
 
 ## UniFi ghost trackers
 
