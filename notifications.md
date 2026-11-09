@@ -47,6 +47,7 @@ that only needs a record: the persistent notification is the log.
 | `automation.vacuum_bin_full` | no | Low urgency, and several Roombas can report at once. |
 | `automation.early_flight_hot_water` | no | It fires the evening before. See [wake-routines.md](wake-routines.md). |
 | `automation.netatmo_watchdog` | no | Diagnostics. See [maintenance.md](maintenance.md). |
+| `automation.power_cycle_dyson_fan` | no | Diagnostics. See [_Power cycle_](maintenance.md#power-cycle). |
 
 Each silenced call carries an inline `note:` that explains why, so that nobody restores the
 speech.

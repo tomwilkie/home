@@ -438,6 +438,14 @@ The fix was a DHCP reservation for `192.168.2.19` and a fresh entry with that ho
 IDs, names, device area and voice-assistant exposure all came back unchanged, and the fan
 connected at once.
 
+The same day, `automation.power_cycle_dyson_fan` was rebuilt. It dated from April 2025, when the
+fan went `unavailable` after about a week because its MQTT broker filled with dead connections,
+and at that point it ran at 00:00 only when the fan was `off`. A full pool makes the fan
+`unavailable`, so that guard skipped the cycle on exactly the nights that needed it. The
+nightly cycle now skips only a running fan, and a 15-minute watchdog cycles a fan that has been
+`unavailable` for 15 minutes, at most once an hour. A manual run took no branch and left the
+plug alone; the watchdog path has not yet fired for real.
+
 ## Naming
 
 ### July 2026: redundant name overrides

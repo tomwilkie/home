@@ -64,7 +64,7 @@ you move it:
 ### Related automations
 
 - **`automation.restart_kitchen_display_browser` is separate from this scheme.** It presses `button.kitchen_display_restart_browser` to clear the Fully Kiosk WebView, which leaks memory while it renders the kitchen dashboard's camera streams (see [dashboards.md](dashboards.md#keep-background-false-on-the-camera-cards)). The Kitchen Display exposes two `device_class: restart` buttons, `restart_browser` and `restart_device`, so the target selection cannot choose between them, and the wrong choice would reboot the tablet nightly.
-- **`automation.power_cycle_dyson_fan` is separate from this scheme.** At 00:00 it cuts mains power for 10 seconds at `switch.master_bedroom_switch_dyson_fan`, a Z-Wave metering plug, and its guard reads `fan.master_bedroom_dyson_fan`, which is a different device. No label can express "this plug powers that fan".
+- **`automation.power_cycle_dyson_fan` is separate from this scheme.** It cuts mains power at `switch.master_bedroom_switch_dyson_fan`, a Z-Wave metering plug, and its guards read `fan.master_bedroom_dyson_fan`, which is a different device. No label can express "this plug powers that fan". Why it exists is in [_Dyson fan_](#dyson-fan).
 - **Master Bedroom - WiiM Sound has no restart button.** The `wiim` integration exposes only a `media_player`, and the speaker's firmware does not implement the `reboot` command that the `linkplay` integration sends. The only reboot from Home Assistant is the undocumented HTTP command `curl -sk "https://192.168.2.10/httpapi.asp?command=StartRebootTime:1"`, which would need a `rest_command` automation rather than a label.
 - **A `linkplay` config entry for the WiiM is parked as ignored.** Zeroconf rediscovers the speaker within seconds, and deleting the ignored entry brings back a duplicate device alongside the `wiim` one.
 
@@ -253,6 +253,29 @@ in [_Dyson fan stranded after restarts_](history.md#2026-11-09-dyson-fan-strande
 - **With a host, a failed connect is retried.** Setup raises `ConfigEntryNotReady`, so Home Assistant retries with backoff. In discovery mode the library forgets the fan before it connects, and a failure is never retried.
 - **The entry has no reconfigure step.** To change the host, delete the device's entry, reload the `MyDyson` account entry, and enter the host in the discovery form that it opens. The fan's credential comes from the account, so you never type it. The entity IDs, names, area and exposure settings come back with the same serial.
 - **If the fan moves VLAN or address, update the reservation and the entry together.**
+
+### Power cycle
+
+The fan runs its own MQTT broker, which has a connection limit, and its firmware keeps dead
+connections open. Every 04:00 restart of Home Assistant leaves one behind, so after about a week
+the pool is full, every connection is refused, and only a loss of power clears it. The
+[`libdyson-wg/ha-dyson` README](https://github.com/libdyson-wg/ha-dyson/) describes the bug for
+the TP07, TP09, HP07 and HP09. This fan is a Purifier Big+Quiet (type 664), which the README
+does not list, but it failed the same way before the automation existed. Reports from other
+owners are in [ha-dyson #263](https://github.com/libdyson-wg/ha-dyson/issues/263) and
+[ha-dyson #310](https://github.com/libdyson-wg/ha-dyson/issues/310).
+
+`automation.power_cycle_dyson_fan` cuts the power for 10 seconds on two paths:
+
+| Path | When | Guard |
+|---|---|---|
+| Nightly | 00:00 | Skips only a fan that is `on`. It runs when the fan is `unavailable`, because that is when the pool is full. |
+| Watchdog | Every 15 minutes | The fan has been `unavailable` for 15 minutes, and the plug has been `on` for an hour. |
+
+- **The plug's one-hour `on` is the rate limit.** Each cycle turns the plug back on, so the watchdog cycles at most once an hour. The same condition skips a plug that is `off` or `unavailable`, which a power cycle cannot fix. A restart re-stamps the plug's `last_changed`, so the first watchdog cycle after a restart comes an hour later, and the integration's own setup retries go first.
+- **A cycle that does not help is recorded, not announced.** If the fan is still `unavailable` 10 minutes after a watchdog cycle, the automation calls `script.annouce` with `speak: false` and the title `Dyson fan`, so repeated failures overwrite one notification. When the fan returns, a third trigger dismisses it.
+- **The automation keeps 100 traces.** The 15-minute poll would otherwise push the midnight run out of the default five within an hour.
+- **To smoke-test it, run it by hand.** A manual run carries no trigger ID, so no branch runs and the plug is not touched. Confirm in the trace that the run finished without a `choose` branch.
 
 ## UniFi ghost trackers
 
