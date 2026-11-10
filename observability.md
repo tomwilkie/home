@@ -61,14 +61,15 @@ upstream as
 The UniFi-Poller dashboards in the Grafana `Unifi` folder come from
 [unpoller/dashboards](https://github.com/unpoller/dashboards/tree/master/v2.0.0), which this
 repo pins as a submodule at `observability/dashboards/unpoller`. Run `make unpoller-dashboards`
-from `observability/` to deploy them. The target uploads the Client, UAP, UMBB, USG and USW
-Insights Prometheus dashboards to the `Unifi` folder under their upstream UIDs.
+from `observability/` to deploy them. The target uploads every `* - Prometheus.json` file in
+`v2.0.0` to the `Unifi` folder (UID `fwvr7h`, `UNPOLLER_FOLDER` in the `Makefile`) under its
+upstream UID, so a dashboard that upstream adds is deployed with no change here. The InfluxDB
+dashboards are skipped, because Alloy scrapes unpoller into Prometheus.
 `UniFi-Poller: UMBB Insights - Prometheus` (`unpoller-umbb`) covers the U5G Max.
 
 - **Don't edit these dashboards in Grafana.** The next deploy overwrites them with the upstream files. Propose a change upstream instead.
-- **The target fills in the datasource.** Upstream files are import templates, so the target replaces every `${DS_…}` input with `grafanacloud-prom`, which also covers the USG dashboard's `${DS_UNIFI_POLLER}`, and drops the `__inputs` and `__requires` blocks.
+- **The target fills in the datasource.** Upstream files are import templates, so the target replaces every `${DS_…}` input with `grafanacloud-prom`, which also covers the USG dashboard's `${DS_UNIFI_POLLER}`, and drops the `__inputs` and `__requires` blocks. It also rewrites the `uid` of every `prometheus` datasource reference, because the Country Insights dashboard hard-codes upstream's UID instead of using an input.
 - **Renovate opens a PR for every upstream commit.** Upstream has no releases or tags, so the submodule tracks `master`. A PR that touches only the InfluxDB dashboards can be merged without a deploy. After you merge one that changes a Prometheus dashboard, run `git submodule update` and then the target.
-- **To deploy another upstream dashboard,** add its short name to `UNPOLLER_BOARDS` in the `Makefile`. The target expects files named `UniFi-Poller_ <name> Insights - Prometheus.json`.
 
 ## Logs
 

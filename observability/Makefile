@@ -7,7 +7,6 @@ DOCKER_HOST      := ssh://$(HAOS_HOST)
 UNPOLLER_DIR     := dashboards/unpoller/v2.0.0
 UNPOLLER_FOLDER  := fwvr7h
 UNPOLLER_DS      := grafanacloud-prom
-UNPOLLER_BOARDS  := Client UAP UMBB USG USW
 
 export DOCKER_HOST
 
@@ -41,11 +40,12 @@ shell:
 	op environment read kq66m26rzkq7ad23i2zmjuchia >.env
 
 unpoller-dashboards:
-	@for board in $(UNPOLLER_BOARDS); do \
-	  file="$(UNPOLLER_DIR)/UniFi-Poller_ $$board Insights - Prometheus.json"; \
+	@for file in "$(UNPOLLER_DIR)"/*" - Prometheus.json"; do \
+	  [ -e "$$file" ] || { echo "no Prometheus dashboards in $(UNPOLLER_DIR)"; exit 1; }; \
+	  board=$$(basename "$$file" .json); \
 	  tmp=$$(mktemp); \
 	  jq --arg ds "$(UNPOLLER_DS)" --arg folder "$(UNPOLLER_FOLDER)" \
-	    '{dashboard: (walk(if type == "string" then gsub("\\$$\\{DS_[A-Z_]+\\}"; $$ds) else . end) | del(.id, .__inputs, .__requires, .__elements)), folderUid: $$folder, overwrite: true, message: "unpoller/dashboards"}' \
+	    '{dashboard: (walk(if type == "string" then gsub("\\$$\\{DS_[A-Z_]+\\}"; $$ds) elif type == "object" and .type == "prometheus" and has("uid") then .uid = $$ds else . end) | del(.id, .__inputs, .__requires, .__elements)), folderUid: $$folder, overwrite: true, message: "unpoller/dashboards"}' \
 	    "$$file" > "$$tmp" || { rm -f "$$tmp"; exit 1; }; \
 	  result=$$(gcx api /api/dashboards/db -d @"$$tmp" 2>/dev/null); rm -f "$$tmp"; \
 	  echo "$$result" | jq -e -r 'select(.status == "success") | "\(.status) \(.url)"' || { echo "upload failed: $$board"; exit 1; }; \
