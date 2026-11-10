@@ -147,8 +147,13 @@ Fix the integration instead. Hive was the one legacy integration here until the
 to `Hallway - Thermostat` and its overrides were cleared, as described in
 [_Hive names compose_](history.md#2026-10-28-hive-names-compose).
 
-Entities with no device, such as the `min_max` helper `sensor.house_temperature`, get no
-composition and are out of scope.
+### Entities with no device
+
+An entity with no device, such as a template or `min_max` helper, gets no composition: its
+`friendly_name` is its own name.
+
+- **A house-wide helper is out of scope.** `sensor.house_temperature` keeps its plain name.
+- **A room-specific helper is named `{Area Display Name} - {Name}`** and assigned to its area, so that it reads like a composed name in Grafana and the entity pickers. A bare name would give every room's copy the same `friendly_name`. Set the name as a registry override and the area with `ha_set_entity(entity_id, area_id="living_room", name="Living Room - Adaptive Lighting Brightness")`.
 
 ### After you rename a device
 
