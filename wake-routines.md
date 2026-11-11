@@ -54,11 +54,11 @@ Check `wake_up_time` first, because a manual override moves the window.
 
 ## Evening hot water
 
-`automation.evening_hot_water` boosts the hot water from 18:45 to 19:30 every evening, ending
-when Kiran's 19:30 bath starts so the tank has not cooled. It copies the morning boost's guards
+`automation.evening_hot_water` boosts the hot water from 18:30 to 19:15 every evening, ending
+when Kiran's 19:15 bath starts so the tank has not cooled. It copies the morning boost's guards
 and its `hive_recovered` and `ha_start` catch-up triggers, as described in
-[_Catch-up triggers_](#catch-up-triggers), with the window fixed at 18:45 to 19:30 by a native
-`condition: time`. The boost length is the time left until 19:30, so a late catch-up still ends
+[_Catch-up triggers_](#catch-up-triggers), with the window fixed at 18:30 to 19:15 by a native
+`condition: time`. The boost length is the time left until 19:15, so a late catch-up still ends
 on time.
 
 It boosts only if the house was occupied at some point in the last 24 hours, so an empty house
