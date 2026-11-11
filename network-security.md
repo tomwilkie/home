@@ -22,7 +22,7 @@ The following table lists the networks:
 | Network | Subnet | VLAN | Network ID | Notes |
 |---|---|---|---|---|
 | Default (main, SSIDs `catch22` and `catch25`) | 192.168.0.0/24 | untagged | `90e421ce-55cc-47a2-89ef-5cedd284345f` | The UDM is `.1`. Home Assistant lives here. |
-| IOT (SSID `iot`) | 192.168.2.0/24 | 2 | `63ae39d7-c21f-4d0e-9503-e5418d0e0600` | Has an ad-blocking DPI policy |
+| IOT (SSID `iot`) | 192.168.2.0/24 | 2 | `63ae39d7-c21f-4d0e-9503-e5418d0e0600` | |
 | Cameras (SSID `cameras`) | 192.168.3.0/24 | 3 | `f8fe2d4e-4046-4c3c-a4cf-346211bfbda1` | UniFi Protect cameras |
 | Nursery (SSID `nursery`) | 192.168.5.0/24 | 5 | `b4cf0b75-0452-4bfb-9f86-b04bd5dae468` | The eufy baby camera and monitor. In the IOT zone. See [_Nursery network_](#nursery-network). |
 | 5G Internet | 192.168.4.0/24 | 4 | `4932bfc5-e715-4c3c-b3d5-b84a47334eca` | WAN failover |
