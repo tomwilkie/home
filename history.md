@@ -156,6 +156,27 @@ the **Content Filter** page still has the `IOT` filter with **Ad Block** ticked,
 is the profile disabled on 2026-10-31; the settings API keeps listing a disabled profile's
 network.
 
+### 2026-11-11: Wi-Fi channel plan
+
+An RF scan from each AP, one at a time, measured how busy each channel was:
+
+- **2.4 GHz** was the busiest band everywhere. Channels 4 to 10 were 30–50% busy at most APs, and the Garage AP heard 60–68% on channels 7 to 11, most likely from neighbouring networks. Channel 1 was the quietest at most APs, but it overlaps Zigbee channel 11, so it was ruled out.
+- **5 GHz** was almost empty (mostly 0–7%) at every AP.
+- **6 GHz** was almost empty. The Basement AP (channel 37) and the Ground Floor AP (channel 41) were both at 160 MHz, so they shared the 33–61 block.
+
+5 GHz was widened from 40 MHz to 80 MHz on every AP, and the Ground Floor AP's 6 GHz radio moved
+from channel 41 to 21. The Ground Floor AP was first left on channel 136, but a MacBook connected
+there at 40 MHz: it does not support channel 144, the top of the 132–144 block. The Ground Floor
+AP and the Garage AP then swapped, to 36 and 136. An iperf3 test from the MacBook on channel 36
+(80 MHz, -65 dBm) to the UDM measured 287 Mbps upload and 340 Mbps download.
+
+The same day:
+
+- **The `HTTPS` port forward was deleted.** It forwarded TCP 8443 to `192.168.0.60`, the old Home Assistant machine, whose DHCP reservation was also removed. The EE hub in front of the UDM had no matching forward, so it never reached the internet. Remote access goes through Home Assistant Cloud and Tailscale.
+- **Internet 2 was disabled.** It had been enabled at failover priority 3 with no port assigned, probably by the Network 11 upgrade.
+- **Fast Roaming was confirmed off** on `catch22` and `catch25`, where it had been turned off earlier because the Apple TVs dropped streams while roaming.
+- **Switch port counters were clean.** No port had CRC errors, and the 10 Mbps and 100 Mbps links matched what each device supports.
+
 ## Observability
 
 ### Unpoller discovery vanished
