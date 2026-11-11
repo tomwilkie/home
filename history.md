@@ -134,6 +134,28 @@ about 185,000 rules and blocked `doubleclick.net` on test, and the IOT devices t
 AdGuard looked up nothing on the list. The LogQL in that issue filtered on a top-level `Reason`,
 which the on-disk log does not have; a blocked line carries `Result.IsFiltered: true`.
 
+### 2026-11-11: UniFi OS 6.0.17 and intrusion detection
+
+The UDM upgraded itself overnight to UniFi OS 6.0.17 and UniFi Network 11.0.99, rebooting at
+about 05:02. `network-security.md` said an upgrade wipes `/etc` and that `install.sh` had to be
+re-run. It did not: `/etc/systemd/system/iot-redirect.service` kept its June timestamp and was
+still enabled, the unit ran at boot and logged "applied IOT DNAT", and all six DNAT rules for
+`br2` and `br5` were in place. The root filesystem is an overlay whose writable layer survives
+the upgrade. iptables is still the legacy build (1.8.7). Network 11 re-keyed every Network
+object (networks, WLANs, firewall policies, zones and groups) with a UUID, so the 24-character IDs
+in the docs were replaced.
+
+The same day, IDS was turned on in **Notify** mode for IOT, Nursery and Cameras, with the 26,656
+Standard signatures and every category selected. The plan is to review its detections for a week
+or two and then decide whether to move to **Notify and Block**. The setting had to be made in the
+UniFi UI, through the cloud console in Chrome: the MCP server cannot set the network scope, and a
+`PUT` to the raw settings API returned `ok` but ignored it.
+
+While reading the IPS settings, `ad_blocking_configurations` still listed the IOT network, and
+the **Content Filter** page still has the `IOT` filter with **Ad Block** ticked, greyed out. That
+is the profile disabled on 2026-10-31; the settings API keeps listing a disabled profile's
+network.
+
 ## Observability
 
 ### Unpoller discovery vanished

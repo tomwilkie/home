@@ -21,12 +21,12 @@ The following table lists the networks:
 
 | Network | Subnet | VLAN | Network ID | Notes |
 |---|---|---|---|---|
-| Default (main, SSIDs `catch22` and `catch25`) | 192.168.0.0/24 | untagged | `66c254deffcde7397016bae8` | The UDM is `.1`. Home Assistant lives here. |
-| IOT (SSID `iot`) | 192.168.2.0/24 | 2 | `66c245d0eb7aca2624cf9a9e` | Has an ad-blocking DPI policy |
-| Cameras (SSID `cameras`) | 192.168.3.0/24 | 3 | `66c32a78e23e0530de545643` | UniFi Protect cameras |
-| Nursery (SSID `nursery`) | 192.168.5.0/24 | 5 | `6ad32ac06c116a998e57fdb0` | The eufy baby camera and monitor. In the IOT zone. See [_Nursery network_](#nursery-network). |
-| 5G Internet | 192.168.4.0/24 | 4 | `69a69f92b0f8eea82e18ff77` | WAN failover |
-| Remote-user VPN | 192.168.8.0/24 | none | `66ccac42e23e0530de571a6b` | |
+| Default (main, SSIDs `catch22` and `catch25`) | 192.168.0.0/24 | untagged | `90e421ce-55cc-47a2-89ef-5cedd284345f` | The UDM is `.1`. Home Assistant lives here. |
+| IOT (SSID `iot`) | 192.168.2.0/24 | 2 | `63ae39d7-c21f-4d0e-9503-e5418d0e0600` | Has an ad-blocking DPI policy |
+| Cameras (SSID `cameras`) | 192.168.3.0/24 | 3 | `f8fe2d4e-4046-4c3c-a4cf-346211bfbda1` | UniFi Protect cameras |
+| Nursery (SSID `nursery`) | 192.168.5.0/24 | 5 | `b4cf0b75-0452-4bfb-9f86-b04bd5dae468` | The eufy baby camera and monitor. In the IOT zone. See [_Nursery network_](#nursery-network). |
+| 5G Internet | 192.168.4.0/24 | 4 | `4932bfc5-e715-4c3c-b3d5-b84a47334eca` | WAN failover |
+| Remote-user VPN | 192.168.8.0/24 | none | `060454c3-bcff-46e0-9cfd-a236631b7fc9` | |
 
 The Home Assistant host is `192.168.0.12`, wired, on the Default network, with MAC
 `c8:ff:bf:03:83:67`. Its address is a DHCP reservation and must stay pinned: it is the single
@@ -132,7 +132,7 @@ work when these rules were built, as described in
 Firewall policies do not stop two devices on the same VLAN talking to each other, because that
 traffic is switched at layer 2 and does not reach the gateway. Two settings cover it:
 
-- **Wireless devices:** Client Device Isolation (`l2_isolation`) on the `iot` WLAN (`66c24e06eb7aca2624cf9fb5`) and the `cameras` WLAN (`66c32aafe23e0530de545688`).
+- **Wireless devices:** Client Device Isolation (`l2_isolation`) on the `iot` WLAN (`f7610b69-4236-4656-8063-86109ece81b8`) and the `cameras` WLAN (`cfbe951f-fe70-4b01-93d1-eedb5610b84c`).
 - **Wired devices:** switch-port isolation (`isolation: true` in the port override) on the following ports:
 
 | Device | VLAN | Switch | Port |
@@ -235,14 +235,19 @@ iptables -t nat -I PREROUTING -i br2 -p tcp --dport 53  ! -d 192.168.0.12 -j DNA
 
 ### Persistence
 
-The UDM (UniFi OS 5.1.19, which uses iptables-legacy) clears custom iptables rules on reboot.
+The UDM (UniFi OS 6.0.17, which uses iptables-legacy) clears custom iptables rules on reboot.
 The following files restore them at boot:
 
 | Path | Purpose |
 |---|---|
 | `/persistent/iot-redirect/apply.sh` | Inserts the three DNAT rules for each interface in its `IFACES` list if they are missing, then flushes the connection tracker. `/persistent` survives reboot and firmware upgrade. A new IOT-zone network needs its bridge interface added to `IFACES`. |
-| `/persistent/iot-redirect/install.sh` | Writes and enables the systemd unit. Run it again after a firmware upgrade, which wipes `/etc`. |
+| `/persistent/iot-redirect/install.sh` | Writes and enables the systemd unit. Run it again if the unit is missing. |
 | `/etc/systemd/system/iot-redirect.service` | A `oneshot` unit that runs `apply.sh` after `network-online.target` and `udapi-server.service`, with a 30-second sleep so that udapi builds its ruleset first. |
+
+The unit survives a firmware upgrade. The UDM's root filesystem is an overlay whose writable
+layer persists across upgrades, so files written to `/etc` stay in place; the unit came through
+the upgrade to UniFi OS 6.0.17 intact. After an upgrade, confirm it with
+`systemctl is-enabled iot-redirect` and `journalctl -u iot-redirect -b`.
 
 To re-apply the rules by hand, run `ssh root@192.168.0.1 '/persistent/iot-redirect/apply.sh'`
 or `systemctl restart iot-redirect`. Don't use `systemctl start`: the unit is `RemainAfterExit`,
@@ -317,15 +322,40 @@ To change membership, edit the rule's `source.client_macs` in the UniFi UI (**Fi
 connection tracker for the affected address with `ssh root@192.168.0.1 conntrack -D -s IOT_IP`,
 so that live flows are re-evaluated.
 
+## Intrusion detection
+
+The gateway's intrusion detection system (IDS) inspects the traffic of the IOT, Nursery and
+Cameras networks against a set of threat signatures: exploit attempts, malware command-and-control
+traffic, scans and known-bad addresses. The firewall policies decide which hosts may talk; IDS
+looks inside the traffic they allow, such as an IOT device's internet connections.
+
+The settings are in UniFi Network under **Settings** > **CyberSecure** > **Threat Management** >
+**Intrusion Prevention**:
+
+| Setting | Value | Reason |
+|---|---|---|
+| **Intrusion Prevention** | On | |
+| **Selected Networks** | IOT, Nursery, Cameras | The untrusted networks. Default holds trusted hosts, and 5G Internet holds only the modem. |
+| **Detection Mode** | **Notify** | Detects and logs without blocking, so a false positive cannot cut off a device. **Notify and Block** is intrusion prevention (IPS). |
+| **Active Detections** | All categories, the default | |
+| Protection level | Standard (Free) | The paid CyberSecure Enhanced adds signatures. |
+
+- **Set it in the UniFi UI.** The `unifi-network` MCP server cannot set the protected networks, and refuses to enable IDS without a hand-picked category list. The raw settings API ignores the network scope.
+- **Check the selected networks after turning it on.** UniFi selects every network when **Intrusion Prevention** is switched on.
+- **To verify**, read `ips_mode` (`ids`) and `enabled_networks` from `GET /proxy/network/api/s/default/rest/setting/ips` with the API key, as in [_Firewall tools_](access-home-assistant.md#firewall-tools).
+
+The change was made on 2026-11-11, as recorded in
+[_2026-11-11: UniFi OS 6.0.17 and intrusion detection_](history.md#2026-11-11-unifi-os-6017-and-intrusion-detection).
+
 ## Audit the isolation
 
 To audit without the UI, query Traffic Flows by source network through the `unifi-network` MCP
 server:
 
 ```
-unifi_get_traffic_flows(source_network_id="66c245d0eb7aca2624cf9a9e", within_hours=168)   # IOT
-unifi_get_traffic_flows(source_network_id="66c32a78e23e0530de545643", within_hours=168)   # Cameras
-unifi_get_traffic_flows(source_network_id="6ad32ac06c116a998e57fdb0", within_hours=168)   # Nursery
+unifi_get_traffic_flows(source_network_id="63ae39d7-c21f-4d0e-9503-e5418d0e0600", within_hours=168)   # IOT
+unifi_get_traffic_flows(source_network_id="f8fe2d4e-4046-4c3c-a4cf-346211bfbda1", within_hours=168)   # Cameras
+unifi_get_traffic_flows(source_network_id="b4cf0b75-0452-4bfb-9f86-b04bd5dae468", within_hours=168)   # Nursery
 ```
 
 Each flow carries an `action` (`allowed` or `blocked`), a `direction` and the policies it
