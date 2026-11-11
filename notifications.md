@@ -114,6 +114,19 @@ The group has the following members:
 | `kitchen_display_ma_player` | Music Assistant proxy. The native `fully_kiosk` entity cannot announce. |
 | `garage_ai_pro_speaker` | Native `unifiprotect` entity with no Music Assistant equivalent, so it stays on the replace path |
 
+### Turn off Music Assistant's pre-announce chime
+
+Music Assistant plays its own chime before an announcement on any of its players, so the room
+hears that chime and then the `computerbeep_3.mp3` chime that `script.annouce` passes to
+ChimeTTS. Turn off `tts_pre_announce` in the Music Assistant config of every `*_ma_player`
+member of the group, including members whose toggle is off.
+
+The setting lives in Music Assistant, not Home Assistant, so a player that Music Assistant
+re-creates gets the chime back. Set it with `config_set_player_value` on the Music Assistant MCP
+server, or in the Music Assistant web UI under **Settings**, **Players**. Music Assistant's
+player names don't always match the Home Assistant ones, so find the player by its ID, which is
+the `unique_id` of the Home Assistant proxy entity.
+
 ### The Kitchen Display watchdog
 
 `media_player.kitchen_display` and `media_player.kitchen_display_ma_player` are the same Pixel
@@ -152,7 +165,8 @@ entity moves to the right branch with no script edit. Both branches carry the sa
 To add a player to the group, also create its `input_boolean.{player_slug}_notifications` toggle
 (display name `Notifications`, assigned to the player's area, turned on) and add it to the
 Notification Players card on the Broadcast view. A member without a toggle is silently mute,
-because its toggle lookup resolves to an entity that does not exist.
+because its toggle lookup resolves to an entity that does not exist. If the player is a Music
+Assistant proxy, also [turn off its pre-announce chime](#turn-off-music-assistants-pre-announce-chime).
 
 To swap a member, also delete the outgoing toggle. A toggle whose player has left the group is
 not read, but it still looks live in the entity list.
