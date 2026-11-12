@@ -140,6 +140,7 @@ traffic is switched at layer 2 and does not reach the gateway. Two settings cove
 |---|---|---|---|
 | Norman Hub | IOT | `USW Pro Max 16 PoE` | 5 |
 | Hive Hub | IOT | `Basement Switch` | 8 |
+| Alarm module (i-on G2SM) | IOT | `Basement Switch` | 6 |
 | Garage Door camera (G5 Turret Ultra) | Cameras | `Garage Switch` | 5 |
 | Garage camera (AI Pro) | Cameras | `Garage Switch` | 7 |
 | Back-garden camera (G5 Turret Ultra) | Cameras | `Basement Switch` | 3 |
@@ -360,6 +361,26 @@ The settings are in UniFi Network under **Settings** > **CyberSecure** > **Threa
 
 The change was made on 2026-11-11, as recorded in
 [_2026-11-11: UniFi OS 6.0.17 and intrusion detection_](history.md#2026-11-11-unifi-os-6017-and-intrusion-detection).
+
+## Protected management frames on the cameras WLAN
+
+Protected management frames (PMF, 802.11w) are **required** on the `cameras` WLAN
+(`pmf_mode: required`). Without PMF, anyone in radio range can forge deauthentication frames and
+keep a wireless camera off the network, and the front-door doorbell is in range of the street.
+The firewall and VLAN isolation don't help, because the attack never joins the network.
+
+- **A new wireless camera must support PMF**, or it cannot join the WLAN. The G4 Doorbell Pro supports it, although Ubiquiti's specifications don't say so.
+- **The WLAN stays WPA2.** PMF works with WPA2, so it doesn't need WPA3.
+- **To verify**, check that the AP's config has `ieee80211w=2` and that the camera's station flags include `[MFP]`. The `cameras` WLAN is `wifi1ap5` on the Ground Floor AP:
+
+  ```sh
+  scripts/unifi-ssh device 192.168.0.205 'grep ieee80211w /etc/hostapd/wifi1ap5.cfg; hostapd_cli -p /var/run/hostapd -i wifi1ap5 all_sta | grep -E "^[0-9a-f]{2}:|flags"'
+  ```
+
+  The interface name can change when WLANs are added or removed, so find it with `grep -l "ssid=cameras" /etc/hostapd/*.cfg` if the command returns nothing.
+
+The test that confirmed doorbell support is in
+[_2026-11-12: PMF on the cameras WLAN_](history.md#2026-11-12-pmf-on-the-cameras-wlan).
 
 ## Audit the isolation
 

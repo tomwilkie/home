@@ -156,6 +156,19 @@ the **Content Filter** page still has the `IOT` filter with **Ad Block** ticked,
 is the profile disabled on 2026-10-31; the settings API keeps listing a disabled profile's
 network.
 
+### 2026-11-12: PMF on the cameras WLAN
+
+Ubiquiti's specifications for the G4 Doorbell Pro (firmware 4.72.38) don't say whether it
+supports PMF, and UniFi's client record has no field for it. The `cameras` WLAN was switched from
+PMF disabled to optional, and the Ground Floor AP then listed the doorbell with the `[MFP]` flag,
+so it had negotiated PMF. The WLAN was then set to required. The doorbell reconnected within
+seconds with `[MFP]`, and Protect showed it connected and recording.
+
+The same day, a network audit found that UniFi's settings API listed the IOT network under ad
+blocking. `ipset list dnsfilter` on the gateway held only `192.168.0.0/24`, so IOT DNS still went
+to AdGuard. The listing is the disabled profile described in
+[_2026-11-11: UniFi OS 6.0.17 and intrusion detection_](#2026-11-11-unifi-os-6017-and-intrusion-detection).
+
 ## Network
 
 ### 2026-11-11: Wi-Fi channel plan
