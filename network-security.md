@@ -7,7 +7,8 @@ The network runs on a UniFi Dream Machine Pro Max (UDM), with UniFi Network and 
 the same box. Firewall rules, WLAN isolation, switch-port isolation and multicast DNS (mDNS)
 settings live on the UDM and are not file-managed, so this document is the source of truth for
 their intent. To apply and inspect them, use the UniFi Network UI or the `unifi-network` MCP
-server described in [_UniFi MCP servers_](access-home-assistant.md#unifi-mcp-servers).
+server described in [_UniFi MCP servers_](access-home-assistant.md#unifi-mcp-servers). The
+internet connections and the Wi-Fi layout are in [network.md](network.md).
 
 ## Goals
 
@@ -359,49 +360,6 @@ The settings are in UniFi Network under **Settings** > **CyberSecure** > **Threa
 
 The change was made on 2026-11-11, as recorded in
 [_2026-11-11: UniFi OS 6.0.17 and intrusion detection_](history.md#2026-11-11-unifi-os-6017-and-intrusion-detection).
-
-## Wi-Fi
-
-### SSID placement
-
-An SSID broadcasts only from the APs that need it, which keeps a device on the AP nearest to it
-and stops it roaming to a distant one. The other WLANs broadcast from every AP:
-
-| WLAN | AP group | Bands | Reason |
-|---|---|---|---|
-| `cameras` | "Ground Floor" | 5 GHz | The wireless cameras connect through the Ground Floor AP. |
-| `nursery` | "Nursery and Ground Floor" | 2.4 GHz | See [_Nursery network_](#nursery-network). |
-
-### Channel plan
-
-The channels are set by hand on each AP. The following table lists the plan:
-
-| AP | 2.4 GHz | 5 GHz (80 MHz) | 6 GHz (160 MHz) |
-|---|---|---|---|
-| Basement | 6 | 56 | 37 |
-| Garage | auto | 136 | none |
-| Ground Floor | 11 | 36 | 21 |
-| Nursery | 6 | 100 | auto |
-| Tom's Office | 11 | 157 | none |
-
-- **Keep 2.4 GHz off Wi-Fi channels 1 to 4.** Zigbee runs on channel 11 (2405 MHz), which sits inside Wi-Fi channel 1. Use only channels 6 and 11, which leave Zigbee clear. If the Garage AP's automatic choice lands below channel 5, set it to 6.
-- **Give each AP its own 5 GHz block.** The UK's 80 MHz blocks are 36–48, 52–64, 100–112, 116–128, 132–144 and 149–161, so the APs never need to share one.
-- **Keep busy APs out of the 132–144 block.** Apple devices sold in the UK don't support channel 144, so they use only the 40 MHz half of that block. The Garage AP has it because it has no 5 GHz clients.
-- **Avoid the 116–128 block.** Channels 120 to 128 are weather-radar channels, where the AP can listen for up to 10 minutes after a restart before it transmits.
-- **Prefer a non-radar block for the Ground Floor AP.** Channels 36 to 48 have no radar check, so the AP that serves the cameras and the living room never waits after a restart or gets forced off its channel.
-- **Give each 6 GHz AP its own 160 MHz block** (1–29, 33–61 or 65–93).
-- **Check a change with an RF scan** (`unifi_trigger_rf_scan`, then `unifi_get_rf_scan_results`). An AP drops its clients for the 5 to 10 minutes it scans, so scan the Nursery and Ground Floor APs when the baby camera is not in use.
-
-The radio settings are in each device's `radio_table`. Change them with a `PUT` to
-`/proxy/network/api/s/default/rest/device/<_id>` that sends the whole `radio_table`.
-
-### Roaming
-
-- **Leave Fast Roaming (802.11r) off on `catch22` and `catch25`.** With it on, the Apple TVs in the living room interrupted streams as they roamed between the Ground Floor and Basement APs, which they both hear weakly.
-- **BSS Transition (802.11v) is on.** If the Apple TVs still stutter on Wi-Fi, turn it off next. Wiring them is the real fix.
-
-The scans and changes were made on 2026-11-11, as recorded in
-[_2026-11-11: Wi-Fi channel plan_](history.md#2026-11-11-wi-fi-channel-plan).
 
 ## Audit the isolation
 

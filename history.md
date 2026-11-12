@@ -156,6 +156,8 @@ the **Content Filter** page still has the `IOT` filter with **Ad Block** ticked,
 is the profile disabled on 2026-10-31; the settings API keeps listing a disabled profile's
 network.
 
+## Network
+
 ### 2026-11-11: Wi-Fi channel plan
 
 An RF scan from each AP, one at a time, measured how busy each channel was:
@@ -176,6 +178,31 @@ The same day:
 - **Internet 2 was disabled.** It had been enabled at failover priority 3 with no port assigned, probably by the Network 11 upgrade.
 - **Fast Roaming was confirmed off** on `catch22` and `catch25`, where it had been turned off earlier because the Apple TVs dropped streams while roaming.
 - **Switch port counters were clean.** No port had CRC errors, and the 10 Mbps and 100 Mbps links matched what each device supports.
+
+### 2026-11-12: Smart Queues
+
+A network audit found the open alarm `NETWORK_WAN_FAILED_MULTIPLE_TIMES_2` and an ISP speed of
+55/12 Mbps on `Internet 1`. The UniFi speed test had reported 218 Mbps down, but that came from
+the 5G connection: the daily 07:00 test runs on every WAN. The EE hub reported a DSL sync of
+64.68 Mbps down and 13.17 Mbps up, so the ISP speed was set to 60/12 Mbps.
+
+The [Waveform bufferbloat test](https://www.waveform.com/tools/bufferbloat) was run from the
+MacBook on `catch22`. The 5G runs used a temporary traffic route for the MacBook only, as
+described in [_Test the 5G connection from one device_](network.md#test-the-5g-connection-from-one-device).
+The following table lists the results, with latency added under load:
+
+| WAN | Smart Queues caps | Idle | Download | Upload | Speed down / up | Grade |
+|---|---|---|---|---|---|---|
+| DSL | off | 14 ms | +61 ms | +394 ms | 43.5 / 12.2 Mbps | D |
+| DSL | 40 / 11 Mbps | 13 ms | +4 ms | +1 ms | 33.1 / 9.4 Mbps | A+ |
+| DSL | 45 / 11.5 Mbps | 16 ms | +16 ms | +0 ms | 37.3 / 10.6 Mbps | A |
+| 5G | off | 28 ms | +172 ms | +858 ms | 187.4 / 9.9 Mbps | F |
+| 5G | 150 / 8 Mbps | 29 ms | +84 ms | +13 ms | 132.0 / 7.1 Mbps | C |
+
+The DSL caps stayed at 45/11.5 Mbps, which is above the unshaped download, so a higher cap would
+add latency for little speed. The 5G caps stayed at 150/8 Mbps. During that run the cell
+delivered only 132 Mbps, so the download queue formed in the mobile network; a 100 Mbps cap was
+considered and not applied.
 
 ## Observability
 
