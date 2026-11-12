@@ -169,6 +169,24 @@ blocking. `ipset list dnsfilter` on the gateway held only `192.168.0.0/24`, so I
 to AdGuard. The listing is the disabled profile described in
 [_2026-11-11: UniFi OS 6.0.17 and intrusion detection_](#2026-11-11-unifi-os-6017-and-intrusion-detection).
 
+### 2026-11-12: Eufy vacuum replaced the Deebot
+
+The Kitchen Deebot X9 Pro Omni stopped working and was replaced by a Eufy S1 Pro (`MACH-R1`,
+`70:68:71:ec:90:54`) on the `iot` WLAN. The HACS integration
+`tkoba1974/ha-eufy-robovac-s1-pro` v1.0.6 signed in to the Eufy cloud and loaded, but created no
+entities and logged `Could not find device ... Available devices: none`. It finds a device's IP
+address only from Tuya UDP broadcasts, which do not reach Home Assistant on the Default network.
+The `tomwilkie/ha-eufy-robovac-s1-pro` fork added a `host` option, proposed upstream as
+[tkoba1974/ha-eufy-robovac-s1-pro#29](https://github.com/tkoba1974/ha-eufy-robovac-s1-pro/pull/29),
+and the vacuum connected on TCP 6668 with no firewall change, because `LAN to IOT` allows it.
+
+The Deebot's Matter device and its UniFi tracker were removed. Removing the device also deleted
+the `history_stats` entry behind `sensor.kitchen_vacuum_cleaning_time`, as the Ecovacs removal
+did on 2026-07-18, so it was re-created and renamed to take the ID back. The Eufy entities took
+the `kitchen_vacuum` IDs, so the dashboards, `input_datetime.kitchen_vacuum_last_run` and the
+vacuum automations needed no edits. The rule is in
+[_Cross-VLAN discovery_](network-security.md#cross-vlan-discovery).
+
 ## Network
 
 ### 2026-11-11: Wi-Fi channel plan

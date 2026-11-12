@@ -331,5 +331,5 @@ within about 30 seconds with `cleaning_time: 0`, so the morning routine appears 
 nothing is cleaned. This automation and the bin-full styling in
 [dashboards.md](dashboards.md#vacuum-bin-full-tiles) surface the cause.
 
-`vacuum.kitchen_vacuum` is a Deebot with no `bin_full` attribute, so the automation and the
+`vacuum.kitchen_vacuum` is a Eufy S1 Pro with no `bin_full` attribute, so the automation and the
 dashboard styling leave it out.

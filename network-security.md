@@ -182,6 +182,13 @@ Matter) needs the mDNS reflector: global Multicast DNS plus `mdns_enabled: true`
 network. Without it, devices that are already added keep working and discovery breaks. The
 reflector runs on the gateway, so the IOT to Internal block does not affect it.
 
+Broadcast discovery does not cross VLANs, and the reflector does not carry it. The Eufy S1 Pro
+integration finds `vacuum.kitchen_vacuum` by listening for Tuya UDP broadcasts on ports 6666 and
+6667, so the vacuum's address is set by hand instead:
+
+- **HACS installs the `manual-ip-address` branch of the `tomwilkie/ha-eufy-robovac-s1-pro` fork,** which adds a `host` option. Keep it until upstream merges [tkoba1974/ha-eufy-robovac-s1-pro#29](https://github.com/tkoba1974/ha-eufy-robovac-s1-pro/pull/29), because the upstream integration has no way to set the address.
+- **`host` is `192.168.2.25`,** on the integration's **Configure** screen. The address is a DHCP reservation and must stay pinned, or the integration loses the vacuum.
+
 Limit the reflector to the Default and IOT networks (`enabled_for: some` in
 `GET /proxy/network/api/s/default/rest/setting/mdns`). Cameras, Nursery and 5G Internet hold no
 device that Home Assistant discovers, and reflecting into them would only advertise main-LAN
@@ -330,7 +337,7 @@ The following devices are deliberately left out of the rule:
 
 - **The Everything Presence Lites and the Voice Assistants**, so that they can pull firmware.
 - **Tom's Office - AirGradient**, which has a local API but keeps its internet access.
-- **Cloud-dependent devices:** Nest Protect, Hive, Deebot, Netatmo, the Kitchen Display, the Prusa cameras and the alarm module.
+- **Cloud-dependent devices:** Nest Protect, Hive, the Eufy vacuum (its integration fetches the device key from the Eufy cloud at every start), Netatmo, the Kitchen Display, the Prusa cameras and the alarm module.
 
 To change membership, edit the rule's `source.client_macs` in the UniFi UI (**Firewall**,
 **Policies**, **Block IOT No-Internet Devices**) or through the firewall tools, then flush the
