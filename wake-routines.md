@@ -69,39 +69,70 @@ the way it resets a state condition with `for: 24h`.
 
 ## Nursery sleep routine
 
-Kiran sleeps in the Nursery from 19:00 to 07:00. `input_boolean.kiran_asleep` is the sleep
-state, and the following helpers and automations read or write it:
+Kiran sleeps in the Nursery from 19:00 to 07:00, and naps during the day. The schedule puts the
+room to sleep overnight, and the bed sensor under his mattress puts it to sleep for naps.
+`input_boolean.kiran_asleep` is the sleep state, and the following helpers and automations read
+or write it:
 
 | Entity | Behaviour |
 |---|---|
 | `schedule.kiran_sleep` | On from 19:00 to 07:00 every day. |
-| `automation.kiran_sleep_schedule` | Copies the schedule's `off` to `on` and `on` to `off` edges onto the boolean. |
+| `automation.kiran_sleep_schedule` | Sets the boolean, as described in [_What sets the sleep state_](#what-sets-the-sleep-state). |
 | `automation.nursery_sleep_routine` | Runs the bedtime branch when the boolean turns on and the wake branch when it turns off, and turns the Hue Go off at 21:00. |
+| `automation.nursery_heartbeat` | Plays the heartbeat track from 19:00 to 07:00, from the schedule alone, as described in [_Heartbeat track_](#heartbeat-track). |
 
-The boolean, not the schedule, drives the routine, so a nap or an early night is a manual toggle.
-Both helpers are on the Settings view of the Settings dashboard.
+The boolean, not the schedule, drives the routine. Both helpers are on the Settings view of the
+Settings dashboard, and toggling the boolean by hand still runs the routine.
+
+### What sets the sleep state
+
+`automation.kiran_sleep_schedule` sets the boolean from four triggers:
+
+| Trigger | Action |
+|---|---|
+| `schedule.kiran_sleep` turns on at 19:00 | Turns the boolean on |
+| `schedule.kiran_sleep` turns off at 07:00 | Turns the boolean off, even if he is still in the cot |
+| `binary_sensor.nursery_bed_sensor_occupancy` turns on (`occupancy.detected`) | Turns the boolean on, at any time of day |
+| The bed sensor stays `off` for 15 minutes | Turns the boolean off, but only while the schedule is off |
+
+- **The 15 minutes debounce a nap's end.** Lifting him out and putting him back within 15 minutes does not wake the room.
+- **Overnight, the sensor clearing is ignored.** A night feed longer than 15 minutes would otherwise wake the room at 02:00. Only the 07:00 schedule ends the night.
+- **A false trigger puts an empty room to sleep.** The sensor sometimes reports occupied with nobody in the cot, and it can then latch for hours, so the room stays in sleep mode until it clears. The household accepted this rather than lose sensor-driven naps.
+
+The bed sensor is a Tuya TS0601 strap under the mattress. Its occupancy state tracks the cot
+well, but its "illuminance" entity, `sensor.nursery_bed_sensor_illuminance`, is not a weight
+reading: it is a raw pressure value that peaks when occupancy turns on and otherwise reads about
+the same whether the cot is full or empty, so don't threshold it. The measurements are in
+[_2026-11-13: naps driven by the bed sensor_](history.md#2026-11-13-naps-driven-by-the-bed-sensor).
+
+### Bedtime and wake branches
 
 The bedtime branch does the following, in order:
 
-1. Turns off `automation.nursery_lights`, so motion cannot switch the lamps on overnight.
-2. Turns on `switch.nursery_adaptive_lighting_sleep_mode`, then turns on `light.nursery_hue_go`, which adaptive lighting intercepts and sets to its sleep brightness and colour.
-3. Turns off `light.nursery_rocket_lamp`.
-4. Plays `library://track/129` ("Baby Sleep Heartbeat") on `media_player.nursery_homepod_mini_ma_player`, sets volume 0.48 and `repeat: one`.
+1. Turns off `input_boolean.nursery_homepod_mini_ma_player_notifications`, so house announcements don't play in the Nursery while he sleeps.
+2. Turns off `automation.nursery_lights`, so motion cannot switch the lamps on.
+3. Turns on `switch.nursery_adaptive_lighting_sleep_mode`, then turns on `light.nursery_hue_go`, which adaptive lighting intercepts and sets to its sleep brightness and colour.
+4. Turns off `light.nursery_rocket_lamp`.
 
-The wake branch stops the track, sets `repeat_set: off`, turns sleep mode off and turns
-`automation.nursery_lights` back on. Between 05:00 and 09:00 it turns both lamps on for the
-morning, and the blueprint's `daylight` trigger turns them off at sunrise plus one hour. At any
-other time it is the end of a nap, and it turns both lamps off.
+The wake branch turns sleep mode off and turns `automation.nursery_lights` back on. Between
+05:00 and 09:00 it turns both lamps on for the morning, and the blueprint's `daylight` trigger
+turns them off at sunrise plus one hour. At any other time it is the end of a nap, and it turns
+both lamps off. Last, it turns the Nursery notifications toggle back on.
 
 At 21:00 the routine turns `light.nursery_hue_go` off, so the sleep-level night light lasts only
 the first two hours of the night.
 
-- **Set the volume after `music_assistant.play_media`, on the Music Assistant proxy entity.** Music Assistant applies its own stored player volume about a second into playback, so a `media_player.volume_set` before the play call, or on the native `apple_tv` entity, is overwritten with no error. The step sits after the play call with a three-second delay.
-- **Don't announce to this speaker.** Its notifications toggle stays off, so house announcements never play in the nursery. Never announce through its native `apple_tv` entity either: a replace-mode announcement takes the HomePod's AirPlay output away from Music Assistant, which keeps reporting `playing` into a silent room. Only a fresh `music_assistant.play_media` rebuilds the session. See [_Choose the entity that supports announce_](notifications.md#choose-the-entity-that-supports-announce).
 - **The rocket lamp is not in the Nursery adaptive lighting instance.** It is an on/off plug, and sleep mode would switch it on.
 
+### Heartbeat track
+
+`automation.nursery_heartbeat` plays `library://track/129` ("Baby Sleep Heartbeat") on
+`media_player.nursery_homepod_mini_ma_player` when `schedule.kiran_sleep` turns on, at volume
+0.48 with `repeat: one`, and stops it and sets `repeat_set: off` when the schedule turns off. It
+follows the schedule rather than the boolean, so naps get no heartbeat.
+
 - **Set the volume after `music_assistant.play_media`, on the Music Assistant proxy entity.** Music Assistant applies its own stored player volume about a second into playback, so a `media_player.volume_set` before the play call, or on the native `apple_tv` entity, is overwritten with no error. The step sits after the play call with a three-second delay.
-- **Don't announce to this speaker through its native `apple_tv` entity.** A replace-mode announcement takes the HomePod's AirPlay output away from Music Assistant, which keeps reporting `playing` into a silent room. Only a fresh `music_assistant.play_media` rebuilds the session. The notification players group therefore uses the proxy, as described in [_Choose the entity that supports announce_](notifications.md#choose-the-entity-that-supports-announce).
+- **Don't announce through the HomePod's native `apple_tv` entity.** A replace-mode announcement takes the HomePod's AirPlay output away from Music Assistant, which keeps reporting `playing` into a silent room. Only a fresh `music_assistant.play_media` rebuilds the session. The notification players group therefore uses the proxy, as described in [_Choose the entity that supports announce_](notifications.md#choose-the-entity-that-supports-announce).
 
 ## Early flight hot water
 

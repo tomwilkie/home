@@ -631,16 +631,6 @@ slugified title as the `notification_id`, the second notification replaced the f
 the San Francisco flight was visible. The 02:15 boost never ran, and Tom boosted the water by
 hand at 02:45.
 
-### 2026-10-17: heartbeat moved to the nursery sleep routine
-
-The heartbeat track had played from `automation.turn_bedroom_lights_on_before_sunset` at 20:00
-or sunset and stopped in `automation.wake_up_routine`'s "Fade out the white noise" branch, first
-on the master bedroom HomePod and, after the HomePod moved to the Nursery, on the nursery one.
-Those steps were removed, and `automation.nursery_sleep_routine` took them over, keyed on
-`input_boolean.kiran_asleep` so that bedtime no longer followed sunset or the parents' wake
-time. The same change took `light.nursery_rocket_lamp` out of the Nursery adaptive lighting
-instance and set `select.nursery_hue_go_power_on_behavior` to `previous`.
-
 Two faults combined:
 
 - The airport check was `regex_search(...) is not none`. Home Assistant's `regex_search` returns
@@ -653,6 +643,40 @@ Two faults combined:
 The fix dropped `is not none`, added an earliest-wins condition and put the event summary in
 the notification title. The rules are in
 [_Filter_](wake-routines.md#filter) and [_Notification_](wake-routines.md#notification).
+
+### 2026-10-17: heartbeat moved to the nursery sleep routine
+
+The heartbeat track had played from `automation.turn_bedroom_lights_on_before_sunset` at 20:00
+or sunset and stopped in `automation.wake_up_routine`'s "Fade out the white noise" branch, first
+on the master bedroom HomePod and, after the HomePod moved to the Nursery, on the nursery one.
+Those steps were removed, and `automation.nursery_sleep_routine` took them over, keyed on
+`input_boolean.kiran_asleep` so that bedtime no longer followed sunset or the parents' wake
+time. The same change took `light.nursery_rocket_lamp` out of the Nursery adaptive lighting
+instance and set `select.nursery_hue_go_power_on_behavior` to `previous`.
+
+### 2026-11-13: naps driven by the bed sensor
+
+A Tuya TS0601 bed presence strap (`_TZE200_seq9cm6u`, "Nursery - Bed Sensor") went under Kiran's
+mattress on 2026-11-05. Zigbee2MQTT exposes its datapoint 12 as illuminance, but it is pressure:
+switching the Nursery and master bedroom lights off did not change it. A threshold helper on that
+value was tried and deleted, because the reading sat at 286–292 whether the cot was full or empty.
+Over the following week every change of occupancy to `on` carried a reading of 299–326 in the
+same message, and no other reading reached 295, so the value is the peak of the event that set
+occupancy, not a weight.
+
+The occupancy state itself proved usable. From 2026-11-11 it matched every nap and night the
+household confirmed, with one false trigger: on 2026-11-12 it reported occupied at 12:20 with
+the cot empty, 53 minutes before Kiran went in, and held that until 14:49.
+
+Settings changed in Home Assistant had not reached the sleepy device: `interval_time` showed 5
+for six days while the strap still reported hourly. Publishing the settings the moment it woke
+from a button press, at 11:23:50 on 2026-11-12, took effect, and it then reported every 5 minutes
+with sensitivity `middle`.
+
+On 2026-11-13 the sensor started driving `input_boolean.kiran_asleep` for naps, the heartbeat
+moved out of `automation.nursery_sleep_routine` into `automation.nursery_heartbeat` on the
+19:00–07:00 schedule, and the routine took over the nursery notifications toggle, which had been
+off permanently.
 
 ## Heating
 

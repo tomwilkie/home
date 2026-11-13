@@ -109,7 +109,7 @@ The group has the following members:
 | Member | Why |
 |---|---|
 | `hallway_doorbell_speaker` and the `*_voice_assistant*` players | Native ESPHome entities, which support announce |
-| `nursery_homepod_mini_ma_player` | Music Assistant proxy. The native `apple_tv` entity cannot announce. Its toggle stays off, so announcements don't wake Kiran or interrupt the [nursery sleep routine](wake-routines.md#nursery-sleep-routine). |
+| `nursery_homepod_mini_ma_player` | Music Assistant proxy. The native `apple_tv` entity cannot announce. The [nursery sleep routine](wake-routines.md#bedtime-and-wake-branches) turns its toggle off while `input_boolean.kiran_asleep` is on and back on when he wakes, so announcements don't wake Kiran. |
 | `living_room_arylic_lp10_ma_player` | Music Assistant proxy. The native `linkplay` entity cannot announce. |
 | `kitchen_display_ma_player` | Music Assistant proxy. The native `fully_kiosk` entity cannot announce. |
 | `garage_ai_pro_speaker` | Native `unifiprotect` entity with no Music Assistant equivalent, so it stays on the replace path |
