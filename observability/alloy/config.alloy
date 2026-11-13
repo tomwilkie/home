@@ -481,7 +481,7 @@ loki.source.syslog "unifi" {
 // them into separate Loki streams with a low-cardinality "log_type" label so a
 // query for, say, camera events is not buried under firewall flow logs:
 //
-//   log_type=firewall  kernel iptables per-flow logs  "[CUSTOM..._WAN-A/D-...] DESCR=..."
+//   log_type=firewall  kernel iptables per-flow logs  "[CUSTOM..._<ZONE>-A/D-...] DESCR=..."
 //   log_type=dns       CoreDNS query logs (JSON)      "coredns[...]: {...}"
 //   log_type=cef       CEF activity events            "CEF:0|Ubiquiti|UniFi Protect|..."
 //   log_type=system    everything else (UniFi-OS daemons: mcad, earlyoom, ...)
@@ -525,7 +525,7 @@ loki.process "unifi" {
     selector = "{job=\"integrations/unifi\"} |= \"[CUSTOM\""
 
     stage.regex {
-      expression = "\\[CUSTOM[0-9]*_WAN-[AD]-[0-9]+\\] DESCR=\"(?P<rule>[^\"]*)\""
+      expression = "\\[CUSTOM[0-9]*_[A-Z]+-[AD]-[0-9]+\\] DESCR=\"(?P<rule>[^\"]*)\""
     }
     stage.labels {
       values = { rule = "rule" }
@@ -601,7 +601,7 @@ loki.process "esphome" {
 // ── AdGuard Home query log ────────────────────────────────────────────────────
 // AdGuard Home (HA add-on a0d7b954_adguard) is the IOT DNS resolver. It has no
 // native log export, so we tail its on-disk query log and ship it to Loki for
-// permanent per-domain history — the add-on's own querylog.json is rotation- and
+// 30 days of per-domain history (Loki's retention) — the add-on's own querylog.json is rotation- and
 // retention-capped, so it is not durable storage. The add-on's data directory is
 // bind-mounted read-only into Alloy at /adguard (see docker-compose.yml).
 //
