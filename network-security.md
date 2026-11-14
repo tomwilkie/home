@@ -337,7 +337,7 @@ The following devices are deliberately left out of the rule:
 
 - **The Everything Presence Lites and the Voice Assistants**, so that they can pull firmware.
 - **Tom's Office - AirGradient**, which has a local API but keeps its internet access.
-- **Cloud-dependent devices:** Nest Protect, Hive, the Eufy vacuum (its integration fetches the device key from the Eufy cloud at every start), Netatmo, the Kitchen Display, the Prusa cameras and the alarm module.
+- **Cloud-dependent devices:** Nest Protect, Hive, the Eufy vacuum (its integration fetches the device key from the Eufy cloud at every start), Netatmo, the Prusa cameras and the alarm module.
 
 To change membership, edit the rule's `source.client_macs` in the UniFi UI (**Firewall**,
 **Policies**, **Block IOT No-Internet Devices**) or through the firewall tools, then flush the

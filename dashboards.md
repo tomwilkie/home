@@ -4,8 +4,7 @@ Dashboard YAML files live in `dashboards/`. This repo is the source of truth: ed
 here, not the Home Assistant UI.
 
 Each file is named `{url-path}.yaml`, after the dashboard's URL path in Home Assistant:
-`dashboards/kitchen-home.yaml`, `dashboards/dashboard-home.yaml` and
-`dashboards/dashboard-settings.yaml`.
+`dashboards/dashboard-home.yaml` and `dashboards/dashboard-settings.yaml`.
 
 ## Workflow
 
@@ -32,33 +31,9 @@ Each file is named `{url-path}.yaml`, after the dashboard's URL path in Home Ass
 5. For a layout change, check the render as described in [_Visual consistency_](#visual-consistency).
 6. Commit.
 
-`URL_PATH` is the dashboard's URL path, for example `kitchen-home`. To list the dashboards, run
+`URL_PATH` is the dashboard's URL path, for example `dashboard-home`. To list the dashboards, run
 `hass-cli dashboard list`. Installing `hass-cli` is covered in
 [_Home Assistant CLI_](access-home-assistant.md#home-assistant-cli).
-
-## `kitchen-home`: kitchen touch screen
-
-The always-on display mounted in the kitchen shows status and quick controls for the household:
-
-- **Environment:** kitchen temperature, CO2 and humidity (Netatmo)
-- **Appliances:** vacuum control and hot water
-- **Family calendar:** upcoming events with weather conditions, high temperature and UV index
-- **Transport:** London Underground Weaver and Victoria line status, and bus departures from Rectory Road
-- **Weather and pollen:** a clock and weather card for My Home, and grass, tree and weed pollen levels
-- **Cameras:** live WebRTC feeds
-- **Media:** Fully Kiosk launcher buttons for Apple Music and YouTube
-- **Automations:** a "Turn Everything Off" button, and "Turn on Bedroom Aircon for 1hr" when the bedroom is above 21 °C
-- **Location:** Where is Tom and Where is Rachana tiles
-
-### Keep `background: false` on the camera cards
-
-The `custom:webrtc-camera` cards must keep `background: false`. With `background: true` every
-stream keeps decoding when it is off-screen and when the tablet's screen is off, and the setting
-overrides the `intersection: 0.75` pause on each card. The permanent decoders leaked the Fully
-Kiosk WebView's memory until the browser froze. With `background: false` the streams pause when
-scrolled out of view, which is most of the time, because the cameras sit near the end of a long
-view. `automation.restart_kitchen_display_browser` in [maintenance.md](maintenance.md) is the
-backstop.
 
 ## `dashboard-home`: main home dashboard
 
@@ -90,7 +65,7 @@ The rooms appear in the following order:
 | Room | Slug | Notable cards |
 |---|---|---|
 | Basement | `basement` | Media player (`media_player.basement_home_cinema`), Lights, Auto lights, Roomba, washing machine state, tumble dryer state |
-| Kitchen | `kitchen` | Vacuum (`vacuum.kitchen_vacuum`), Kitchen Display media player |
+| Kitchen | `kitchen` | Vacuum (`vacuum.kitchen_vacuum`) |
 | Living Room | `living_room` | Apple TV media player, Arylic LP10 media player, Lights, Auto lights, Roomba |
 | Master Bedroom | `master_bedroom` | WiiM Sound media player, Dyson fan, aircon, shutters, Lights, electric blanket |
 | Nursery | `nursery` | HomePod Mini media player, Lights, Auto lights |

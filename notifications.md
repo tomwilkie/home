@@ -87,10 +87,11 @@ because Spook raises a repair for each one.
 
 `media_player.notification_players`, a media player group helper, is the list of candidate
 speakers. Each member has a toggle named `input_boolean.{player_slug}_notifications`, where the
-slug comes from the entity that is in the group: `media_player.kitchen_display_ma_player` pairs
-with `input_boolean.kitchen_display_ma_player_notifications`. The script's `notification_targets`
-variable is the group members whose toggle is on, and the script skips the speech step when
-there are none. The toggles are on the Broadcast view of the Settings dashboard.
+slug comes from the entity that is in the group: `media_player.living_room_arylic_lp10_ma_player`
+pairs with `input_boolean.living_room_arylic_lp10_ma_player_notifications`. The script's
+`notification_targets` variable is the group members whose toggle is on, and the script skips
+the speech step when there are none. The toggles are on the Broadcast view of the Settings
+dashboard.
 
 ### Choose the entity that supports announce
 
@@ -111,7 +112,6 @@ The group has the following members:
 | `hallway_doorbell_speaker` and the `*_voice_assistant*` players | Native ESPHome entities, which support announce |
 | `nursery_homepod_mini_ma_player` | Music Assistant proxy. The native `apple_tv` entity cannot announce. The [nursery sleep routine](wake-routines.md#bedtime-and-wake-branches) turns its toggle off while `input_boolean.kiran_asleep` is on and back on when he wakes, so announcements don't wake Kiran. |
 | `living_room_arylic_lp10_ma_player` | Music Assistant proxy. The native `linkplay` entity cannot announce. |
-| `kitchen_display_ma_player` | Music Assistant proxy. The native `fully_kiosk` entity cannot announce. |
 | `garage_ai_pro_speaker` | Native `unifiprotect` entity with no Music Assistant equivalent, so it stays on the replace path |
 
 ### Turn off Music Assistant's pre-announce chime
@@ -126,23 +126,6 @@ re-creates gets the chime back. Set it with `config_set_player_value` on the Mus
 server, or in the Music Assistant web UI under **Settings**, **Players**. Music Assistant's
 player names don't always match the Home Assistant ones, so find the player by its ID, which is
 the `unique_id` of the Home Assistant proxy entity.
-
-### The Kitchen Display watchdog
-
-`media_player.kitchen_display` and `media_player.kitchen_display_ma_player` are the same Pixel
-Tablet. Music Assistant did not proxy the `fully_kiosk` entity: it discovered the tablet over
-Google Cast. An announcement therefore opens a cast session, Android brings the Cast receiver
-`com.google.android.apps.mediashell` to the foreground, and when the session ends Android
-returns to the launcher, not to Fully Kiosk. Fully's Kiosk Mode is deliberately off, because the
-kitchen dashboard launches Apple Music and YouTube, so nothing brings Fully back.
-
-`automation.kitchen_display_foreground_watchdog` fixes this. It presses
-`button.kitchen_display_bring_to_foreground` when `sensor.kitchen_display_foreground_app` sits on
-`mediashell` or the launcher for 30 seconds. It matches only those two apps, so it leaves alone
-an app launched from the dashboard, and it does not act while the Music Assistant player is
-`playing`, so it cannot cut an announcement short. The healing lives in an automation rather
-than in `script.annouce`, which keeps the script device-agnostic and also covers cast drift that
-no announcement caused.
 
 ### Why the speech step is split in two
 

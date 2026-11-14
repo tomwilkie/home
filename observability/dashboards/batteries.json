@@ -36,7 +36,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "## Batteries\n\nDevices on replaceable batteries. Phones, tablets, the Kitchen Display and the robot vacuums are rechargeable, so they're left out.\n\nReplace a battery below **20%**, when the device warns that it's low, or when it goes offline.",
+          "content": "## Batteries\n\nDevices on replaceable batteries. Phones, tablets and the robot vacuums are rechargeable, so they're left out.\n\nReplace a battery below **20%**, when the device warns that it's low, or when it goes offline.",
           "mode": "markdown"
         },
         "title": "",
@@ -98,7 +98,7 @@
               "uid": "grafanacloud-prom"
             },
             "editorMode": "code",
-            "expr": "count(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}))",
+            "expr": "count(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|roomba|vacuum).*\"}))",
             "instant": true,
             "range": false,
             "refId": "A"
@@ -166,7 +166,7 @@
               "uid": "grafanacloud-prom"
             },
             "editorMode": "code",
-            "expr": "count(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}) < 20) or vector(0)",
+            "expr": "count(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|roomba|vacuum).*\"}) < 20) or vector(0)",
             "instant": true,
             "range": false,
             "refId": "A"
@@ -302,7 +302,7 @@
               "uid": "grafanacloud-prom"
             },
             "editorMode": "code",
-            "expr": "count(max by (entity) (homeassistant_entity_available{entity=~\"sensor\\\\..*_battery(_level|_percent)?(_[0-9]+)?\", entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}) == 0) or vector(0)",
+            "expr": "count(max by (entity) (homeassistant_entity_available{entity=~\"sensor\\\\..*_battery(_level|_percent)?(_[0-9]+)?\", entity!~\".*(iphone|ipad|roomba|vacuum).*\"}) == 0) or vector(0)",
             "instant": true,
             "range": false,
             "refId": "A"
@@ -374,7 +374,7 @@
               "uid": "grafanacloud-prom"
             },
             "editorMode": "code",
-            "expr": "min(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}))",
+            "expr": "min(max by (entity) (homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|roomba|vacuum).*\"}))",
             "instant": true,
             "range": false,
             "refId": "A"
@@ -457,7 +457,7 @@
             },
             "editorMode": "code",
             "exemplar": false,
-            "expr": "bottomk(10, sort(homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|kitchen_display|roomba|vacuum).*\"}) < 100)",
+            "expr": "bottomk(10, sort(homeassistant_sensor_battery_percent{entity!~\".*(iphone|ipad|roomba|vacuum).*\"}) < 100)",
             "instant": true,
             "legendFormat": "{{friendly_name}}",
             "range": false,

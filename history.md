@@ -367,6 +367,42 @@ Seen twice. In June 2026 the Living Room proxy came back as
 `living_room_arylic_lp10_music_assistant`. In September 2026 both Arylic LP10 proxies were
 re-created as `media_player.dining_room` and `media_player.toms_office`.
 
+### 2026-11-14: Kitchen Display removed
+
+The Pixel Tablet in the kitchen went out of use, so its `fully_kiosk` entry and Music Assistant
+proxy were removed, along with what existed only for it: the foreground watchdog, which brought
+Fully Kiosk back after a cast session left Android on the Cast receiver or the launcher; the
+04:45 browser restart, which cleared the WebView leak in
+[_Kitchen display memory leak_](#kitchen-display-memory-leak); its notification toggle and
+membership of `media_player.notification_players`; its 50% volume step in
+`automation.set_assistant_volumes`; and its tile on the Home dashboard.
+
+### 2026-11-14: `kitchen-home` dashboard retired
+
+With the Kitchen Display gone, the `kitchen-home` dashboard it showed was deleted from Home
+Assistant. Its last YAML is kept at
+[`backups/dashboards/kitchen-home.yaml`](backups/dashboards/kitchen-home.yaml). To bring it
+back, push that file with `hass-cli dashboard set` as in
+[_Workflow_](dashboards.md#workflow).
+
+It was the always-on touch screen for the household, with the following sections:
+
+- **Environment:** kitchen temperature, CO2 and humidity (Netatmo)
+- **Appliances:** vacuum control and hot water
+- **Family calendar:** upcoming events with weather conditions, high temperature and UV index
+- **Transport:** London Underground Weaver and Victoria line status, and bus departures from Rectory Road
+- **Weather and pollen:** a clock and weather card for My Home, and grass, tree and weed pollen levels
+- **Cameras:** live WebRTC feeds
+- **Media:** Fully Kiosk launcher buttons for Apple Music and YouTube
+- **Automations:** a "Turn Everything Off" button, and "Turn on Bedroom Aircon for 1hr" when the bedroom is above 21 °C
+- **Location:** Where is Tom and Where is Rachana tiles
+
+Its `custom:webrtc-camera` cards had to keep `background: false`. With `background: true`, every
+stream kept decoding off-screen and while the tablet's screen was off, overriding the
+`intersection: 0.75` pause on each card, and the decoders leaked the WebView as described in
+[_Kitchen display memory leak_](#kitchen-display-memory-leak). Keep the setting if the cards are
+reused on another always-on screen.
+
 ## Lighting
 
 ### 2026-09-20: Tom's Office adaptive lighting was dead

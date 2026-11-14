@@ -257,15 +257,6 @@ views:
                            -  start_pause
                            -  return_home
                   features_position: inline
-               -  type: tile
-                  entity: media_player.kitchen_display
-                  features_position: inline
-                  vertical: false
-                  grid_options:
-                      columns: 12
-                      rows: 1
-                  features:
-                     -  type: media-player-volume-slider
             visibility:
                -  condition: or
                   conditions:

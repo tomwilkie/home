@@ -57,13 +57,11 @@ you move it:
 |---|---|---|
 | 04:00 | `automation.restart_home_assistant_at_4am_every_day` | Bounces every ESPHome connection. The sweep needs it finished first. It also strands Netatmo, as described in [_Integration watchdogs_](#integration-watchdogs). |
 | 04:30 | `automation.scheduled_device_restarts` | Takes about five minutes with every device due |
-| 04:45 | `automation.restart_kitchen_display_browser` | Clears the Fully Kiosk WebView |
 | 05:30 | `automation.update_esphome_devices` | Flashes firmware with three-minute waits per device, and must not be interrupted |
 | 06:00 | `automation.set_assistant_volumes` | Runs after the sweep, so it re-applies any volume that a restart disturbs |
 
 ### Related automations
 
-- **`automation.restart_kitchen_display_browser` is separate from this scheme.** It presses `button.kitchen_display_restart_browser` to clear the Fully Kiosk WebView, which leaks memory while it renders the kitchen dashboard's camera streams (see [dashboards.md](dashboards.md#keep-background-false-on-the-camera-cards)). The Kitchen Display exposes two `device_class: restart` buttons, `restart_browser` and `restart_device`, so the target selection cannot choose between them, and the wrong choice would reboot the tablet nightly.
 - **`automation.power_cycle_dyson_fan` is separate from this scheme.** It cuts mains power at `switch.master_bedroom_switch_dyson_fan`, a Z-Wave metering plug, and its guards read `fan.master_bedroom_dyson_fan`, which is a different device. No label can express "this plug powers that fan". Why it exists is in [_Dyson fan_](#dyson-fan).
 - **Master Bedroom - WiiM Sound has no restart button.** The `wiim` integration exposes only a `media_player`, and the speaker's firmware does not implement the `reboot` command that the `linkplay` integration sends. The only reboot from Home Assistant is the undocumented HTTP command `curl -sk "https://192.168.2.10/httpapi.asp?command=StartRebootTime:1"`, which would need a `rest_command` automation rather than a label.
 - **A `linkplay` config entry for the WiiM is parked as ignored.** Zeroconf rediscovers the speaker within seconds, and deleting the ignored entry brings back a duplicate device alongside the `wiim` one.
