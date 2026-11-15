@@ -799,3 +799,18 @@ after the move to the Hive fork:
 
 The fix was a red-channel condition on Boiler On rather than delays, which would have hidden the
 real short cycles.
+
+### 2026-11-15: clock face redraw
+
+The clock's second hand lurched: as a meter indicator on a 0 to 720 scale it had six positions
+a second, rounded to whole degrees, and it read seconds and microseconds from two clocks, so it
+could step back at the turn of a second. It became a separate line widget redrawn every 33 ms
+from one `gettimeofday()`, with the display's SPI clock raised from 10 to 40 MHz, in
+[tomwilkie/clock#2](https://github.com/tomwilkie/clock/pull/2). The same change gave the face
+a Type B flieger dial, hid the alarm circle except while the dial turns, removed the date, and
+moved the face into `face.yaml` with a host preview.
+
+The redraw interval went from 100 ms to 33 ms, against the 100 ms chosen during the clock API
+disconnects. The line widget redraws only the hand's bounding box, not the meter. In the 30
+minutes after the flash, the internal temperature read 42.8 to 44.8 °C, against 42.8 to 43.8 °C
+in the 10 minutes before it, and free memory fell from 133 KB to 127 KB.

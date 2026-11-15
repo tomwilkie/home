@@ -25,6 +25,7 @@ subscription rather than syslog, as described in
 
 - **The clock and the doorbell are git submodules tracking `main`.** Their repos are public, so each stands alone. To change one, commit and push inside the submodule first, then commit the new submodule commit in this repo. Renovate opens a pull request here when either repo's `main` moves past the recorded commit.
 - **Clone with `git clone --recurse-submodules`,** or run `git submodule update --init` in an existing clone. Without it the two folders are empty.
+- **The clock's face lives in its own `face.yaml`.** `clock.yaml` includes it for the device, and `preview.yaml` includes the same file for a host build in an SDL window. Edit the face only in `face.yaml`, so the preview always draws what the clock draws.
 - **The boiler monitor lives directly in this repo,** because it has no project of its own.
 - **Each folder has its own `debug.yaml`, and the copies must stay identical.** Every config includes it as the `core` package. It supplies the diagnostic entities that the restart sweep and health checks read (Wi-Fi signal, uptime, internal temperature, free memory, online status, IP address, SSID, version and the reboot button), and it sends the device log to Loki, as described in [_ESPHome device logs_](observability.md#esphome-device-logs). Copy any change to all three folders.
 
@@ -60,6 +61,7 @@ Replace `DEVICE` with the folder name and `ADDRESS` with the device's address fr
 gateway's reflector.
 
 - **Nothing in Home Assistant builds or flashes these devices.** The ESPHome Device Builder add-on is not installed, because its copies of the configs went stale and installing one would have broken the device, as recorded in [_Configs moved out of the ESPHome dashboard_](history.md#2026-11-01-configs-moved-out-of-the-esphome-dashboard). Don't reinstall it to flash these devices.
+- **To check a change to the clock face before flashing, run the preview.** `esphome run preview.yaml` in `esphome/clock` opens the face in a window, and the clock's readme gives the commands that save screenshots instead. It needs SDL2 (`brew install sdl2`).
 - **After a flash, check two entities.** The device's online binary sensor must be `on`, and its version sensor must show the new ESPHome version and config hash.
 
 ## Config rules
@@ -67,6 +69,8 @@ gateway's reflector.
 - **All devices build on esp-idf,** which is ESPHome's default for the ESP32.
 - **Format with `yamlfmt .` before committing.** Each folder has a `.yamlfmt` that keeps single blank lines and skips git-ignored files.
 - **The clock's display uses `mipi_spi` with model `GC9A01A` and the model's default transform.** The default mirrors the x axis, which is what this panel needs. A `transform:` block with `mirror_x: false` draws the face mirrored left to right.
+- **The clock's display runs SPI at `data_rate: 40MHz`.** The `mipi_spi` default of 10 MHz is too slow to redraw the second hand smoothly. Don't raise it to 80 MHz without testing on the device: the display is wired to GPIO5 and GPIO6, which aren't the ESP32-S3's dedicated SPI pins.
+- **The clock's second hand is an LVGL `line` widget, not a meter indicator.** Meter indicators round their angle to whole degrees, which makes a second hand lurch. It sits after the meter and before the centre cap and the alarm circle, which draw on top of it.
 - **Every device config must define a time source,** because the `syslog` component in `debug.yaml` needs one for its timestamps. `debug.yaml` cannot define it: ESPHome rejects a second SNTP block with a different ID, and the clock already has one. Use `sntp` with chrony at `192.168.0.12` as the server. ESPHome's SNTP component ignores the NTP server that DHCP offers, so the address is in the config.
 - **The clock uses ESPHome's default light Wi-Fi power save.** `power_save_mode: none` raised its chip temperature from about 45 °C to about 58 °C, so it stays off unless the API disconnects in [#7](https://github.com/tomwilkie/home/issues/7) return, as recorded in [_Clock API disconnects_](history.md#2026-11-01-clock-api-disconnects).
 - **Boiler On needs blue above 50 and red below 30.** The burner raises the blue channel from about 44 to about 67 and leaves red near 24, while daylight from the cupboard door raises red and saturates the clear channel. Don't add `delayed_on` or `delayed_off`: the short burner cycles are real and worth seeing.
