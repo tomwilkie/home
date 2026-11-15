@@ -79,8 +79,9 @@ that you work from the current documents rather than stale ones. If the working 
 uncommitted changes, or the rebase conflicts, stop and ask rather than stashing or discarding
 anything.
 
-**Don't sign commits in this repo.** Commit with `git -c commit.gpgsign=false commit`. Signing
-goes through 1Password, and a locked vault makes the commit fail.
+**Don't sign commits in this repo or in its submodules** (`esphome/clock` and
+`esphome/doorbell`). Commit with `git -c commit.gpgsign=false commit`. Signing goes through
+1Password, and a locked vault makes the commit fail.
 
 Commit messages follow `<area>: <lowercase summary>` (for example `lighting:`, `naming:`,
 `notifications:`, `maintenance:`), with a body explaining why when the change is not
