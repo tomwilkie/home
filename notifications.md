@@ -52,6 +52,14 @@ that only needs a record: the persistent notification is the log.
 Each silenced call carries an inline `note:` that explains why, so that nobody restores the
 speech.
 
+### Wait before notifying that an add-on stopped
+
+`automation.notify_on_app_stopped` waits up to five minutes for the running sensor to come back
+before it notifies, and stays silent if it does. An add-on update or restart stops the container
+for about 30 seconds, and without the wait every update raised a notification. The automation
+runs in `mode: parallel`, because it triggers on every `state_changed` event and a queued run
+holding a five-minute wait would block the rest.
+
 ### Enable `system_log` events for `automation.notify_on_automation_failure`
 
 `automation.notify_on_automation_failure` triggers on the `system_log_event` event, which
