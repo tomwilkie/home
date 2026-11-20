@@ -34,6 +34,7 @@ subscription rather than syslog, as described in
 - **Credentials live in a git-ignored `secrets.yaml` in each folder.** ESPHome reads `!secret` from the folder of the config being built. The repos are public, so a key or password must never appear in a config.
 - **The key names differ per device:** `api_encryption_key` on the clock, `home_assistant_api_key` on the doorbell and `boiler_api_encryption_key` on the boiler monitor. Each file also holds `wifi_ssid` and `wifi_password`.
 - **The files exist only on the machine that flashes the devices,** so keep a copy elsewhere. A lost API key means a new key, a reflash and re-authentication in Home Assistant.
+- **A git worktree has no `secrets.yaml`,** because git does not copy ignored files into a new worktree. To build or flash from a worktree, copy the file from the main checkout into the same folder of the worktree, for example `cp "$(git worktree list | head -1 | cut -d' ' -f1)/esphome/doorbell/secrets.yaml" esphome/doorbell/`. A placeholder file is enough for a compile, as in CI, but not for a flash.
 
 ## Encryption
 
