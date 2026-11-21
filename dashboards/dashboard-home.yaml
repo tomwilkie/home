@@ -30,7 +30,7 @@ views:
                -  type: custom:mushroom-template-card
                   entity: person.tom_wilkie
                   secondary: "{% if is_state('person.tom_wilkie', 'home') %}\n  {{
-                      states('sensor.tom_s_iphone_area') }}\n{% else %}\n  {% set
+                      states('sensor.toms_iphone_area') }}\n{% else %}\n  {% set
                       loc = states('sensor.toms_iphone_geocoded_location') %}\n  {%
                       if loc not in ('unavailable', 'unknown', '') %}\n    {% set
                       parts = loc.split('\\n') | map('trim') | list %}\n    {{ parts[0]
