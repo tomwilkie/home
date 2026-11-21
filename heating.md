@@ -1,7 +1,7 @@
 # Heating
 
 This document covers how Home Assistant controls the central heating: the house thermostat, the
-relay that drives the Hive thermostat, and the automation that picks the preset.
+relay that drives the Hive thermostat, and the automation that picks the target temperature.
 
 ## House thermostat
 
@@ -14,11 +14,18 @@ Assistant host. Edit it with `ha_config_set_yaml(yaml_path="climate")`, then cal
 | `heater` | `switch.heating_relay` | See [_Heating relay_](#heating-relay) |
 | `target_sensor` | `sensor.hallway_thermostat_temperature` | The Hive thermostat's own reading. A template sensor helper on the `current_temperature` attribute of `climate.hallway_thermostat`, because `generic_thermostat` reads a sensor's state, not an attribute, and the Hive fork exposes no temperature sensor. |
 | `min_temp` / `max_temp` | 15 / 23 | `max_temp` must stay below the relay's "on" setpoint |
-| `comfort_temp` | 21 | |
-| `sleep_temp` | 20 | |
 | `away_temp` | 15 | Matches the relay's "off" setpoint |
 | `cold_tolerance` / `hot_tolerance` | 0.3 / 0.1 | Heats below target − 0.3, stops at target + 0.1 |
 | `min_cycle_duration` | 30 minutes | Protects the boiler and limits Hive cloud calls |
+
+`away` is the only preset. The comfort and sleep targets are the `input_number` helpers
+`input_number.house_comfort_temperature` and `input_number.house_sleep_temperature` (16 to 23 °C
+in 0.5 °C steps), which are on the Settings view of the Settings dashboard, because
+`generic_thermostat` reads its preset temperatures from YAML at load and has no service to change
+them. The thermostat's `preset_mode` reads `none` in comfort and sleep.
+
+Keep the helpers' minimum above `away_temp`. `generic_thermostat` reports the preset whose
+temperature matches the target, so a comfort or sleep target of 15 °C would read as `away`.
 
 ## Heating relay
 
@@ -41,19 +48,20 @@ step only doubles the cloud calls, and each extra call is one more that Hive can
 Home Assistant retries a Hive setup that fails after the 04:00 restart, as described in
 [_Hive_](maintenance.md#hive).
 
-## Preset automation
+## Thermostat automation
 
-`automation.set_thermostat_state` sets the preset from presence and `schedule.house_comfort_mode`:
+`automation.set_thermostat_state` sets the thermostat from presence and
+`schedule.house_comfort_mode`:
 
-| Preset | When |
-|---|---|
-| `away` | `zone.home` has been `0` and `binary_sensor.house_occupancy` `off` for an hour |
-| `comfort` | Otherwise, while the schedule is `on` |
-| `sleep` | Otherwise, while the schedule is `off` |
+| Mode | Action | When |
+|---|---|---|
+| Away | The `away` preset | `zone.home` has been `0` and `binary_sensor.house_occupancy` `off` for an hour |
+| Comfort | Target from `input_number.house_comfort_temperature` | Otherwise, while the schedule is `on` |
+| Sleep | Target from `input_number.house_sleep_temperature` | Otherwise, while the schedule is `off` |
 
 It does nothing while the thermostat is `off`.
 
-- **It acts on transitions only, so a manual change lasts until the next one.** The triggers are a schedule change, the house empty for an hour, a return from away, and Home Assistant starting. An hourly re-assert used to undo manual changes within the hour, which is why the automation was once disabled.
+- **It acts on transitions only, so a manual change lasts until the next one.** The triggers are a schedule change, the house empty for an hour, a return from away, Home Assistant starting, and a change to either temperature helper. A helper change acts only when its mode is the active one, so moving the sleep slider during comfort hours does nothing until the schedule turns off. An hourly re-assert used to undo manual changes within the hour, which is why the automation was once disabled.
 - **A return only acts when the preset is `away`.** Occupancy flips `on` many times a day, and acting on each flip would undo manual changes.
 - **The away triggers carry `for: 1h`, and so do the away conditions.** Either dwell can finish first, so each trigger re-checks both.
 - **At startup the away check drops the dwell.** A restart resets `last_changed`, so `for: 1h` cannot pass. Without this branch, the 04:00 restart of an empty house would switch it out of away for good.

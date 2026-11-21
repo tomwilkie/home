@@ -27,6 +27,28 @@ views:
                   grid_options:
                       columns: 12
                       rows: 1
+               -  type: tile
+                  entity: input_number.house_comfort_temperature
+                  name: Comfort Temperature
+                  vertical: false
+                  features:
+                     -  type: numeric-input
+                        style: buttons
+                  features_position: bottom
+                  grid_options:
+                      columns: 6
+                      rows: 2
+               -  type: tile
+                  entity: input_number.house_sleep_temperature
+                  name: Sleep Temperature
+                  vertical: false
+                  features:
+                     -  type: numeric-input
+                        style: buttons
+                  features_position: bottom
+                  grid_options:
+                      columns: 6
+                      rows: 2
          -  type: grid
             cards:
                -  type: heading
@@ -100,8 +122,9 @@ views:
                       data:
                           skip_condition: true
                       confirmation:
-                          text: Run the wake up routine now? Lights will fade up, the
-                              shutters will open and the vacuums may start.
+                          text: Run the wake up routine now? Lights will fade 
+                              up, the shutters will open and the vacuums may 
+                              start.
                   hold_action:
                       action: more-info
          -  type: grid
@@ -359,6 +382,15 @@ views:
                                       service: script.turn_on
                                       target:
                                           entity_id: script.broadcast
+                  grid_options:
+                      columns: 12
+                      rows: auto
+               -  type: markdown
+                  text_only: true
+                  content: "{% if is_state('script.broadcast', 'on') %} **Sending…**
+                      {% elif states('input_text.broadcast_last_message') not in ['',
+                      'unknown', 'unavailable'] %} Last sent {{ states('input_text.broadcast_last_message')
+                      }} {% endif %}"
                   grid_options:
                       columns: 12
                       rows: auto
