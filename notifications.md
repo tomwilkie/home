@@ -246,12 +246,14 @@ to `finished`, and dismisses when the door opens.
 | Trigger ID | Source | Event | Guard | Transition |
 |---|---|---|---|---|
 | `knocking` | `binary_sensor.front_door_vibration_vibration` | `off` to `on` | `Absent`, and `binary_sensor.front_door_contact_contact` has been `off` for at least one minute | to `Someone at the Door` |
-| `doorbell` | `binary_sensor.front_door_doorbell` (UniFi Protect) | `off` to `on` | `Absent` | to `Someone at the Door` |
+| `doorbell` | `event.front_door_doorbell` (UniFi Protect) | A new ring timestamp, not from `unavailable` and not to `unavailable` or `unknown` | `Absent` | to `Someone at the Door` |
 | `webhook` | UniFi Protect "Ring" alarm rule, by a GET to webhook `<your-webhook-id>` | Request received | `Absent` | to `Someone at the Door` |
 | `door_open` | `binary_sensor.front_door_contact_contact` | State becomes `on` | `Someone at the Door` | to `Absent` |
 
 - **`doorbell` and `webhook` are redundant paths for the same press.** Both fire within milliseconds. In `restart` mode one supersedes the other, and the `Absent` guard means one announcement. The native `doorbell` trigger is the primary path.
-- **The `doorbell` trigger uses `from: off`,** so an `unavailable` to `on` transition during the nightly restart or a Protect reconnect cannot fire it.
+- **The `doorbell` trigger is the event entity, not `binary_sensor.front_door_doorbell`.** UniFi Protect deprecated the binary sensor, which stops working in 2027.1.
+- **The `doorbell` trigger uses `not_from: unavailable`.** When Protect reconnects, the event entity can come back from `unavailable` with the previous ring's timestamp, which would otherwise read as a new press.
+- **The `doorbell` trigger allows `from: unknown`.** The entity comes back as `unknown` after each nightly restart, so the first ring of the day starts from `unknown`.
 - **The state resets after two minutes.** After the choose block, if the state is `Someone at the Door`, the automation waits two minutes and sets `Absent`. A door-open trigger during the wait restarts the run and resets at once.
 
 ### Webhook source
