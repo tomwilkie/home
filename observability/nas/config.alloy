@@ -1,0 +1,310 @@
+// Grafana Alloy on the Synology NAS. Modelled on ../alloy/config.alloy, the
+// HAOS host's config: see observability.md → Synology NAS.
+
+// ── Grafana Cloud stack ───────────────────────────────────────────────────────
+remote.http "grafana_cloud" {
+  url = "https://grafana.com/api/instances/" + sys.env("STACK_NAME")
+  client {
+    bearer_token = sys.env("ACCESS_TOKEN")
+  }
+  poll_frequency = "24h"
+}
+
+prometheus.remote_write "grafana_cloud" {
+  endpoint {
+    url = encoding.from_json(remote.http.grafana_cloud.content)["hmInstancePromUrl"] + "/api/prom/push"
+
+    basic_auth {
+      username = encoding.from_json(remote.http.grafana_cloud.content)["hmInstancePromId"]
+      password = sys.env("ACCESS_TOKEN")
+    }
+  }
+}
+
+loki.write "grafana_cloud" {
+  endpoint {
+    url = encoding.from_json(remote.http.grafana_cloud.content)["hlInstanceUrl"] + "/loki/api/v1/push"
+
+    basic_auth {
+      username = encoding.from_json(remote.http.grafana_cloud.content)["hlInstanceId"]
+      password = sys.env("ACCESS_TOKEN")
+    }
+  }
+}
+
+// ── Alloy self-monitoring ─────────────────────────────────────────────────────
+logging {
+  level    = "info"
+  format   = "logfmt"
+  write_to = [loki.process.alloy.receiver]
+}
+
+loki.process "alloy" {
+  forward_to = [loki.write.grafana_cloud.receiver]
+
+  stage.static_labels {
+    values = {
+      instance     = constants.hostname,
+      job          = "integrations/alloy",
+      service_name = "alloy",
+    }
+  }
+}
+
+prometheus.exporter.self "integrations_alloy_health" { }
+
+discovery.relabel "integrations_alloy_health" {
+  targets = prometheus.exporter.self.integrations_alloy_health.targets
+
+  rule {
+    replacement  = constants.hostname
+    target_label = "instance"
+  }
+  rule {
+    target_label = "job"
+    replacement  = "integrations/alloy"
+  }
+}
+
+prometheus.scrape "integrations_alloy_health" {
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+  targets         = discovery.relabel.integrations_alloy_health.output
+  scrape_interval = "60s"
+  job_name        = "integrations/alloy"
+}
+
+// ── Node metrics ──────────────────────────────────────────────────────────────
+// The DSM volumes are btrfs, so the btrfs collector stays on here.
+prometheus.exporter.unix "integrations_node_exporter" {
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+  rootfs_path = "/host/root"
+
+  disable_collectors = ["ipvs", "infiniband", "xfs", "zfs"]
+
+  filesystem {
+    fs_types_exclude     = "^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|tmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
+    // DSM mounts its @ system folders (@docker, and the Container Manager
+    // binds of every share under @appdata) as extra copies of the volume.
+    mount_points_exclude = "^/(dev|proc|run|sys|tmp|var/lib/docker|volume[0-9]+/@[^/]+)($|/)"
+    mount_timeout        = "5s"
+  }
+
+  netclass {
+    ignored_devices = "^(veth.*|docker.*|[a-f0-9]{15})$"
+  }
+
+  netdev {
+    device_exclude = "^(veth.*|docker.*|[a-f0-9]{15})$"
+  }
+}
+
+discovery.relabel "integrations_node_exporter" {
+  targets = prometheus.exporter.unix.integrations_node_exporter.targets
+
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+  rule {
+    target_label = "job"
+    replacement  = "integrations/node_exporter"
+  }
+}
+
+prometheus.scrape "integrations_node_exporter" {
+  targets         = discovery.relabel.integrations_node_exporter.output
+  forward_to      = [prometheus.relabel.integrations_node_exporter.receiver]
+  scrape_interval = "60s"
+}
+
+prometheus.relabel "integrations_node_exporter" {
+  forward_to = [prometheus.remote_write.grafana_cloud.receiver]
+
+  rule {
+    source_labels = ["__name__"]
+    regex         = "node_scrape_collector_.+"
+    action        = "drop"
+  }
+}
+
+// ── Container metrics (cAdvisor) ──────────────────────────────────────────────
+prometheus.exporter.cadvisor "integrations_cadvisor" {
+  docker_host = "unix:///var/run/docker.sock"
+  docker_only = true
+
+  // Same list as the HAOS host: cAdvisor's defaults plus "disk", whose
+  // once-a-minute filesystem walk is expensive.
+  disabled_metrics = [
+    "advtcp", "cpu_topology", "cpuset", "hugetlb", "memory_numa", "process",
+    "referenced_memory", "resctrl", "sched", "tcp", "udp", "disk",
+  ]
+}
+
+discovery.relabel "integrations_cadvisor" {
+  targets = prometheus.exporter.cadvisor.integrations_cadvisor.targets
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/docker"
+  }
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+}
+
+prometheus.scrape "integrations_cadvisor" {
+  targets         = discovery.relabel.integrations_cadvisor.output
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+  scrape_interval = "60s"
+}
+
+// ── Synology SNMP ─────────────────────────────────────────────────────────────
+// DSM's SNMP service (Control Panel → Terminal & SNMP → SNMP), queried on
+// localhost with SNMPv3 (SHA authentication, AES privacy, one password for
+// both). The embedded snmp_exporter config already has the modules; the merge
+// adds only this auth, so the credentials come from .env.
+prometheus.exporter.snmp "synology" {
+  config_merge_strategy = "merge"
+  config = string.format(
+    "auths:\n  synology_v3:\n    version: 3\n    username: %q\n    security_level: authPriv\n    auth_protocol: SHA\n    password: %q\n    priv_protocol: AES\n    priv_password: %q\n",
+    sys.env("SNMP_USERNAME"), sys.env("SNMP_PASSWORD"), sys.env("SNMP_PASSWORD"),
+  )
+
+  target "nas" {
+    address = "127.0.0.1"
+    // The Synology dashboards also read the standard MIBs: interfaces,
+    // host resources and the UCD memory, load and CPU tables.
+    module  = "system,if_mib,hrSystem,hrStorage,ucd_memory,ucd_la_table,ucd_system_stats,synology"
+    auth    = "synology_v3"
+  }
+}
+
+discovery.relabel "snmp" {
+  targets = prometheus.exporter.snmp.synology.targets
+
+  rule {
+    target_label = "job"
+    replacement  = "integrations/snmp"
+  }
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+}
+
+prometheus.scrape "snmp" {
+  targets         = discovery.relabel.snmp.output
+  forward_to      = [prometheus.remote_write.grafana_cloud.receiver]
+  scrape_interval = "60s"
+  scrape_timeout  = "50s"
+}
+
+// ── DSM log files ─────────────────────────────────────────────────────────────
+// DSM runs syslog-ng, which writes /var/log/messages and the per-facility
+// *.log files. The systemd journal is volatile and duplicates them, so it is
+// not read. bash_history.log is the shell history of every DSM user.
+local.file_match "dsm" {
+  path_targets = [
+    {
+      __path__         = "/var/log/{messages,*.log}",
+      __path_exclude__ = "/var/log/bash_*.log",
+      job              = "integrations/synology",
+      instance         = constants.hostname,
+      service_name     = "synology",
+      source           = "file",
+    },
+  ]
+}
+
+loki.source.file "dsm" {
+  targets       = local.file_match.dsm.targets
+  forward_to    = [loki.write.grafana_cloud.receiver]
+  // On first start, ship new lines only rather than every file's history.
+  tail_from_end = true
+}
+
+// ── DSM Log Center ────────────────────────────────────────────────────────────
+// Log Center keeps the connection, file transfer and general system logs in
+// its own database, not in /var/log. Log Center → Log Sending forwards them to
+// this listener (127.0.0.1, port 5514, TCP, IETF format). Localhost only.
+loki.source.syslog "logcenter" {
+  listener {
+    address       = "127.0.0.1:5514"
+    protocol      = "tcp"
+    syslog_format = "rfc5424"
+    labels = {
+      job          = "integrations/synology",
+      instance     = constants.hostname,
+      service_name = "synology",
+      source       = "logcenter",
+    }
+  }
+  relabel_rules = loki.relabel.logcenter.rules
+  forward_to    = [loki.write.grafana_cloud.receiver]
+}
+
+loki.relabel "logcenter" {
+  forward_to = []
+
+  rule {
+    source_labels = ["__syslog_message_app_name"]
+    target_label  = "app"
+  }
+  rule {
+    source_labels = ["__syslog_message_severity"]
+    target_label  = "level"
+  }
+}
+
+// ── Docker container logs ─────────────────────────────────────────────────────
+discovery.docker "logs_integrations_docker" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = "5s"
+}
+
+discovery.relabel "logs_integrations_docker" {
+  targets = []
+
+  // Alloy's own logs come from the logging block above.
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/alloy[-_]alloy[-_].*"
+    action        = "drop"
+  }
+  rule {
+    target_label = "job"
+    replacement  = "integrations/docker"
+  }
+  rule {
+    target_label = "instance"
+    replacement  = constants.hostname
+  }
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "service_name"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_log_stream"]
+    target_label  = "stream"
+  }
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "compose_service"
+  }
+}
+
+loki.source.docker "logs_integrations_docker" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.docker.logs_integrations_docker.targets
+  forward_to       = [loki.write.grafana_cloud.receiver]
+  relabel_rules    = discovery.relabel.logs_integrations_docker.rules
+  refresh_interval = "5s"
+}

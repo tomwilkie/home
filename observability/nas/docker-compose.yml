@@ -1,0 +1,53 @@
+services:
+  alloy:
+    image: grafana/alloy:v1.22.0
+    restart: unless-stopped
+    pid: "host"
+    network_mode: host
+    env_file: ".env"
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    security_opt:
+      - seccomp:unconfined
+      # Same reason as the HAOS container: docker-default denies reads of other
+      # processes' /proc entries. See observability.md → Why Alloy runs without AppArmor.
+      - apparmor=unconfined
+    # DSM's mounts are private, not shared, so a bind with rslave fails to start.
+    volumes:
+      # Node exporter mounts
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host/root:ro
+
+      # cAdvisor mounts. No /proc:/proc as on HAOS: runc then cannot write
+      # /proc/self/attr/exec to apply the AppArmor profile, and with pid host
+      # the container's own /proc already shows the host's processes.
+      - /sys:/sys:ro
+      - /var/run:/var/run:rw
+      # DSM keeps the Docker root on the volume Container Manager was installed on
+      - /volume3/@docker:/var/lib/docker:ro
+      - /volume3/@docker:/volume3/@docker:ro
+
+      # Host identity files
+      - /etc/hostname:/etc/hostname:ro
+      - /etc/machine-id:/etc/machine-id:ro
+      # DSM logs
+      - /var/log:/var/log:ro
+      # Alloy config + persistent state
+      - ./config.alloy:/etc/alloy/config.alloy:ro
+      - alloy-data:/var/lib/alloy
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/12345 && printf \"GET /-/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3 && grep -q \"200 OK\" <&3'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    command:
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy
+      - --server.http.listen-addr=0.0.0.0:12345
+
+volumes:
+  alloy-data:

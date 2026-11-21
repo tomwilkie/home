@@ -2,7 +2,8 @@
 
 [Grafana Alloy](https://grafana.com/docs/alloy/latest/) ships Home Assistant metrics and logs,
 and continuous profiles of itself and of Home Assistant Core, to Grafana Cloud. It runs as a plain Docker container on the Home Assistant OS (HAOS) host, with
-`network_mode: host` so that it reaches Home Assistant on `localhost:8123`.
+`network_mode: host` so that it reaches Home Assistant on `localhost:8123`. A second Alloy
+runs on the Synology NAS, as described in [_Synology NAS_](#synology-nas).
 
 ## Why Alloy is not an add-on
 
@@ -345,7 +346,78 @@ run `make up` to pull the new image, because merging alone changes nothing on th
 container runs at `--stability.level=experimental`, so changes to experimental features apply
 too. After the restart, confirm the container is `healthy` with `make ps` and look for `level=warn`
 in `make logs`: a deprecation warning there means the config needs a change before the function
-is removed.
+is removed. The NAS's `observability/nas/docker-compose.yml` pins the same image, so run
+`make up` from `observability/nas/` as well.
+
+## Synology NAS
+
+A second Alloy runs on the Synology NAS (`NAS.local`, `192.168.0.18`, DSM 7.4, x86_64) under
+DSM's Container Manager. Its config is in `observability/nas/` and follows the HAOS config, with
+the Home Assistant, zigbee2mqtt, Unpoller, UniFi, ESPHome and AdGuard sources left out. Every
+series and stream carries `instance="NAS"`.
+
+| Source | Job label | Notes |
+|---|---|---|
+| Alloy | `integrations/alloy` | Health metrics and Alloy's own logs |
+| Node | `integrations/node_exporter` | Reads the host's `/proc`, `/sys` and `/` from `/host/…`. The btrfs collector stays on, because the volumes are btrfs |
+| Docker containers | `integrations/docker` | cAdvisor metrics and container logs |
+| DSM SNMP | `integrations/snmp` | The Synology MIBs (disks, RAID, SMART, temperatures, fans, services) plus the standard interface, host-resources and UCD tables |
+| DSM log files | `integrations/synology` | `/var/log/messages` and `/var/log/*.log`, with `source="file"` and a `filename` label |
+| DSM Log Center | `integrations/synology` | Connection, file transfer and general logs, with `source="logcenter"`, `app` and `level` labels |
+
+### NAS container
+
+- **The Docker root is `/volume3/@docker`,** on the volume Container Manager was installed on, and the compose file mounts it for cAdvisor. The `docker` shared folder is `/volume3/docker`, and the deployment lives in `/volume3/docker/alloy`.
+- **No `rslave` on the bind mounts.** DSM's mounts are private, and Docker refuses to start a container that asks for slave propagation of a private mount.
+- **No `/proc:/proc` mount, unlike HAOS.** With it, runc cannot write `/proc/self/attr/exec` to apply the AppArmor profile and the container fails to start. `pid: host` already gives the container the host's `/proc`.
+- **The node exporter ignores DSM's `@` system folders.** DSM mounts `@docker` and, under `@appdata/ContainerManager/all_shares`, every shared folder a second time, so `mount_points_exclude` drops `/volume<n>/@…` to keep one `node_filesystem_*` series per volume.
+- **The systemd journal is not read.** DSM runs syslog-ng, which writes the same lines to `/var/log`, and the journal is volatile. `bash_*.log` is excluded, because `bash_history.log` records every user's shell commands.
+- **The file tail starts at the end of each file** (`tail_from_end`), so a first start does not ship each file's history.
+
+### DSM SNMP
+
+Alloy's embedded `snmp_exporter` config already has the `synology` module, and
+`config_merge_strategy = "merge"` adds only an SNMPv3 auth built from `SNMP_USERNAME` and
+`SNMP_PASSWORD`. Alloy queries `127.0.0.1`, so the credentials never cross the network. A missing
+variable fails the whole config load, not only the SNMP scrape.
+
+- **Check the scrape in Grafana Cloud, not through Alloy's component API.** `/api/v0/component/prometheus.exporter.snmp.synology/metrics?target=nas` ignores the target's `module` and `auth` and walks `if_mib` with the default `public_v2` community, which DSM drops, so it times out while the real scrape works. Query `up{instance="NAS", job="integrations/snmp"}` and `snmp_scrape_duration_seconds` instead.
+- **The Network Interfaces panels on the Synology dashboards are empty.** The interface tables arrive (`ifHCInOctets`), but the panels' interface filters match nothing.
+
+To configure DSM, open **Control Panel**, **Terminal & SNMP**, **SNMP**:
+
+1. Select **Enable SNMP service** and **SNMPv3 service**. Clear **SNMPv1, SNMPv2c service**.
+2. Set **Username** to `SNMP_USERNAME`, **Protocol** to **SHA** and **Password** to `SNMP_PASSWORD`.
+3. Select **Enable SNMP privacy**, set **Protocol** to **AES** and the privacy **Password** to the same `SNMP_PASSWORD`.
+4. Apply, then run `make restart` from `observability/nas/`.
+
+### DSM Log Center
+
+Log Center keeps its logs in its own database rather than in `/var/log`, so Alloy receives them
+on `loki.source.syslog "logcenter"`, which listens on `127.0.0.1:5514` (TCP, RFC 5424). The
+listener binds to localhost because it has no auth. To configure DSM, open **Log Center**,
+**Log Sending**, set the server to `127.0.0.1`, the port to `5514`, the transfer protocol to
+**TCP** and the log format to **IETF (RFC 5424)**, and apply.
+
+### NAS deployment
+
+Run the following targets from `observability/nas/`. They act on the NAS over SSH as `twilkie`
+and run Docker with `sudo -n /usr/local/bin/docker`, which `/etc/sudoers.d/alloy` on the NAS
+allows without a password:
+
+| Target | Action |
+|---|---|
+| `make deploy` | `push` then `up` |
+| `make push` | Upload `docker-compose.yml`, `config.alloy` and `.env` to `/volume3/docker/alloy` |
+| `make up` | `docker compose up -d` |
+| `make down`, `make restart`, `make logs`, `make ps` | As on the HAOS host |
+| `make .env` | Write `.env` from the HAOS host's 1Password Environment, keeping only `STACK_NAME`, `ACCESS_TOKEN`, `SNMP_USERNAME` and `SNMP_PASSWORD` |
+
+The full path to `docker` matters: the sudoers rule names `/usr/local/bin/docker`, and `sudo`'s
+`PATH` does not include `/usr/local/bin`. `make push` creates the deployment folder with mode
+`700` and `.env` with mode `600`, because `/volume3/docker` is writable by everyone.
+
+The Synology dashboards are in [_Grafana dashboards_](#grafana-dashboards).
 
 ## Grafana dashboards
 
@@ -362,12 +434,19 @@ area, next to that area's alert rules, and the file records the folder.
 | `zigbee2mqtt-coordinator.json` | `zigbee2mqtt-coordinator` | zigbee2mqtt | Coordinator and adapter health: version, network status, MQTT throughput, queue and retries |
 | `zigbee2mqtt-device.json` | `zigbee2mqtt-device` | zigbee2mqtt | Per-device drill-down, where `device` is the IEEE address |
 | `batteries.json` | `1cd4cd88-fa62-4059-9848-f6f6fdbe0ef9` | Home Assistant | Replaceable batteries: device count, how many are below 20%, low-battery warnings, offline battery sensors, the lowest level, and the ten lowest batteries. A regular expression on `entity` leaves out rechargeable devices (phones, tablets, the robot vacuums) |
+| `synology-nas-details.json` | `i55CRAlMk` | Synology | [Grafana.com dashboard 14284](https://grafana.com/grafana/dashboards/14284): system, disks, SMART, RAID, network and resources for one NAS, from the `integrations/snmp` job |
+| `synology-nas-overview.json` | `ZDXCZYrMk` | Synology | [Grafana.com dashboard 14364](https://grafana.com/grafana/dashboards/14364): one row of status per NAS |
 | `central-heating.json` | `eeasfye26sge8c` | Home Assistant | Two tabs. **Heating**: Hive thermostat, water heater and boiler status, with boiler runtime and radiator, boiler and outside temperatures. **Rooms**: one row per area, each with a time series of that area's temperature entities |
 
 Select a single entity's series with `entity`, and aggregate `friendly_name` away with
 `max by (__name__, entity)`. The exporter puts `friendly_name` in the labels, so a rename starts
 a new series, and a stat or gauge panel shows the old and new series side by side until the old
 one leaves the time range.
+
+The Synology dashboards were imported from grafana.com with `${DS_PROMETHEUS}` set to
+`grafanacloud-prom` and the `NASDevices` constant, the number of NAS devices expected, set to
+`1`. Grafana.com dashboards 22265 and 22266 are Chinese translations of the same two
+dashboards, with the same queries. From the import on, the files here are the source of truth.
 
 The zigbee2mqtt dashboards are tagged `zigbee2mqtt-integration` and link to each other. The
 overview's device table links to `/d/zigbee2mqtt-device?var-device=<ieee_address>` by IEEE
