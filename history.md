@@ -187,6 +187,27 @@ the `kitchen_vacuum` IDs, so the dashboards, `input_datetime.kitchen_vacuum_last
 vacuum automations needed no edits. The rule is in
 [_Cross-VLAN discovery_](network-security.md#cross-vlan-discovery).
 
+### 2026-11-22: Eufy vacuum moved to Eufy Clean
+
+The fork showed `vacuum.kitchen_vacuum` as `error` with `error_code: 280` while the Eufy app
+showed no error, because it treats any DPS 6 value of 100 or more as an error. Eufy Clean
+(`jeppesens/eufy-clean` v1.13.1, domain `robovac_mqtt`) reads errors from DPS 177 with an S1 Pro
+code table, reported the vacuum `docked` with `error_code: 0`, and adds room cleaning, a live
+map and the robot camera. It was installed from the Marketplace, given the local Tuya host, and
+the fork's entry and repository were removed.
+
+Removing the fork's device deleted the `history_stats` entry behind
+`sensor.kitchen_vacuum_cleaning_time` for the third time, so it was restored from an ha-mcp
+per-helper backup, which took the ID back. The new entities came up as
+`*.kitchen_kitchen_vacuum_*` and were renamed to `*.kitchen_vacuum_*`. The integration's own
+last-run duration sensor became `sensor.kitchen_vacuum_last_cleaning_time`, because the
+`history_stats` sensor holds `sensor.kitchen_vacuum_cleaning_time`. The fork's running-status,
+dirty-water-tank and auto-return entities have no equivalent and nothing used them. The
+automations and dashboards needed no edits.
+
+The room list was empty after setup and after a reload with the fork removed, and is expected to
+arrive after the vacuum's next run.
+
 ## Network
 
 ### 2026-11-11: Wi-Fi channel plan
