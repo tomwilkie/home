@@ -234,6 +234,9 @@ loki.source.syslog "logcenter" {
     address       = "127.0.0.1:5514"
     protocol      = "tcp"
     syslog_format = "rfc5424"
+    // Log Center holds one connection open and sends a few lines an hour. At
+    // the default 120s Alloy drops it between messages and logs a warning.
+    idle_timeout  = "1h"
     labels = {
       job          = "integrations/synology",
       instance     = constants.hostname,
