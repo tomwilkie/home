@@ -225,6 +225,11 @@ only. The main LAN uses the UDM resolver.
 
 chrony runs as the Home Assistant add-on `a0d7b954_chrony` on `192.168.0.12:123`, at stratum 2.
 
+Keep the add-on's `set_system_clock` option `false`, so that `chronyd` runs with `-x` and serves
+time without adjusting the host clock. The host's own `systemd-timesyncd` sets the clock, and
+two clients steering it make chrony log `System clock interference detected` and distrust its
+own offset tracking.
+
 ### Blocks
 
 DNAT happens in `nat PREROUTING`, ahead of the ZBF forward chains, so a redirected packet's
