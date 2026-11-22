@@ -11,7 +11,7 @@ or write it:
 
 | Automation | Direction | Behaviour |
 |---|---|---|
-| `automation.reset_wake_up_time` | Writes | At 17:00 daily, sets `wake_up_time` from `input_datetime.weekday_wakeup_time` (07:00) on Sunday to Thursday evenings, or `input_datetime.weekend_wakeup_time` (08:00) on Friday and Saturday evenings. A manual override therefore lasts one morning. |
+| `automation.reset_wake_up_time` | Writes | At 17:00 daily, sets `wake_up_time` from `input_datetime.weekday_wakeup_time` (07:00) on Sunday to Thursday evenings, or `input_datetime.weekend_wakeup_time` (07:30) on Friday and Saturday evenings. A manual override therefore lasts one morning. |
 | `automation.synchronise_alarm_time` | Both | Mirrors `wake_up_time` and `time.master_bedroom_clock_alarm_time`, the ESPHome bedside clock. Setting either sets the other, and context guards on both branches stop a loop. |
 | `automation.morning_hot_water` | Reads | Calls `hive.boost_hot_water` at `wake_up_time` minus 45 minutes. |
 | `automation.wake_up_routine` | Reads | At `wake_up_time`: runs the air purifier for one hour, runs a 30-minute light sunrise in the master bedroom, opens the shutters, and from Monday to Thursday starts every Roomba in an unoccupied area. |
