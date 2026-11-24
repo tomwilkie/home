@@ -39,6 +39,25 @@ Assistant drops parentheses when it slugifies, so the entity ID stays clean:
 The convention applies to every device with an assigned area, whatever its type. Devices without
 an area, such as Home Assistant Core and HACS, are out of scope.
 
+### Music Assistant players
+
+A speaker with a Music Assistant player has a Music Assistant proxy device in Home Assistant, and
+usually a native integration's device as well. Each Music Assistant player also has a name
+of its own inside Music Assistant. Name them as follows:
+
+| Where | Name | Example |
+|---|---|---|
+| Native device | `{Area} - {Device}` | `Kitchen - HomeView` |
+| Music Assistant proxy device | `{Area} - {Device} (Music Assistant)` | `Kitchen - HomeView (Music Assistant)` |
+| Proxy `media_player` | `media_player.{area_id}_{device_slug}_ma_player` | `media_player.kitchen_homeview_ma_player` |
+| Proxy favourite button | `button.{area_id}_{device_slug}_ma_favorite_current_song` | `button.kitchen_homeview_ma_favorite_current_song` |
+| Player name in Music Assistant | `{Area} - {Device}`, with no suffix | `Kitchen - HomeView` |
+
+- **The player name in Music Assistant matches the native device name,** so the Music Assistant web UI and the Home Assistant device pickers name a speaker the same way. Music Assistant takes its default from the speaker's own configured name, which has no relation to the area (the Living Room Arylic LP10 calls itself "Dining Room").
+- **Set the Music Assistant name in its web UI** (**Settings**, **Players**, the player, **Name**). The [Music Assistant MCP server](access-home-assistant.md#music-assistant-mcp-server) cannot set it.
+- **A player name change in Music Assistant doesn't rename anything in Home Assistant,** because the proxy device's `name_by_user` overrides it. Rename the proxy device and its entities separately.
+- **Match a player to its Home Assistant proxy by ID, not by name.** The Music Assistant player ID is the `unique_id` of the proxy entity.
+
 ## Entities
 
 ### Entity ID format

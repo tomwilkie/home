@@ -130,10 +130,12 @@ ChimeTTS. Turn off `tts_pre_announce` in the Music Assistant config of every `*_
 member of the group, including members whose toggle is off.
 
 The setting lives in Music Assistant, not Home Assistant, so a player that Music Assistant
-re-creates gets the chime back. Set it with `config_set_player_value` on the Music Assistant MCP
-server, or in the Music Assistant web UI under **Settings**, **Players**. Music Assistant's
-player names don't always match the Home Assistant ones, so find the player by its ID, which is
-the `unique_id` of the Home Assistant proxy entity.
+re-creates gets the chime back. Set it with `config_set_player_value` on the
+[Music Assistant MCP server](access-home-assistant.md#music-assistant-mcp-server), or in the
+Music Assistant web UI under **Settings**, **Players**. Find the player by its ID, which is the
+`unique_id` of the Home Assistant proxy entity. Player names follow
+[_Music Assistant players_](naming-conventions.md#music-assistant-players), but a re-created
+player comes back with its default name.
 
 ### Why the speech step is split in two
 

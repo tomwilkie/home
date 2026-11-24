@@ -30,6 +30,32 @@ terminal sessions and Claude Code cloud environments, with nothing to configure 
 - **The REST config API is not gated.** `./scripts/ha-api /api/config/automation/config/<id> -X POST -d @file.json`, followed by `POST /api/services/automation/reload`, runs the same validation with no skill round trip.
 - **`ha_get_logs` searches a bounded window** of a buffer that holds about four hours. For anything older, query Loki as described in [_Home Assistant's own logs_](observability.md#home-assistants-own-logs).
 
+## Music Assistant MCP server
+
+Music Assistant's [FastMCP server plugin](https://www.music-assistant.io/plugins/fastmcp-server/)
+serves an MCP server from inside the add-on, and its tools are the `mcp__ma__*` family, in
+categories such as `players_`, `playback_`, `queue_`, `config_` and `debug_`. Use it to read
+players and to change player settings such as `tts_pre_announce`.
+
+### Setup
+
+- **Endpoint:** `http://192.168.0.12:8095/mcp/v1` on the Music Assistant add-on's public port. It is reachable only from the LAN, so cloud environments don't get it.
+- **Auth:** a bearer token from Music Assistant, sent as an `Authorization` header. The Music Assistant config entry's token in Home Assistant is rejected on port 8095.
+- **Scope:** add the server at local scope, so that the token stays in `~/.claude.json` and out of the repo's `.mcp.json`. Name it `ma`, which sets the tool prefix:
+
+  ```sh
+  claude mcp add --scope local --transport http ma http://192.168.0.12:8095/mcp/v1 \
+    --header "Authorization: Bearer MA_TOKEN"
+  ```
+
+  Replace `MA_TOKEN` with the token. After you add the server, run `/reload-plugins` or restart Claude Code.
+
+### Operating notes
+
+- **Players are addressed by `player_id`,** which is the `unique_id` of the Home Assistant proxy entity. `players_list_players` hides disabled and unavailable players unless you pass `include_disabled` and `include_unavailable`.
+- **`config_get_entries` lists the keys a player accepts.** `config_set_player_value` and `config_save_player` reject any other key, and take `dry_run: true` to return a diff without saving.
+- **The player name is not a config key,** so the MCP server cannot rename a player, and it cannot enable or disable one either. Rename a player in the Music Assistant web UI, or use the internal WebSocket described in [_Remove a Music Assistant player_](dashboards.md#remove-a-music-assistant-player).
+
 ## Home Assistant CLI
 
 `hass-cli` downloads and uploads dashboards, and sends raw WebSocket commands
