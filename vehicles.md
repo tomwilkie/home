@@ -18,6 +18,10 @@ appear in any committed file. See the [PII and secrets policy](CLAUDE.md#pii-and
 - **Set the scan interval to `86400` seconds (24 hours) on every entry.** The API key is
   registered for 300 lookups a month, and each entry makes one lookup per interval plus one at
   each Home Assistant restart. A 6-hour interval uses about 120 lookups a month per car.
+- **Don't use the integration's options form**, which opens from **Configure** on an entry. It replaces the
+  entry's stored data with only the scan interval and calendars, which deletes the API key and
+  the registration number, and every sensor goes `unavailable`. To change either setting, delete
+  the entry and add it again with the new values in the setup form.
 - **Entity IDs follow the plate**: `sensor.dvla_<reg>_taxstatus`, `sensor.dvla_<reg>_motexpirydate`
   and so on, with `<reg>` in lower case. They contain the registration number, so a dashboard
   or automation that references them can't be committed as it stands.
@@ -39,8 +43,3 @@ FLOW=$(./scripts/ha-api /api/config/config_entries/flow -X POST -d '{"handler":"
 
 Each car added uses about 30 lookups a month at the 24-hour interval. Before you add one,
 check that the total stays under the API key's limit, or ask the DVLA for a higher one.
-
-## Change the scan interval or calendars
-
-The options flow holds `scan_interval` and `calendars`. To change them on every entry at once,
-run the options flow for each `dvla` entry through `scripts/ha-api`, passing both fields.
