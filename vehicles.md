@@ -43,3 +43,22 @@ FLOW=$(./scripts/ha-api /api/config/config_entries/flow -X POST -d '{"handler":"
 
 Each car added uses about 30 lookups a month at the 24-hour interval. Before you add one,
 check that the total stays under the API key's limit, or ask the DVLA for a higher one.
+
+## Reminders
+
+Each car's device has two template sensor helpers, **Days until tax due** and **Days until MOT
+expires**, with device class `duration` and unit `d`. Their state template is the following, with
+the car's `taxduedate` or `motexpirydate` sensor as `SOURCE`:
+
+```jinja
+{{ ((states('SOURCE') | as_datetime).date() - now().date()).days }}
+```
+
+They exist because Home Assistant exports only numeric states to Prometheus, and the DVLA date
+sensors are text. The Grafana alert in
+[_Vehicle tax or MOT due_](observability.md#vehicle-tax-or-mot-due) emails when either is under
+30 days.
+
+- **Create both helpers when you add a car,** in the template helper's setup form with the car's device selected. The entity name then composes with the device name, and the alert's pattern picks the entity up with no change.
+- **Delete both helpers when you remove a car.** A helper whose source sensor is gone goes `unavailable` and drops out of Prometheus, so it doesn't alert, but it clutters the entity list.
+

@@ -664,6 +664,27 @@ gcx api /api/v1/provisioning/alert-rules/music-assistant-login-failed -X PUT \
   -H "X-Disable-Provenance: true" -d @observability/alerts/music-assistant-login-failed.json
 ```
 
+### Vehicle tax or MOT due
+
+`observability/alerts/vehicle-tax-mot-due.json` defines one rule in folder `Home Assistant`,
+group `vehicles`, with a one-minute interval and `for: 10m`. It produces one alert instance per
+sensor and fires when a car's tax or MOT is due in fewer than 30 days:
+
+```promql
+min by (entity, friendly_name) (homeassistant_sensor_duration_d{entity=~"sensor\\..*days_until_(tax_due|mot_expires)"})
+```
+
+- **It reads the days-until template sensors, not the DVLA date sensors.** Home Assistant exports only numeric states to Prometheus, so the dates never arrive. The template sensors are described in [vehicles.md](vehicles.md#reminders).
+- **The pattern matches every car,** so adding a car needs no change to the rule, and the file contains no registration numbers.
+- **`noDataState` is `OK`,** so removing every car doesn't fire it.
+
+After you edit the file, update the rule:
+
+```sh
+gcx api /api/v1/provisioning/alert-rules/vehicle-tax-mot-due -X PUT \
+  -H "X-Disable-Provenance: true" -d @observability/alerts/vehicle-tax-mot-due.json
+```
+
 ### IOT DNAT redirect tripwire
 
 The tripwire detects the removal of the UDM's DNS and NTP redirects described in

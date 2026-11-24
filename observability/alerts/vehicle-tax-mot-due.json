@@ -1,0 +1,62 @@
+{
+  "uid": "vehicle-tax-mot-due",
+  "title": "Vehicle tax or MOT due",
+  "folderUID": "home-assistant",
+  "ruleGroup": "vehicles",
+  "condition": "threshold",
+  "for": "10m",
+  "noDataState": "OK",
+  "execErrState": "Error",
+  "annotations": {
+    "summary": "{{ $labels.friendly_name }}: {{ $values.query.Value }} days left. Renew the tax or book the MOT. See vehicles.md."
+  },
+  "labels": {},
+  "data": [
+    {
+      "refId": "query",
+      "datasourceUid": "grafanacloud-prom",
+      "relativeTimeRange": {
+        "from": 600,
+        "to": 0
+      },
+      "model": {
+        "refId": "query",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "grafanacloud-prom"
+        },
+        "editorMode": "code",
+        "instant": true,
+        "range": false,
+        "expr": "min by (entity, friendly_name) (homeassistant_sensor_duration_d{entity=~\"sensor\\\\..*days_until_(tax_due|mot_expires)\"})"
+      }
+    },
+    {
+      "refId": "threshold",
+      "datasourceUid": "__expr__",
+      "relativeTimeRange": {
+        "from": 600,
+        "to": 0
+      },
+      "model": {
+        "refId": "threshold",
+        "datasource": {
+          "type": "__expr__",
+          "uid": "__expr__"
+        },
+        "type": "threshold",
+        "expression": "query",
+        "conditions": [
+          {
+            "evaluator": {
+              "type": "lt",
+              "params": [
+                30
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
