@@ -13,7 +13,7 @@ or write it:
 |---|---|---|
 | `automation.reset_wake_up_time` | Writes | At 17:00 daily, sets `wake_up_time` from `input_datetime.weekday_wakeup_time` (07:00) on Sunday to Thursday evenings, or `input_datetime.weekend_wakeup_time` (07:30) on Friday and Saturday evenings. A manual override therefore lasts one morning. |
 | `automation.synchronise_alarm_time` | Both | Mirrors `wake_up_time` and `time.master_bedroom_clock_alarm_time`, the ESPHome bedside clock. Setting either sets the other, and context guards on both branches stop a loop. |
-| `automation.morning_hot_water` | Reads | Calls `hive.boost_hot_water` at `wake_up_time` minus 45 minutes. |
+| `automation.morning_hot_water` | Reads | Calls `hive.boost_hot_water` at `wake_up_time` minus 60 minutes. |
 | `automation.wake_up_routine` | Reads | At `wake_up_time`: runs the air purifier for one hour, runs a 30-minute light sunrise in the master bedroom, opens the shutters, and from Monday to Thursday starts every Roomba in an unoccupied area. |
 
 `wake_up_time` is the whole morning, not an alarm. Moving it moves the bedside alarm, opens the
@@ -21,8 +21,8 @@ shutters and starts the vacuums, which is why the early-flight routine does not 
 
 ## Morning hot water
 
-`automation.morning_hot_water` boosts for the 45 minutes before `wake_up_time`, which covers
-two showers. The boost length is the time left until `wake_up_time`, so a late catch-up still
+`automation.morning_hot_water` boosts for the 60 minutes before `wake_up_time`, which covers
+the morning showers when there are guests in the house. The boost length is the time left until `wake_up_time`, so a late catch-up still
 ends on time. Saturdays get the same boost as every other day, because the evening boost
 reheats the tank for the bath, as described in [_Evening hot water_](#evening-hot-water).
 
@@ -33,12 +33,12 @@ loses the boost. The automation calls a Hive service, and when the Hive config e
 set up, that service is not registered. Home Assistant retries a Hive setup that fails on a
 transient error, as described in [_Hive_](maintenance.md#hive).
 
-Every trigger is gated on the same window (`wake - 45 min <= now < wake`), so a late recovery
+Every trigger is gated on the same window (`wake - 60 min <= now < wake`), so a late recovery
 cannot boost for a shower that has already happened:
 
 | Trigger | ID | Covers |
 |---|---|---|
-| `time` at `wake_up_time` minus 45 minutes | `scheduled` | The normal path |
+| `time` at `wake_up_time` minus 60 minutes | `scheduled` | The normal path |
 | `state` on `wake_up_time` | `wake_changed` | A late override into a window that has already started |
 | `state` on `water_heater.hallway_thermostat` from `unavailable` | `hive_recovered` | Hive was down at the scheduled instant, and the retried setup brings it back |
 | `homeassistant` start | `ha_start` | A restart inside the window |
